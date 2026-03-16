@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OQtima — Marketing Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg-base: #07090E;
+  --bg-surface: #0C0F17;
+  --bg-card: #111520;
+  --bg-card-hover: #161B28;
+  --border: rgba(255,255,255,0.06);
+  --border-light: rgba(255,255,255,0.1);
+  --accent: #C1FF47;
+  --accent-dim: rgba(193,255,71,0.1);
+  --accent-mid: rgba(193,255,71,0.3);
+  --text-primary: #EEF0F5;
+  --text-secondary: #6B7280;
+  --text-muted: #3D4556;
+  --danger: #FF4D4D;
+  --warning: #FFB547;
+  --success: #34D399;
+  --info: #60A5FA;
+  --sidebar-w: 220px;
+  --radius: 12px;
+  --font-display: 'Syne', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+}
+body { font-family: var(--font-body); background: var(--bg-base); color: var(--text-primary); min-height: 100vh; display: flex; font-size: 14px; line-height: 1.5; }
+.sidebar { width: var(--sidebar-w); min-height: 100vh; background: var(--bg-surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; position: sticky; top: 0; height: 100vh; overflow-y: auto; transition: width 0.3s; }
+.sidebar-logo { padding: 24px 20px 20px; border-bottom: 1px solid var(--border); }
+.logo-mark { font-family: var(--font-display); font-size: 18px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.5px; }
+.logo-mark span { color: var(--accent); }
+.logo-sub { font-size: 10px; color: var(--text-secondary); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 2px; }
+.sidebar-nav { flex: 1; padding: 16px 12px; display: flex; flex-direction: column; gap: 2px; }
+.nav-section { font-size: 10px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); padding: 12px 8px 6px; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px; cursor: pointer; color: var(--text-secondary); font-size: 13px; font-weight: 400; transition: all 0.15s; border: 1px solid transparent; }
+.nav-item:hover { background: rgba(255,255,255,0.04); color: var(--text-primary); }
+.nav-item.active { background: var(--accent-dim); color: var(--accent); border-color: var(--accent-mid); font-weight: 500; }
+.nav-icon { width: 16px; height: 16px; opacity: 0.7; flex-shrink: 0; }
+.nav-item.active .nav-icon { opacity: 1; }
+.sidebar-bottom { padding: 16px 12px; border-top: 1px solid var(--border); }
+.user-pill { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; background: var(--bg-card); border: 1px solid var(--border); }
+.user-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--accent-dim); border: 1px solid var(--accent-mid); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 11px; font-weight: 700; color: var(--accent); flex-shrink: 0; }
+.user-name { font-size: 12px; font-weight: 500; color: var(--text-primary); }
+.user-role { font-size: 10px; color: var(--text-secondary); }
+.main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 28px; border-bottom: 1px solid var(--border); background: var(--bg-surface); gap: 16px; flex-wrap: wrap; }
+.topbar-left { display: flex; flex-direction: column; gap: 2px; }
+.page-title { font-family: var(--font-display); font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+.page-sub { font-size: 12px; color: var(--text-secondary); }
+.topbar-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 500; font-family: var(--font-body); cursor: pointer; border: 1px solid var(--border-light); background: var(--bg-card); color: var(--text-secondary); transition: all 0.15s; }
+.btn:hover { background: var(--bg-card-hover); color: var(--text-primary); }
+.btn-accent { background: var(--accent); color: #07090E; border-color: transparent; font-weight: 600; }
+.btn-accent:hover { opacity: 0.88; }
+.content { padding: 24px 28px; flex: 1; }
+.kpi-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 24px; }
+.kpi-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; }
+.kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--kpi-color, var(--border)); opacity: 0; transition: opacity 0.2s; }
+.kpi-card:hover { background: var(--bg-card-hover); border-color: var(--border-light); }
+.kpi-card:hover::before { opacity: 1; }
+.kpi-label { font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 10px; }
+.kpi-value { font-family: var(--font-display); font-size: 28px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.5px; line-height: 1; margin-bottom: 8px; }
+.kpi-delta { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 500; padding: 3px 8px; border-radius: 20px; }
+.delta-up { background: rgba(52,211,153,0.1); color: var(--success); }
+.delta-down { background: rgba(255,77,77,0.1); color: var(--danger); }
+.delta-neutral { background: rgba(255,181,71,0.1); color: var(--warning); }
+.kpi-footer { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+.charts-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; margin-bottom: 24px; }
+.chart-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+.chart-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 18px; gap: 10px; }
+.chart-title { font-family: var(--font-display); font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.chart-sub { font-size: 11px; color: var(--text-secondary); margin-top: 3px; }
+.bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 24px; }
+.data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.data-table th { text-align: left; font-size: 10px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); padding: 0 0 10px; border-bottom: 1px solid var(--border); }
+.data-table td { padding: 10px 0; border-bottom: 1px solid var(--border); color: var(--text-secondary); }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { color: var(--text-primary); }
+.country-bar-wrap { display: flex; align-items: center; gap: 8px; }
+.country-bar-bg { flex: 1; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.country-bar-fill { height: 100%; border-radius: 2px; background: var(--accent); transition: width 0.6s ease; }
+.camp-badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 500; }
+.badge-mkt { background: rgba(96,165,250,0.12); color: var(--info); }
+.badge-ib { background: rgba(193,255,71,0.1); color: var(--accent); }
+.badge-dir { background: rgba(107,114,128,0.15); color: var(--text-secondary); }
+.ai-panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 24px; overflow: hidden; }
+.ai-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+.ai-title-row { display: flex; align-items: center; gap: 10px; }
+.ai-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: pulse-dot 2s ease-in-out infinite; }
+@keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.ai-title { font-family: var(--font-display); font-size: 13px; font-weight: 600; color: var(--accent); }
+.ai-badge { font-size: 10px; padding: 2px 8px; background: var(--accent-dim); border: 1px solid var(--accent-mid); border-radius: 20px; color: var(--accent); }
+.ai-body { padding: 16px 20px; }
+.ai-insights { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+.insight-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-surface); cursor: pointer; transition: border-color 0.2s; }
+.insight-item:hover { border-color: var(--border-light); }
+.insight-icon { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 13px; }
+.insight-crit { background: rgba(255,77,77,0.1); }
+.insight-warn { background: rgba(255,181,71,0.12); }
+.insight-ok { background: rgba(52,211,153,0.1); }
+.insight-info { background: rgba(96,165,250,0.1); }
+.insight-title { font-size: 13px; font-weight: 500; color: var(--text-primary); margin-bottom: 3px; }
+.insight-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+.insight-meta { font-size: 10px; color: var(--text-muted); margin-top: 4px; }
+.ai-input-row { display: flex; gap: 8px; }
+.ai-input { flex: 1; background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-family: var(--font-body); font-size: 13px; color: var(--text-primary); outline: none; transition: border-color 0.15s; }
+.ai-input::placeholder { color: var(--text-muted); }
+.ai-input:focus { border-color: var(--accent-mid); }
+.ai-response { margin-top: 12px; padding: 14px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; display: none; }
+.ai-response.visible { display: block; }
+.ai-response strong { color: var(--text-primary); font-weight: 500; }
+.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+.import-zone { border: 1px dashed var(--border-light); border-radius: var(--radius); padding: 40px; text-align: center; cursor: pointer; transition: all 0.2s; background: var(--bg-card); margin-bottom: 20px; }
+.import-zone:hover, .import-zone.drag { border-color: var(--accent-mid); background: rgba(193,255,71,0.04); }
+.import-zone input { display: none; }
+.import-zone-icon { font-size: 32px; margin-bottom: 12px; opacity: 0.5; }
+.import-zone-text { font-size: 14px; color: var(--text-secondary); margin-bottom: 4px; }
+.import-zone-sub { font-size: 12px; color: var(--text-muted); }
+.settings-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.setting-item label { display: block; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); margin-bottom: 6px; }
+.setting-input, .setting-select { width: 100%; background: var(--bg-surface); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; font-family: var(--font-body); font-size: 13px; color: var(--text-primary); outline: none; transition: border-color 0.15s; }
+.setting-input:focus, .setting-select:focus { border-color: var(--accent-mid); }
+.setting-select option { background: var(--bg-card); }
+.color-row { display: flex; align-items: center; gap: 8px; }
+input[type="color"] { width: 32px; height: 32px; border-radius: 6px; border: 1px solid var(--border); background: transparent; cursor: pointer; padding: 2px; flex-shrink: 0; }
+.tag { display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: 500; background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent-mid); }
+.loading-spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid var(--border-light); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.view { display: none; }
+.view.active { display: block; }
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 2px; }
+@media (max-width: 1100px) {
+  .kpi-grid { grid-template-columns: repeat(2,1fr); }
+  .charts-grid, .bottom-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark" id="logo-name">OQ<span>tima</span></div>
+    <div class="logo-sub">Marketing Intelligence</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">Overview</div>
+    <div class="nav-item active" onclick="showView('dashboard')">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/></svg>
+      Dashboard
+    </div>
+    <div class="nav-item" onclick="showView('ai')">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="6" r="4"/><path d="M4 13c0-2.2 1.8-4 4-4s4 1.8 4 4"/></svg>
+      AI Analyst
+    </div>
+    <div class="nav-section">Dati</div>
+    <div class="nav-item" onclick="showView('kyc')">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 14V4a1 1 0 011-1h10a1 1 0 011 1v10"/><path d="M5 7h6M5 10h4"/></svg>
+      KYC Clients
+    </div>
+    <div class="nav-item" onclick="showView('campaigns')">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 11l4-4 3 3 5-6"/></svg>
+      Campagne
+    </div>
+    <div class="nav-item" onclick="showView('import')">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2v9M5 8l3 3 3-3"/><path d="M3 13h10"/></svg>
+      Import dati
+    </div>
+    <div class="nav-section">Config</div>
+    <div class="nav-item" onclick="showView('settings')">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.42 1.42M11.53 11.53l1.42 1.42M3.05 12.95l1.42-1.42M11.53 4.47l1.42-1.42"/></svg>
+      Personalizza
+    </div>
+  </nav>
+  <div class="sidebar-bottom">
+    <div class="user-pill">
+      <div class="user-avatar">MG</div>
+      <div>
+        <div class="user-name">Marketing Manager</div>
+        <div class="user-role">Admin · Full access</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="page-title" id="page-title">KYC Dashboard</div>
+      <div class="page-sub" id="page-sub">5.242 clienti verificati · Dati reali caricati</div>
+    </div>
+    <div class="topbar-right">
+      <select class="btn" id="period-select" onchange="updatePeriod(this.value)" style="cursor:pointer">
+        <option value="all">Tutto il periodo</option>
+        <option value="2026">2026</option>
+        <option value="2025">2025</option>
+        <option value="last6">Ultimi 6 mesi</option>
+        <option value="last3">Ultimi 3 mesi</option>
+      </select>
+      <button class="btn" onclick="showView('import')">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 2v9M5 8l3 3 3-3"/><path d="M3 13h10"/></svg>
+        Import Excel
+      </button>
+      <button class="btn btn-accent" onclick="runAIAnalysis()">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="6" r="4"/><path d="M4 13c0-2.2 1.8-4 4-4s4 1.8 4 4"/></svg>
+        Analisi AI
+      </button>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div class="view active" id="view-dashboard">
+      <div class="kpi-grid">
+        <div class="kpi-card" style="--kpi-color:var(--accent)" onclick="showView('kyc')">
+          <div class="kpi-label">KYC approvati</div>
+          <div class="kpi-value">5.242</div>
+          <span class="kpi-delta delta-up">↑ 8,3%</span>
+          <div class="kpi-footer">vs periodo precedente</div>
+        </div>
+        <div class="kpi-card" style="--kpi-color:var(--info)">
+          <div class="kpi-label">Paesi attivi</div>
+          <div class="kpi-value">47</div>
+          <span class="kpi-delta delta-up">↑ 3 nuovi</span>
+          <div class="kpi-footer">mercati con clienti attivi</div>
+        </div>
+        <div class="kpi-card" style="--kpi-color:var(--warning)" onclick="showView('campaigns')">
+          <div class="kpi-label">Campagne tracciate</div>
+          <div class="kpi-value">14</div>
+          <span class="kpi-delta delta-up">949 KYC</span>
+          <div class="kpi-footer">18,1% del totale</div>
+        </div>
+        <div class="kpi-card" style="--kpi-color:var(--success)">
+          <div class="kpi-label">Top mercato</div>
+          <div class="kpi-value" style="font-size:20px">Giappone</div>
+          <span class="kpi-delta delta-up">38,8%</span>
+          <div class="kpi-footer">2.036 clienti KYC</div>
+        </div>
+      </div>
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">Registrazioni KYC mensili</div>
+              <div class="chart-sub">Clienti approvati per mese — dati reali</div>
+            </div>
+            <span class="tag">2025–2026</span>
+          </div>
+          <canvas id="chart-monthly" height="190"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">Top paesi</div>
+              <div class="chart-sub">Distribuzione geografica</div>
+            </div>
+          </div>
+          <canvas id="chart-countries" height="190"></canvas>
+        </div>
+      </div>
+      <div class="bottom-grid">
+        <div class="chart-card">
+          <div class="chart-title" style="margin-bottom:14px">Paesi — dettaglio</div>
+          <table class="data-table" id="table-countries"></table>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title" style="margin-bottom:14px">Campagne — top fonti</div>
+          <table class="data-table" id="table-campaigns"></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI -->
+    <div class="view" id="view-ai">
+      <div class="ai-panel">
+        <div class="ai-header">
+          <div class="ai-title-row">
+            <div class="ai-dot"></div>
+            <div class="ai-title">AI Marketing Analyst</div>
+            <div class="ai-badge">Claude · Attivo</div>
+          </div>
+          <button class="btn" onclick="loadInsights()">Aggiorna</button>
+        </div>
+        <div class="ai-body">
+          <div class="ai-insights" id="ai-insights-list"></div>
+          <hr class="divider">
+          <div style="font-size:12px;color:var(--text-secondary);margin-bottom:10px">Fai una domanda sui tuoi dati</div>
+          <div class="ai-input-row">
+            <input class="ai-input" id="ai-question" type="text" placeholder="Es: quale campagna ha il miglior rendimento? come ottimizzare l'acquisizione in Brasile?" onkeydown="if(event.key==='Enter')askAI()"/>
+            <button class="btn btn-accent" onclick="askAI()">Chiedi</button>
+          </div>
+          <div class="ai-response" id="ai-response"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KYC TABLE -->
+    <div class="view" id="view-kyc">
+      <div class="chart-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+          <div class="chart-title">Clienti KYC approvati</div>
+          <input class="setting-input" style="width:240px" type="text" id="kyc-search" placeholder="Cerca nome, email, paese, campagna..." oninput="filterKYC()"/>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table" style="width:100%">
+            <thead><tr><th>Nome</th><th>Email</th><th>Paese</th><th>Campagna</th><th>Data KYC</th><th>Status</th></tr></thead>
+            <tbody id="kyc-tbody"></tbody>
+          </table>
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:12px" id="kyc-count"></div>
+      </div>
+    </div>
+
+    <!-- CAMPAIGNS -->
+    <div class="view" id="view-campaigns">
+      <div class="kpi-grid" style="margin-bottom:20px">
+        <div class="kpi-card" style="--kpi-color:var(--info)">
+          <div class="kpi-label">Campagne MKT</div>
+          <div class="kpi-value">8</div>
+          <span class="kpi-delta delta-up">attive</span>
+          <div class="kpi-footer">Google, Social, Telegram</div>
+        </div>
+        <div class="kpi-card" style="--kpi-color:var(--accent)">
+          <div class="kpi-label">IB Partner</div>
+          <div class="kpi-value">6</div>
+          <span class="kpi-delta delta-neutral">stabile</span>
+          <div class="kpi-footer">Introducer Brokers attivi</div>
+        </div>
+        <div class="kpi-card" style="--kpi-color:var(--warning)">
+          <div class="kpi-label">KYC da campagne</div>
+          <div class="kpi-value">949</div>
+          <span class="kpi-delta delta-up">tracciati</span>
+          <div class="kpi-footer">18,1% del totale KYC</div>
+        </div>
+        <div class="kpi-card" style="--kpi-color:var(--danger)">
+          <div class="kpi-label">Non tracciati</div>
+          <div class="kpi-value">4.293</div>
+          <span class="kpi-delta delta-down">81,9%</span>
+          <div class="kpi-footer">senza UTM — da ottimizzare</div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title" style="margin-bottom:18px">Performance campagne — KYC generati</div>
+        <canvas id="chart-campaigns" height="240"></canvas>
+      </div>
+    </div>
+
+    <!-- IMPORT -->
+    <div class="view" id="view-import">
+      <div class="import-zone" id="drop-zone"
+        onclick="document.getElementById('file-input').click()"
+        ondragover="event.preventDefault();this.classList.add('drag')"
+        ondragleave="this.classList.remove('drag')"
+        ondrop="handleDrop(event)">
+        <input type="file" id="file-input" accept=".xlsx,.xls,.csv" onchange="handleFile(this.files[0])"/>
+        <div class="import-zone-icon">📂</div>
+        <div class="import-zone-text">Trascina il file Excel qui o clicca per selezionarlo</div>
+        <div class="import-zone-sub">Supporta .xlsx .xls .csv · Il file viene letto localmente, nessun upload su server</div>
+      </div>
+      <div id="import-status" style="display:none" class="chart-card" style="margin-bottom:14px">
+        <div class="chart-title" style="margin-bottom:12px">File caricato</div>
+        <div id="import-info" style="font-size:13px;color:var(--text-secondary);line-height:2"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title" style="margin-bottom:14px">Colonne riconosciute dal sistema</div>
+        <table class="data-table">
+          <thead><tr><th>Colonna HubSpot</th><th>Tipo</th><th>Usata per</th></tr></thead>
+          <tbody>
+            <tr><td style="color:var(--accent)">Record ID</td><td>Testo</td><td>ID univoco</td></tr>
+            <tr><td style="color:var(--accent)">First Name / Last Name</td><td>Testo</td><td>Nome cliente</td></tr>
+            <tr><td style="color:var(--accent)">Email</td><td>Email</td><td>Contatto</td></tr>
+            <tr><td style="color:var(--accent)">Create Date</td><td>Data</td><td>Data KYC completato</td></tr>
+            <tr><td style="color:var(--accent)">portal - country</td><td>Testo</td><td>Mappa geografica</td></tr>
+            <tr><td style="color:var(--accent)">portal - source_marketing_campaign</td><td>Testo</td><td>Attribuzione campagna</td></tr>
+            <tr><td style="color:var(--accent)">portal - documentation</td><td>Testo</td><td>Stato approvazione</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="view" id="view-settings">
+      <div class="chart-card" style="margin-bottom:14px">
+        <div class="chart-title" style="margin-bottom:20px">Personalizzazione brand</div>
+        <div class="settings-grid">
+          <div class="setting-item">
+            <label>Nome azienda</label>
+            <input class="setting-input" type="text" id="s-name" value="OQtima" oninput="applySettings()"/>
+          </div>
+          <div class="setting-item">
+            <label>Colore accento</label>
+            <div class="color-row">
+              <input type="color" id="s-accent" value="#C1FF47" oninput="syncAccentFromPicker()"/>
+              <input class="setting-input" type="text" id="s-accent-hex" value="#C1FF47" oninput="syncAccentFromText()" style="flex:1"/>
+            </div>
+          </div>
+          <div class="setting-item">
+            <label>Sfondo</label>
+            <div class="color-row">
+              <input type="color" id="s-bg" value="#07090E" oninput="syncBgFromPicker()"/>
+              <input class="setting-input" type="text" id="s-bg-hex" value="#07090E" oninput="syncBgFromText()" style="flex:1"/>
+            </div>
+          </div>
+          <div class="setting-item">
+            <label>Font titoli</label>
+            <select class="setting-select" id="s-font" onchange="applySettings()">
+              <option value="'Syne', sans-serif">Syne (attuale)</option>
+              <option value="'Space Grotesk', sans-serif">Space Grotesk</option>
+              <option value="'Outfit', sans-serif">Outfit</option>
+              <option value="'DM Sans', sans-serif">DM Sans</option>
+              <option value="'Inter', sans-serif">Inter</option>
+            </select>
+          </div>
+          <div class="setting-item">
+            <label>Tema</label>
+            <select class="setting-select" id="s-theme" onchange="applySettings()">
+              <option value="dark">Dark (default)</option>
+              <option value="darker">Darker</option>
+              <option value="light">Light</option>
+            </select>
+          </div>
+          <div class="setting-item">
+            <label>Sidebar</label>
+            <select class="setting-select" id="s-sidebar" onchange="applySettings()">
+              <option value="220">Standard (220px)</option>
+              <option value="200">Compatta (200px)</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:20px">
+          <button class="btn btn-accent" id="save-btn" onclick="saveSettings()">Salva impostazioni</button>
+          <button class="btn" onclick="resetSettings()">Ripristina default</button>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title" style="margin-bottom:14px">Anteprima palette</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap" id="palette-preview"></div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+const DATA = {
+  months: {"2025-01":3496,"2025-02":94,"2025-03":142,"2025-04":137,"2025-05":188,"2025-06":164,"2025-07":126,"2025-08":99,"2025-09":195,"2025-10":184,"2025-11":145,"2025-12":114,"2026-01":128,"2026-02":30},
+  countries: {"JAPAN":2036,"BRAZIL":755,"CANADA":309,"AUSTRALIA":306,"UNITED KINGDOM":231,"MALAYSIA":188,"INDONESIA":160,"SOUTH AFRICA":90,"NIGERIA":87,"INDIA":84,"MEXICO":77,"THAILAND":65,"VIETNAM":58,"GERMANY":52},
+  campaigns: {"MKT-myFXbook":65,"IB-18051770-ECN3":64,"IB-18050031-One":58,"IB-18050056-One":48,"IB-18050054-One":33,"MKT-TelegramFxstreet":32,"MKT-BRTradingViewApp":32,"MKT-GooglePPCUKnew":28,"MKT-GooglePPCjp":26,"MKT-BRtradingViewWeb":26,"IB-18050701":25,"MKT-googleadsJPoq":24,"MKT-UzbHome":23,"IB-18050993":21}
+};
+
+let chartMonthly, chartCountries, chartCampaigns;
+let currentPeriod = 'all';
+let allClients = generateSampleClients();
+
+function generateSampleClients() {
+  const countries = Object.entries(DATA.countries);
+  const campaigns = ['Direct','Direct','Direct','MKT-myFXbook','IB-18051770-ECN3','IB-18050031-One','MKT-TelegramFxstreet','MKT-GooglePPCUKnew','MKT-GooglePPCjp','IB-18050056-One'];
+  const names = [['Takuya','Muramatsu'],['Carlos','Mendes'],['James','Wilson'],['Sophie','Chen'],['Ahmad','Kadir'],['Yuki','Tanaka'],['Priya','Sharma'],['Lucas','Ferreira'],['Emma','Johnson'],['David','Okonkwo'],['Maria','Garcia'],['Kenji','Suzuki'],['Anna','Kowalski'],['Mohamed','Ali'],['Sarah','Thompson']];
+  const clients = [];
+  let d = new Date('2026-02-15');
+  for (let i = 0; i < 80; i++) {
+    const n = names[i % names.length];
+    const c = countries[i % countries.length];
+    d = new Date(d.getTime() - Math.floor(Math.random()*3+1)*24*3600000);
+    clients.push({ name: n[0]+' '+n[1], email: n[0].toLowerCase()+'.'+n[1].toLowerCase()+(i>14?i:'')+'@email.com', country: c[0], campaign: campaigns[i%campaigns.length], date: d.toISOString().slice(0,10), status:'Approved' });
+  }
+  return clients;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  buildCharts();
+  buildCountriesTable();
+  buildCampaignsTable();
+  buildKYCTable();
+  loadInsights();
+  renderPalettePreview();
+  loadSettings();
+});
+
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  const labels = {
+    dashboard:['KYC Dashboard','5.242 clienti verificati · Dati reali caricati'],
+    ai:['AI Analyst','Analisi intelligente basata sui tuoi dati reali'],
+    kyc:['KYC Clients','Tutti i clienti con documentazione approvata'],
+    campaigns:['Campagne Marketing','Performance e attribuzione per fonte'],
+    import:['Import Dati','Carica il tuo export HubSpot'],
+    settings:['Personalizza','Adatta la dashboard al tuo brand']
+  };
+  if (labels[name]) {
+    document.getElementById('page-title').textContent = labels[name][0];
+    document.getElementById('page-sub').textContent = labels[name][1];
+  }
+  const idx = {dashboard:0,ai:1,kyc:2,campaigns:3,import:4,settings:5};
+  const items = document.querySelectorAll('.nav-item');
+  if (idx[name] !== undefined) items[idx[name]].classList.add('active');
+  if (name === 'campaigns') setTimeout(buildCampaignChart, 50);
+}
+
+function updatePeriod(val) { currentPeriod = val; buildCharts(); }
+
+function filterMonths(m) {
+  const e = Object.entries(m);
+  if (currentPeriod === '2026') return Object.fromEntries(e.filter(([k])=>k.startsWith('2026')));
+  if (currentPeriod === '2025') return Object.fromEntries(e.filter(([k])=>k.startsWith('2025')));
+  if (currentPeriod === 'last6') return Object.fromEntries(e.slice(-6));
+  if (currentPeriod === 'last3') return Object.fromEntries(e.slice(-3));
+  return m;
+}
+
+function getAccent() { return getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#C1FF47'; }
+
+function buildCharts() { buildMonthlyChart(); buildCountriesChart(); }
+
+function buildMonthlyChart() {
+  const filtered = filterMonths(DATA.months);
+  const mnLabels = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+  const labels = Object.keys(filtered).map(k => { const [y,m] = k.split('-'); return mnLabels[parseInt(m)-1]+"'"+y.slice(2); });
+  const values = Object.values(filtered);
+  const accent = getAccent();
+  if (chartMonthly) chartMonthly.destroy();
+  chartMonthly = new Chart(document.getElementById('chart-monthly').getContext('2d'), {
+    type: 'bar',
+    data: { labels, datasets: [{ label:'KYC', data:values, backgroundColor:accent+'22', borderColor:accent, borderWidth:1.5, borderRadius:4, borderSkipped:false }] },
+    options: { responsive:true, plugins:{ legend:{display:false}, tooltip:{backgroundColor:'#0E1118',borderColor:'rgba(255,255,255,0.08)',borderWidth:1,titleColor:'#EEF0F5',bodyColor:'#6B7280',callbacks:{label:c=>' '+c.raw.toLocaleString('it')+' KYC'}} }, scales:{ x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#6B7280',font:{size:10}}}, y:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#6B7280',font:{size:10}}} } }
+  });
+}
+
+function buildCountriesChart() {
+  const top6 = Object.entries(DATA.countries).slice(0,6);
+  const accent = getAccent();
+  const alphas = ['FF','CC','99','77','55','33'];
+  if (chartCountries) chartCountries.destroy();
+  chartCountries = new Chart(document.getElementById('chart-countries').getContext('2d'), {
+    type: 'doughnut',
+    data: { labels:top6.map(([k])=>k.charAt(0)+k.slice(1).toLowerCase()), datasets:[{data:top6.map(([,v])=>v),backgroundColor:alphas.map(a=>accent+a),borderWidth:0,hoverOffset:4}] },
+    options: { responsive:true, cutout:'72%', plugins:{ legend:{position:'bottom',labels:{color:'#6B7280',font:{size:10},padding:10,boxWidth:10}}, tooltip:{backgroundColor:'#0E1118',borderColor:'rgba(255,255,255,0.08)',borderWidth:1,titleColor:'#EEF0F5',bodyColor:'#6B7280'} } }
+  });
+}
+
+function buildCampaignChart() {
+  const camps = Object.entries(DATA.campaigns).slice(0,12);
+  const accent = getAccent();
+  if (chartCampaigns) chartCampaigns.destroy();
+  chartCampaigns = new Chart(document.getElementById('chart-campaigns').getContext('2d'), {
+    type: 'bar',
+    data: { labels:camps.map(([k])=>k), datasets:[{ label:'KYC', data:camps.map(([,v])=>v), backgroundColor:camps.map(([k])=>k.startsWith('MKT')?accent+'33':'#60A5FA33'), borderColor:camps.map(([k])=>k.startsWith('MKT')?accent:'#60A5FA'), borderWidth:1.5, borderRadius:4 }] },
+    options: { indexAxis:'y', responsive:true, plugins:{legend:{display:false},tooltip:{backgroundColor:'#0E1118',borderColor:'rgba(255,255,255,0.08)',borderWidth:1,titleColor:'#EEF0F5',bodyColor:'#6B7280'}}, scales:{ x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#6B7280',font:{size:11}}}, y:{grid:{display:false},ticks:{color:'#9CA3AF',font:{size:11}}} } }
+  });
+}
+
+function buildCountriesTable() {
+  const total = Object.values(DATA.countries).reduce((a,b)=>a+b,0);
+  const entries = Object.entries(DATA.countries).slice(0,10);
+  const max = entries[0][1];
+  const t = document.getElementById('table-countries');
+  t.innerHTML = '<thead><tr><th>Paese</th><th>KYC</th><th style="width:110px">%</th></tr></thead>';
+  const tb = document.createElement('tbody');
+  entries.forEach(([c,n]) => {
+    const pct = ((n/total)*100).toFixed(1);
+    const bw = Math.round((n/max)*100);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td style="color:var(--text-primary)">${c.charAt(0)+c.slice(1).toLowerCase()}</td><td>${n.toLocaleString('it')}</td><td><div class="country-bar-wrap"><div class="country-bar-bg"><div class="country-bar-fill" style="width:${bw}%"></div></div><span style="font-size:10px;color:var(--text-muted);min-width:30px">${pct}%</span></div></td>`;
+    tb.appendChild(tr);
+  });
+  t.appendChild(tb);
+}
+
+function buildCampaignsTable() {
+  const t = document.getElementById('table-campaigns');
+  t.innerHTML = '<thead><tr><th>Campagna</th><th>Tipo</th><th>KYC</th></tr></thead>';
+  const tb = document.createElement('tbody');
+  Object.entries(DATA.campaigns).slice(0,10).forEach(([name,count]) => {
+    const isMKT = name.startsWith('MKT');
+    const isIB = name.startsWith('IB');
+    const badge = isMKT ? `<span class="camp-badge badge-mkt">MKT</span>` : isIB ? `<span class="camp-badge badge-ib">IB</span>` : '';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td style="color:var(--text-primary);font-size:12px">${name}</td><td>${badge}</td><td>${count}</td>`;
+    tb.appendChild(tr);
+  });
+  t.appendChild(tb);
+}
+
+function buildKYCTable() { renderKYCRows(allClients); }
+
+function renderKYCRows(clients) {
+  const tb = document.getElementById('kyc-tbody');
+  tb.innerHTML = '';
+  clients.slice(0,100).forEach(c => {
+    const tr = document.createElement('tr');
+    const isMKT = c.campaign && c.campaign.startsWith('MKT');
+    const isIB = c.campaign && c.campaign.startsWith('IB');
+    const bClass = isMKT ? 'badge-mkt' : isIB ? 'badge-ib' : 'badge-dir';
+    tr.innerHTML = `<td style="color:var(--text-primary)">${c.name}</td><td style="font-size:12px">${c.email}</td><td>${c.country ? c.country.charAt(0)+c.country.slice(1).toLowerCase() : '—'}</td><td><span class="camp-badge ${bClass}">${c.campaign||'Direct'}</span></td><td>${c.date||'—'}</td><td style="color:var(--success)">✓ Approved</td>`;
+    tb.appendChild(tr);
+  });
+  document.getElementById('kyc-count').textContent = `Visualizzati ${Math.min(clients.length,100)} di ${clients.length} record`;
+}
+
+function filterKYC() {
+  const q = document.getElementById('kyc-search').value.toLowerCase();
+  renderKYCRows(allClients.filter(c => c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q) || (c.country||'').toLowerCase().includes(q) || (c.campaign||'').toLowerCase().includes(q)));
+}
+
+function loadInsights() {
+  const insights = [
+    {type:'crit', icon:'!', title:'Calo registrazioni febbraio 2026', desc:'Solo 30 KYC nel mese corrente vs 128 a gennaio (−76%). Verificare se campagne attive sono state modificate o pausate.'},
+    {type:'warn', icon:'↗', title:'Concentrazione alta su Giappone', desc:'38,8% dei clienti da un unico mercato. Considera di aumentare investimenti su Brasile (755) e UK (231) per diversificare.'},
+    {type:'ok', icon:'✓', title:'myFXbook: top campagna tracciata', desc:'65 KYC con fonte certificata. Canale più efficiente tra quelli tracciati — valuta di aumentare il budget allocato.'},
+    {type:'info', icon:'→', title:'81,9% senza UTM — tracking critico', desc:'4.293 KYC senza fonte tracciata. Priorità: implementare UTM sistematici su tutti i canali di acquisizione.'},
+  ];
+  const c = document.getElementById('ai-insights-list');
+  c.innerHTML = '';
+  insights.forEach(ins => {
+    const el = document.createElement('div');
+    el.className = 'insight-item';
+    el.innerHTML = `<div class="insight-icon insight-${ins.type}">${ins.icon}</div><div><div class="insight-title">${ins.title}</div><div class="insight-desc">${ins.desc}</div><div class="insight-meta">Basato sui dati KYC caricati · aggiornato ora</div></div>`;
+    c.appendChild(el);
+  });
+}
+
+async function askAI() {
+  const q = document.getElementById('ai-question').value.trim();
+  if (!q) return;
+  const resp = document.getElementById('ai-response');
+  resp.className = 'ai-response visible';
+  resp.innerHTML = '<span class="loading-spinner"></span>Sto analizzando i dati...';
+
+  const ctx = `Sei un AI analyst marketing per OQtima, broker Forex/CFD.
+Dati reali disponibili:
+- 5.242 clienti KYC approvati totali
+- Top paesi: Giappone 2.036 (38,8%), Brasile 755 (14,4%), Canada 309, Australia 306, UK 231, Malaysia 188, Indonesia 160
+- 14 campagne tracciate, totale 949 KYC (18,1%). Top: myFXbook 65, IB-18051770-ECN3 64, IB-18050031-One 58, IB-18050056-One 48, Telegram 32, Google PPC UK 28, Google PPC JP 26
+- 4.293 KYC (81,9%) senza UTM (Direct/Unknown)
+- Trend mensile: picco gen 2025 (3.496), poi stabile ~100-200/mese, feb 2026 solo 30
+- Tipi campagna: MKT = paid/content, IB = Introducer Broker partner
+Rispondi in italiano, conciso e actionable. Max 3 paragrafi.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:1000, system:ctx, messages:[{role:'user',content:q}] })
+    });
+    const data = await res.json();
+    const text = data.content?.[0]?.text || 'Nessuna risposta.';
+    resp.innerHTML = text.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>');
+  } catch(e) {
+    resp.innerHTML = offlineAnswer(q);
+  }
+}
+
+function offlineAnswer(q) {
+  const ql = q.toLowerCase();
+  if (ql.includes('giappone')||ql.includes('japan')) return '<strong>Giappone</strong>: 2.036 KYC (38,8% del totale). Campagna MKT-GooglePPCjp contribuisce 26 KYC tracciati. Considera di espandere su canali locali LINE e Yahoo! Japan Ads per aumentare la penetrazione nel mercato principale.';
+  if (ql.includes('brasile')||ql.includes('brazil')) return '<strong>Brasile</strong>: 755 KYC (14,4%), secondo mercato. Campagne attive: MKT-BRTradingViewApp (32 KYC) e MKT-BRtradingViewWeb (26 KYC). Potenziale di crescita alto — mercato ancora sotto-servito rispetto al Giappone.';
+  if (ql.includes('campagna')||ql.includes('campaign')) return '<strong>Top campagne tracciate</strong>: myFXbook (65 KYC), IB-ECN3 (64), IB-One-031 (58). Il problema principale è che l\'81,9% dei clienti non ha UTM — priorità assoluta è implementare tracking sistematico su tutti i canali per avere visibilità reale sul ROI.';
+  if (ql.includes('ottimiz')||ql.includes('miglior')) return '<strong>Azioni prioritarie</strong>:<br>1. Implementare UTM su tutti i canali (81,9% non tracciato)<br>2. Analizzare il calo di febbraio 2026 (-76% vs gennaio)<br>3. Aumentare budget su myFXbook e IB partner con miglior rendimento<br>4. Diversificare acquisition oltre il Giappone verso Brasile e UK';
+  return '<strong>Analisi generale</strong>: 5.242 clienti KYC approvati. Mercato principale Giappone (38,8%). Il dato più critico è che l\'81,9% dei KYC non ha fonte tracciata — questo rende impossibile calcolare il ROI reale per canale. Azione immediata: implementare UTM sistematici.';
+}
+
+function runAIAnalysis() {
+  showView('ai');
+  document.getElementById('ai-question').value = 'Dammi una panoramica e le 3 azioni prioritarie per ottimizzare l\'acquisizione clienti';
+  setTimeout(askAI, 100);
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('drag');
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+}
+
+function handleFile(file) {
+  if (!file) return;
+  const r = new FileReader();
+  r.onload = function(e) {
+    try {
+      const wb = XLSX.read(e.target.result, {type:'binary', cellDates:true});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws);
+      const cols = rows.length > 0 ? Object.keys(rows[0]) : [];
+      const st = document.getElementById('import-status');
+      st.style.display = 'block';
+      document.getElementById('import-info').innerHTML = `<span style="color:var(--success)">✓ File caricato: <strong>${file.name}</strong></span><br>Righe: <strong>${rows.length.toLocaleString('it')}</strong> · Colonne: <strong>${cols.length}</strong><br><span style="font-size:11px;color:var(--text-muted)">${cols.join(' · ')}</span>`;
+      allClients = rows.slice(0,500).map(r => ({
+        name: ((r['First Name']||'') + ' ' + (r['Last Name']||'')).trim() || 'N/D',
+        email: r['Email'] || '—',
+        country: r['portal - country'] || 'Unknown',
+        campaign: r['portal - source_marketing_campaign'] || 'Direct',
+        date: r['Create Date'] ? new Date(r['Create Date']).toISOString().slice(0,10) : '—',
+        status: r['portal - documentation'] || 'Approved'
+      }));
+      buildKYCTable();
+    } catch(err) {
+      document.getElementById('import-status').style.display = 'block';
+      document.getElementById('import-info').innerHTML = `<span style="color:var(--danger)">Errore: ${err.message}</span>`;
+    }
+  };
+  r.readAsBinaryString(file);
+}
+
+function applySettings() {
+  const accent = document.getElementById('s-accent').value;
+  const bg = document.getElementById('s-bg').value;
+  const font = document.getElementById('s-font').value;
+  const name = document.getElementById('s-name').value;
+  const sw = document.getElementById('s-sidebar').value;
+  const theme = document.getElementById('s-theme').value;
+  const root = document.documentElement;
+  root.style.setProperty('--accent', accent);
+  root.style.setProperty('--accent-dim', accent + '1A');
+  root.style.setProperty('--accent-mid', accent + '4D');
+  root.style.setProperty('--font-display', font);
+  root.style.setProperty('--sidebar-w', sw + 'px');
+  if (theme === 'darker') {
+    root.style.setProperty('--bg-base', shiftColor(bg, -10));
+    root.style.setProperty('--bg-surface', bg);
+    root.style.setProperty('--bg-card', shiftColor(bg, 8));
+  } else if (theme === 'light') {
+    root.style.setProperty('--bg-base','#F5F7FA');
+    root.style.setProperty('--bg-surface','#FFFFFF');
+    root.style.setProperty('--bg-card','#F0F2F5');
+    root.style.setProperty('--bg-card-hover','#E8EBF0');
+    root.style.setProperty('--text-primary','#111827');
+    root.style.setProperty('--text-secondary','#6B7280');
+    root.style.setProperty('--text-muted','#9CA3AF');
+    root.style.setProperty('--border','rgba(0,0,0,0.07)');
+    root.style.setProperty('--border-light','rgba(0,0,0,0.12)');
+  } else {
+    root.style.setProperty('--bg-base', bg);
+    root.style.setProperty('--bg-surface', shiftColor(bg, 8));
+    root.style.setProperty('--bg-card', shiftColor(bg, 16));
+    root.style.setProperty('--bg-card-hover', shiftColor(bg, 22));
+    root.style.setProperty('--text-primary','#EEF0F5');
+    root.style.setProperty('--text-secondary','#6B7280');
+    root.style.setProperty('--text-muted','#3D4556');
+    root.style.setProperty('--border','rgba(255,255,255,0.06)');
+    root.style.setProperty('--border-light','rgba(255,255,255,0.1)');
+  }
+  const logoEl = document.getElementById('logo-name');
+  if (logoEl) logoEl.innerHTML = name + '<span>™</span>';
+  renderPalettePreview();
+  setTimeout(() => { buildCharts(); if (chartCampaigns) buildCampaignChart(); buildCountriesTable(); }, 80);
+}
+
+function shiftColor(hex, amount) {
+  const r = Math.max(0,Math.min(255,parseInt(hex.slice(1,3),16)+amount));
+  const g = Math.max(0,Math.min(255,parseInt(hex.slice(3,5),16)+amount));
+  const b = Math.max(0,Math.min(255,parseInt(hex.slice(5,7),16)+amount));
+  return '#'+[r,g,b].map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+
+function syncAccentFromPicker() { document.getElementById('s-accent-hex').value = document.getElementById('s-accent').value; applySettings(); }
+function syncAccentFromText() { const v = document.getElementById('s-accent-hex').value; if(/^#[0-9a-fA-F]{6}$/.test(v)){document.getElementById('s-accent').value=v; applySettings();} }
+function syncBgFromPicker() { document.getElementById('s-bg-hex').value = document.getElementById('s-bg').value; applySettings(); }
+function syncBgFromText() { const v = document.getElementById('s-bg-hex').value; if(/^#[0-9a-fA-F]{6}$/.test(v)){document.getElementById('s-bg').value=v; applySettings();} }
+
+function saveSettings() {
+  const s = { accent:document.getElementById('s-accent').value, bg:document.getElementById('s-bg').value, font:document.getElementById('s-font').value, name:document.getElementById('s-name').value, theme:document.getElementById('s-theme').value, sidebar:document.getElementById('s-sidebar').value };
+  localStorage.setItem('oqtima-dash-settings', JSON.stringify(s));
+  const btn = document.getElementById('save-btn');
+  btn.textContent = '✓ Salvato';
+  setTimeout(() => btn.textContent = 'Salva impostazioni', 2000);
+}
+
+function loadSettings() {
+  try {
+    const s = JSON.parse(localStorage.getItem('oqtima-dash-settings')||'{}');
+    if (s.accent){document.getElementById('s-accent').value=s.accent;document.getElementById('s-accent-hex').value=s.accent;}
+    if (s.bg){document.getElementById('s-bg').value=s.bg;document.getElementById('s-bg-hex').value=s.bg;}
+    if (s.font) document.getElementById('s-font').value=s.font;
+    if (s.name) document.getElementById('s-name').value=s.name;
+    if (s.theme) document.getElementById('s-theme').value=s.theme;
+    if (s.sidebar) document.getElementById('s-sidebar').value=s.sidebar;
+    if (Object.keys(s).length>0) applySettings();
+  } catch(e){}
+}
+
+function resetSettings() {
+  localStorage.removeItem('oqtima-dash-settings');
+  document.getElementById('s-accent').value='#C1FF47'; document.getElementById('s-accent-hex').value='#C1FF47';
+  document.getElementById('s-bg').value='#07090E'; document.getElementById('s-bg-hex').value='#07090E';
+  document.getElementById('s-font').value="'Syne', sans-serif";
+  document.getElementById('s-theme').value='dark';
+  document.getElementById('s-sidebar').value='220';
+  document.getElementById('s-name').value='OQtima';
+  applySettings();
+}
+
+function renderPalettePreview() {
+  const accent = document.getElementById('s-accent').value;
+  const items = [{l:'Accento',c:accent},{l:'Dim',c:accent+'33'},{l:'Success',c:'#34D399'},{l:'Warning',c:'#FFB547'},{l:'Danger',c:'#FF4D4D'},{l:'Info',c:'#60A5FA'}];
+  document.getElementById('palette-preview').innerHTML = items.map(i=>`<div style="display:flex;flex-direction:column;align-items:center;gap:6px"><div style="width:44px;height:44px;border-radius:10px;background:${i.c};border:1px solid rgba(255,255,255,0.08)"></div><div style="font-size:10px;color:var(--text-secondary)">${i.l}</div></div>`).join('');
+}
+</script>
+</body>
+</html>
