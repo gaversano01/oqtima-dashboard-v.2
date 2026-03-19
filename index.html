@@ -851,19 +851,21 @@ function renderOverviewStatic(){
   const mktMax=mktC[0]?.[1]||1;
   buildCB('cb-ov-mkt',mktC.map(([k,v])=>({label:k.replace('MKT-',''),val:fmt(v),pct:fmtP(v/FTD.total*100),w:(v/mktMax*100)+'%',color:'#3B82F6'})));
 
-  // Funnel
+  // Funnel — period-filtered sums from byMonth
   const gads=MAN.gads||D.gads;
   const ratio=mkt==='all'?1:getMktRatio(mkt);
-  const impr=Math.round((gads?.summary?.totalImpressions||0)*ratio);
-  const clicks=Math.round((gads?.summary?.totalClicks||0)*ratio);
-  const reg=Math.round((gads?.summary?.totalConversions||0)*ratio);
+  const gadsMonthsFn=filterMonths(gads?.byMonth,period);
+  const hasGadsMo=Object.keys(gadsMonthsFn).length>0;
+  const sumFn=(key)=>Object.values(gadsMonthsFn).reduce((a,v)=>a+(v[key]||0),0);
+  const impr=Math.round((hasGadsMo?sumFn('impr'):(gads?.summary?.totalImpressions||0))*ratio);
+  const clicks=Math.round((hasGadsMo?sumFn('clicks'):(gads?.summary?.totalClicks||0))*ratio);
+  const reg=Math.round((hasGadsMo?sumFn('conv'):(gads?.summary?.totalConversions||0))*ratio);
+  const spend=(hasGadsMo?sumFn('cost'):(gads?.summary?.totalCost||5099.85))*ratio;
   const kyc=mkt==='all'?KYC.total:(KYC.byCountry[mkt]||0);
   const ftd=mkt==='all'?FTD.total:(FTD.byCountry[mkt]||0);
-  const totalSpend=gads?.summary?.totalCost||5099.85;
-  const spend=totalSpend*ratio;
-
-  const pLabel={all:'All time',thismonth:'This month',lastmonth:'Last month',thisyear:'2026',lastyear:'2025'}[period]||period+' days';
+  const pLabel={all:'All time',thismonth:'This month',lastmonth:'Last month',thisyear:'This year',lastyear:'Last year',7:'Last 7d',14:'Last 14d',30:'Last 30d',90:'Last 90d'}[period]||(period?period+' days':'All time');
   document.getElementById('fn-badge').textContent=pLabel;
+  const ovBadge=document.getElementById('ov-badge'); if(ovBadge)ovBadge.textContent=pLabel;
 
   const steps=[
     {n:1,label:'Ad Impressions',val:fmt(impr),sub:'Google Ads reach',c:'#3B82F6',rate:impr>0?((clicks/impr)*100).toFixed(2)+'%':'—',rl:'CTR',drop:impr>0?'↓ '+((clicks/impr)*100).toFixed(2)+'% click rate':''},
@@ -916,63 +918,86 @@ function renderOverviewStatic(){
 
 function renderOverview(){
   renderOverviewStatic();
-  // Dynamic parts that need backend
-  const gads=MAN.gads||D.gads,ga4=MAN.ga4||D.ga4;
-  const period=getOvPeriod(),mkt=getOvMkt();
+  const gads=MAN.gads||D.gads, ga4=MAN.ga4||D.ga4;
+  const period=getOvPeriod(), mkt=getOvMkt();
+  const ratio=mkt==='all'?1:getMktRatio(mkt);
+  const nameMap={JAPAN:'Japan',AUSTRALIA:'Australia','UNITED KINGDOM':'United Kingdom',BRAZIL:'Brazil',CANADA:'Canada'};
+  const ga4MktName=nameMap[mkt]||'';
 
-  if(gads){
-    const ratio=mkt==='all'?1:getMktRatio(mkt);
-    document.getElementById('ok-reg').textContent=fmt(Math.round((gads.summary?.totalConversions||0)*ratio));
-    const spendFiltered=(gads.summary?.totalCost||0)*(mkt==='all'?1:getMktRatio(mkt));
-    document.getElementById('ok-spend').textContent=fmtD(spendFiltered);
-    const convFiltered=Math.round((gads.summary?.totalConversions||0)*(mkt==='all'?1:getMktRatio(mkt)));
-    const cpaFiltered=convFiltered>0?(spendFiltered/convFiltered).toFixed(2):'12.81';
-    document.getElementById('ok-cpa-s').textContent=`$${cpaFiltered} cost per registration`;
-  }else{
-    document.getElementById('ok-reg').textContent='398';
-    document.getElementById('ok-spend').textContent='$5,100';
+  // ── Compute period-filtered summaries from raw monthly/daily data ──
+  // Google Ads: sum from byMonth for the selected period
+  const gadsMonths=filterMonths(gads?.byMonth, period);
+  const gadsPeriodCost=Object.values(gadsMonths).reduce((s,v)=>s+(v.cost||0),0);
+  const gadsPeriodConv=Object.values(gadsMonths).reduce((s,v)=>s+(v.conv||0),0);
+  const gadsPeriodClicks=Object.values(gadsMonths).reduce((s,v)=>s+(v.clicks||0),0);
+  const gadsPeriodImpr=Object.values(gadsMonths).reduce((s,v)=>s+(v.impr||0),0);
+
+  // GA4: sum from byMonth
+  const ga4Months=filterMonths(ga4?.byMonth, period);
+  const ga4PeriodSess=Object.values(ga4Months).reduce((s,v)=>s+(v.sessions||0),0);
+
+  // Apply market ratio
+  const costFiltered=gadsPeriodCost*ratio;
+  const convFiltered=Math.round(gadsPeriodConv*ratio);
+  const sessFiltered=mkt==='all'?ga4PeriodSess:Math.round(ga4PeriodSess*(ga4?.byCountry?.[ga4MktName]||0)/(ga4?.summary?.totalSessions||1));
+
+  // ── KPI cards ──
+  if(gads||gadsPeriodCost>0){
+    document.getElementById('ok-reg').textContent=fmt(convFiltered||Math.round((gads?.summary?.totalConversions||398)*ratio));
+    document.getElementById('ok-spend').textContent=fmtD(costFiltered||((gads?.summary?.totalCost||5100)*ratio));
+    const cpa=convFiltered>0?(costFiltered/convFiltered).toFixed(2):(gadsPeriodConv>0?(gadsPeriodCost/gadsPeriodConv).toFixed(2):'12.81');
+    document.getElementById('ok-cpa-s').textContent='$'+cpa+' cost per registration';
+  } else {
+    document.getElementById('ok-reg').textContent=fmt(Math.round(398*ratio));
+    document.getElementById('ok-spend').textContent=fmtD(5100*ratio);
     document.getElementById('ok-cpa-s').textContent='$12.81 per registration';
   }
 
   if(ga4){
-    let sessVal;
-    if(mkt==='all'){
-      sessVal=ga4.summary?.totalSessions||0;
-    }else{
-      const nameMap={JAPAN:'Japan',AUSTRALIA:'Australia','UNITED KINGDOM':'United Kingdom',BRAZIL:'Brazil',CANADA:'Canada'};
-      sessVal=ga4.byCountry?.[nameMap[mkt]]||0;
-    }
-    document.getElementById('ok-sess').textContent=fmt(sessVal);
-  }else{
-    document.getElementById('ok-sess').textContent='121,626';
+    const sessForKpi=mkt==='all'
+      ? ga4PeriodSess
+      : Math.round((ga4PeriodSess*(ga4.byCountry?.[ga4MktName]||0))/(ga4.summary?.totalSessions||1));
+    document.getElementById('ok-sess').textContent=fmt(sessForKpi||ga4PeriodSess);
+  } else {
+    document.getElementById('ok-sess').textContent=fmt(Math.round(121626*ratio));
   }
 
-  // Sessions vs spend chart
-  const ga4m=filterMonths(ga4?.byMonth,period),gadsm=filterMonths(gads?.byMonth,period);
-  const allM=[...new Set([...Object.keys(ga4m),...Object.keys(gadsm)])].sort();
+  // ── Charts ──
+  const allM=[...new Set([...Object.keys(ga4Months),...Object.keys(gadsMonths)])].sort();
   const a=getA();
   C.ovTrend=mkChart('c-ov-trend',{
     data:{labels:allM.map(mlb),datasets:[
-      {type:'bar',label:'Sessions',data:allM.map(m=>ga4m[m]?.sessions||0),backgroundColor:a+'20',borderColor:a,borderWidth:1.5,borderRadius:4,yAxisID:'y'},
-      {type:'line',label:'Spend ($)',data:allM.map(m=>gadsm[m]?.cost||0),borderColor:'#3B82F6',borderWidth:2,pointRadius:2,fill:false,yAxisID:'y1',tension:.35}
+      {type:'bar',label:'Sessions',data:allM.map(m=>(ga4Months[m]?.sessions||0)*ratio),backgroundColor:a+'20',borderColor:a,borderWidth:1.5,borderRadius:4,yAxisID:'y'},
+      {type:'line',label:'Spend ($)',data:allM.map(m=>(gadsMonths[m]?.cost||0)*ratio),borderColor:'#3B82F6',borderWidth:2,pointRadius:2,fill:false,yAxisID:'y1',tension:.35}
     ]},
     options:{responsive:true,interaction:{intersect:false,mode:'index'},plugins:{legend:{labels:{color:'#5E7191',font:{size:10},boxWidth:10}},tooltip:{...TO}},scales:{x:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#5E7191',font:{size:9}}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}},y1:{position:'right',grid:{display:false},ticks:{color:'#3B82F6',font:{size:9}}}}}
   });
 
-  // Daily gads chart
-  const daily=filterDaily(gads?.daily,period==='all'?'30':period,'');
+  // Daily gads - use filtered daily
+  const daily=filterDaily(gads?.daily, period==='all'?'all':period, '');
+  const dailyFiltered=daily.map(d=>({...d,clicks:(d.clicks||0)*ratio,cost:(d.cost||0)*ratio,conv:(d.conv||0)*ratio}));
   C.ovGads=mkChart('c-ov-gads',{
-    data:{labels:daily.map(d=>d.day?.slice(5)),datasets:[
-      {type:'bar',label:'Clicks',data:daily.map(d=>d.clicks||0),backgroundColor:a+'25',borderColor:a,borderWidth:1.5,borderRadius:3,yAxisID:'y'},
-      {type:'line',label:'Cost ($)',data:daily.map(d=>d.cost||0),borderColor:'#F59E0B',borderWidth:1.5,pointRadius:0,fill:false,yAxisID:'y1',tension:.3}
+    data:{labels:dailyFiltered.map(d=>d.day?.slice(5)),datasets:[
+      {type:'bar',label:'Clicks',data:dailyFiltered.map(d=>d.clicks),backgroundColor:a+'25',borderColor:a,borderWidth:1.5,borderRadius:3,yAxisID:'y'},
+      {type:'line',label:'Cost ($)',data:dailyFiltered.map(d=>d.cost),borderColor:'#F59E0B',borderWidth:1.5,pointRadius:0,fill:false,yAxisID:'y1',tension:.3}
     ]},
-    options:{responsive:true,interaction:{intersect:false,mode:'index'},plugins:{legend:{labels:{color:'#5E7191',font:{size:10},boxWidth:10}},tooltip:{...TO}},scales:{x:{grid:{display:false},ticks:{color:'#5E7191',font:{size:9},maxTicksLimit:12}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}},y1:{position:'right',grid:{display:false},ticks:{color:'#F59E0B',font:{size:9}}}}}
+    options:{responsive:true,interaction:{intersect:false,mode:'index'},plugins:{legend:{labels:{color:'#5E7191',font:{size:10},boxWidth:10}},tooltip:{...TO}},scales:{x:{grid:{display:false},ticks:{color:'#5E7191',font:{size:9},maxTicksLimit:14}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}},y1:{position:'right',grid:{display:false},ticks:{color:'#F59E0B',font:{size:9}}}}}
   });
 
-  // Medium bars
-  const tot=ga4?.summary?.totalSessions||1,maxM=Object.values(ga4?.byMedium||{})[0]||1;
-  buildCB('cb-ov-med',Object.entries(ga4?.byMedium||{}).slice(0,7).map(([k,v])=>({label:k,val:fmt(v),pct:((v/tot)*100).toFixed(1)+'%',w:(v/maxM*100)+'%',color:'#3B82F6'})));
+  // Medium bars — filter by period if we have daily GA4 (otherwise use totals)
+  const ga4MediumPeriod={};
+  Object.entries(ga4Months).forEach(([mo,v])=>{
+    // We only have totals per medium not per month, so approximate by ratio
+    // Use total medium breakdown scaled to period sessions ratio
+  });
+  const periodSessRatio=(ga4PeriodSess||0)/(ga4?.summary?.totalSessions||1)||1;
+  const tot=ga4PeriodSess||ga4?.summary?.totalSessions||1;
+  const maxM=Object.values(ga4?.byMedium||{})[0]||1;
+  const mediumData=Object.entries(ga4?.byMedium||{}).slice(0,7)
+    .map(([k,v])=>({label:k,val:fmt(Math.round(v*periodSessRatio*ratio)),pct:((v/((ga4?.summary?.totalSessions||1)))*100).toFixed(1)+'%',w:(v/maxM*100)+'%',color:'#3B82F6'}));
+  buildCB('cb-ov-med', mediumData);
 }
+
 
 // ─── KYC ──────────────────────────────────────────────────────────
 function renderKyc(){
