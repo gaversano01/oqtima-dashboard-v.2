@@ -227,6 +227,18 @@ input[type=color]{width:32px;height:32px;border-radius:6px;border:1px solid var(
 .attr-grid{grid-template-columns:1.8fr 1fr 1fr}
 @media(max-width:900px){.attr-grid{grid-template-columns:1fr!important}}
 
+
+/* ── EMPTY STATE ── */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;text-align:center;gap:10px;border:1px dashed var(--bl);border-radius:10px;background:var(--card);min-height:180px}
+.empty-ico{font-size:28px;opacity:.4}
+.empty-t{font-size:12px;font-weight:700;color:var(--ts)}
+.empty-s{font-size:11px;color:var(--tm);line-height:1.5;max-width:280px}
+.empty-btn{padding:7px 16px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid var(--am);background:var(--ad);color:var(--a);transition:all .15s;margin-top:4px}
+.empty-btn:hover{background:var(--a);color:#080C14}
+/* Loaded badge */
+.loaded-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:9px;font-weight:700;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);color:#10B981}
+.loaded-badge::before{content:'●';margin-right:2px}
+
 </style>
 </head>
 <body>
@@ -490,8 +502,8 @@ input[type=color]{width:32px;height:32px;border-radius:6px;border:1px solid var(
     <div class="sh-right">
       <div style="display:flex;gap:5px;flex-wrap:wrap" id="ftd-src-chips">
         <span class="chip on" data-src="all" onclick="setFtdSrc('all')">All (808)</span>
-        <span class="chip" data-src="IB" onclick="setFtdSrc('IB')">IB (141)</span>
-        <span class="chip" data-src="MKT" onclick="setFtdSrc('MKT')">MKT (34)</span>
+        <span class="chip" data-src="IB" onclick="setFtdSrc('IB')" id="chip-ib">IB (—)</span>
+        <span class="chip" data-src="MKT" onclick="setFtdSrc('MKT')" id="chip-mkt">MKT (—)</span>
       </div>
       <select class="sel" id="ftd-ctry" onchange="renderFtd()"><option value="">All countries</option><option value="JAPAN">🇯🇵 Japan (187)</option><option value="BRAZIL">🇧🇷 Brazil (157)</option><option value="AUSTRALIA">🇦🇺 Australia (142)</option><option value="UNITED KINGDOM">🇬🇧 UK (50)</option><option value="CANADA">🇨🇦 Canada (43)</option></select>
     </div>
@@ -656,25 +668,9 @@ input[type=color]{width:32px;height:32px;border-radius:6px;border:1px solid var(
 // KYC source: hubspot-crm-exports-kycd-clients-2026-03-16.xlsx
 // FTD source: hubspot-crm-exports-ftds-clients-2026-03-18.xlsx
 // ═══════════════════════════════════════════════════════════════════
-const KYC = {
-  total: 5242,
-  byCountry: {JAPAN:2036,BRAZIL:755,CANADA:309,AUSTRALIA:306,'UNITED KINGDOM':231,MALAYSIA:188,INDONESIA:160},
-  byCampaign: {'Direct/Unknown':4293,'MKT-myFXbook':65,'IB-18051770-ECN3':64,'IB-18050031-One':58,'IB-18050056-One':48,'IB-18050054-One':33,'MKT-TelegramFxstreet':32,'MKT-BRTradingViewApp':32,'MKT-GooglePPCUKnew':28,'MKT-GooglePPCjp':26},
-  byMonth: {'2025-03':142,'2025-04':137,'2025-05':188,'2025-06':164,'2025-07':126,'2025-08':99,'2025-09':195,'2025-10':184,'2025-11':145,'2025-12':114,'2026-01':128,'2026-02':30}
-};
-// KYC IB total = 64+58+48+33+... = 283; MKT total = 65+32+32+28+26+... = 349; Direct = 4293
-const KYC_IB = Object.entries(KYC.byCampaign).filter(([k])=>k.startsWith('IB')).reduce((s,[,v])=>s+v,0); // 283
-const KYC_MKT = Object.entries(KYC.byCampaign).filter(([k])=>k.startsWith('MKT')).reduce((s,[,v])=>s+v,0); // 349
-
-const FTD = {
-  total: 808,
-  ibTotal: 141,  // 50+35+21+17+10+8
-  mktTotal: 34,  // 13+12+9
-  directTotal: 497,
-  byCountry: {JAPAN:187,BRAZIL:157,AUSTRALIA:142,'UNITED KINGDOM':50,CANADA:43,INDONESIA:19,INDIA:18,THAILAND:16,'UNITED ARAB EMIRATES':16},
-  byCampaign: {'Direct/Unknown':497,'IB-18050031-One':50,'IB-18051770-ECN3':35,'IB-18050993':21,'IB-18050056-One':17,'MKT-myFXbook':13,'MKT-OL_Thiago':12,'IB-10050344-One':10,'MKT-TakumiKatoMB':9,'IB-18050054-One':8},
-  byMonth: {'2025-01':209,'2025-02':44,'2025-03':28,'2025-04':22,'2025-05':34,'2025-06':30,'2025-07':44,'2025-08':40,'2025-09':56,'2025-10':52,'2025-11':57,'2025-12':31,'2026-01':20,'2026-02':9}
-};
+const KYC = { total:0, byCountry:{}, byCampaign:{}, byMonth:{} };
+const KYC_IB = 0, KYC_MKT = 0;
+const FTD = { total:0, ibTotal:0, mktTotal:0, directTotal:0, byCountry:{}, byCampaign:{}, byMonth:{} };
 
 // ─── STATE ────────────────────────────────────────────────────────
 let BE = localStorage.getItem('oq-be')||'https://oqtima-backend.onrender.com';
@@ -694,6 +690,31 @@ function fmtP(n){return(n==null||isNaN(parseFloat(n)))?'—':parseFloat(n).toFix
 function getA(){return getComputedStyle(document.documentElement).getPropertyValue('--a').trim()||'#C1FF47'}
 
 // ─── BOOT ─────────────────────────────────────────────────────────
+
+// ─── DATA AVAILABILITY ──────────────────────────────────────────────
+function hasGads(){return !!(MAN.gads||MAN.uk)}
+function hasGa4(){return !!MAN.ga4}
+function hasHs(){return !!MAN.hs}
+function hasAnyData(){return hasGads()||hasGa4()||hasHs()}
+
+function emptyState(title,subtitle,goUpload=true){
+  return `<div class="empty-state">
+    <div class="empty-ico">📂</div>
+    <div class="empty-t">${title}</div>
+    <div class="empty-s">${subtitle}</div>
+    ${goUpload?`<button class="empty-btn" onclick="sv('upload')">Upload data →</button>`:''}
+  </div>`;
+}
+
+function emptyChart(id){
+  const el=document.getElementById(id);
+  if(!el)return;
+  const ex=Chart.getChart(el);if(ex)ex.destroy();
+  const ctx=el.getContext('2d');
+  ctx.clearRect(0,0,el.width,el.height);
+  // Draw placeholder text
+  el.style.opacity='0.3';
+}
 
 // ─── AUTH ─────────────────────────────────────────────────────────
 const PASS = 'OQtima@2026!';
@@ -755,11 +776,19 @@ function renderWorldMap(){
   if(!svg)return;
   
   // Country FTD data
-  const ftdByCountry={
-    'Japan':187,'Brazil':157,'Australia':142,'United Kingdom':50,
-    'Canada':43,'Indonesia':19,'India':18,'Thailand':16,'UAE':16,
-    'Unknown':31
-  };
+  // Use uploaded data if available, else show empty map
+  const hsData=MAN.hs;
+  const rawByC=hsData?.byCountry||{};
+  // Map HubSpot country names to display names
+  const cMap={'JAPAN':'Japan','BRAZIL':'Brazil','AUSTRALIA':'Australia','UNITED KINGDOM':'United Kingdom','CANADA':'Canada','INDONESIA':'Indonesia','INDIA':'India','THAILAND':'Thailand','UNITED ARAB EMIRATES':'UAE'};
+  const ftdByCountry={};
+  if(hsData&&hsData.withDeposit>0){Object.entries(rawByC).forEach(([k,v])=>{const n=cMap[k]||k;ftdByCountry[n]=(ftdByCountry[n]||0)+v;});}
+  // If no hs data, show empty map with placeholder
+  if(!hsData){
+    svg.innerHTML='<rect width="1000" height="500" fill="#0D1220" rx="6"/><text x="500" y="230" text-anchor="middle" fill="#2A3A52" font-size="14" font-family="Plus Jakarta Sans,sans-serif" font-weight="700">No data loaded</text><text x="500" y="255" text-anchor="middle" fill="#2A3A52" font-size="11" font-family="Plus Jakarta Sans,sans-serif">Upload a HubSpot CSV to see geographic distribution</text>';
+    if(legend)legend.innerHTML='';
+    return;
+  }
   const maxFtd=Math.max(...Object.values(ftdByCountry));
   const accent=getComputedStyle(document.documentElement).getPropertyValue('--a').trim()||'#C1FF47';
   
@@ -928,6 +957,8 @@ function getOvMkt(){return document.getElementById('ov-mkt').value}
 
 
 // Safe chart helper — always destroys before recreating
+function set(id,v){const e=document.getElementById(id);if(e)e.textContent=v}
+
 function mkChart(id, config){
   const el=document.getElementById(id);
   if(!el)return null;
@@ -1014,267 +1045,239 @@ function setChFilter(ch){
 
 // ─── OVERVIEW ─────────────────────────────────────────────────────
 function renderOverviewStatic(){
-  // KYC and FTD = all-time totals (HubSpot has no per-period date breakdown)
-  const period=getOvPeriod(), mkt=getOvMkt();
-  const {total,byC,byCamp}=getFtdForFilter(mkt,chFilter);
+  const {byCamp}=getFtdForFilter(getMkt(),chFilter);
   const a=getA();
-
-  // KPIs — KYC and FTD are always all-time
-  const kycForMkt=mkt==='all'?KYC.total:(KYC.byCountry[mkt]||0);
-  const ftdForMkt=mkt==='all'?FTD.total:(FTD.byCountry[mkt]||0);
-  document.getElementById('ok-kyc').textContent=fmt(kycForMkt);
-  document.getElementById('ok-ftd').textContent=fmt(chFilter==='all'?ftdForMkt:total);
-  document.getElementById('ok-ftd-s').textContent=(mkt!=='all'?mkt.charAt(0)+mkt.slice(1).toLowerCase()+' · ':'')+(chFilter==='all'?'all channels':chFilter+' only');
 
   // IB bars
   const ibC=Object.entries(byCamp).filter(([k])=>k.startsWith('IB')).sort((a,b)=>b[1]-a[1]);
   const ibMax=ibC[0]?.[1]||1;
-  buildCB('cb-ov-ib',ibC.map(([k,v])=>({label:k.replace('IB-',''),val:fmt(v),pct:fmtP(v/FTD.total*100),w:(v/ibMax*100)+'%',color:a})));
+  const ibEl=document.getElementById('cb-ov-ib');
+  if(ibEl){
+    if(!hasHs()&&!ibC.length){ibEl.innerHTML=emptyState('No HubSpot data','Upload a HubSpot contacts CSV to see IB partner performance');}
+    else{buildCB('cb-ov-ib',ibC.map(([k,v])=>({label:k.replace('IB-',''),val:fmt(v),pct:fmtP(v/(FTD.total||1)*100),w:(v/ibMax*100)+'%',color:a})));}
+  }
   const ibSub=document.getElementById('ib-sub-ov');
-  if(ibSub)ibSub.textContent=ibC.length+' IB partners · '+ibC.reduce((s,[,v])=>s+v,0)+' FTDs';
+  if(ibSub)ibSub.textContent=ibC.length?ibC.length+' IB partners · '+ibC.reduce((s,[,v])=>s+v,0)+' FTDs':'No data';
 
   // MKT bars
   const mktC=Object.entries(byCamp).filter(([k])=>k.startsWith('MKT')).sort((a,b)=>b[1]-a[1]);
   const mktMax=mktC[0]?.[1]||1;
-  buildCB('cb-ov-mkt',mktC.map(([k,v])=>({label:k.replace('MKT-',''),val:fmt(v),pct:fmtP(v/FTD.total*100),w:(v/mktMax*100)+'%',color:'#3B82F6'})));
+  const mktEl=document.getElementById('cb-ov-mkt');
+  if(mktEl){
+    if(!hasHs()&&!mktC.length){mktEl.innerHTML=emptyState('No HubSpot data','Upload a HubSpot contacts CSV to see MKT campaign performance');}
+    else{buildCB('cb-ov-mkt',mktC.map(([k,v])=>({label:k.replace('MKT-',''),val:fmt(v),pct:fmtP(v/(FTD.total||1)*100),w:(v/mktMax*100)+'%',color:'#3B82F6'})));}
+  }
 
-  // KYC vs FTD by market (horizontal bar chart — all-time)
+  // KYC vs FTD by market
   const mktData=[
-    {l:'Japan',ky:KYC.byCountry.JAPAN,ft:FTD.byCountry.JAPAN,c:'#EF4444'},
-    {l:'Australia',ky:KYC.byCountry.AUSTRALIA,ft:FTD.byCountry.AUSTRALIA,c:'#3B82F6'},
-    {l:'UK',ky:KYC.byCountry['UNITED KINGDOM'],ft:FTD.byCountry['UNITED KINGDOM'],c:'#8B5CF6'},
-    {l:'Brazil',ky:KYC.byCountry.BRAZIL,ft:FTD.byCountry.BRAZIL,c:'#10B981'},
-    {l:'Canada',ky:KYC.byCountry.CANADA,ft:FTD.byCountry.CANADA,c:'#F59E0B'},
+    {l:'Japan',ky:KYC.byCountry.JAPAN||0,ft:FTD.byCountry.JAPAN||0,c:'#EF4444'},
+    {l:'Australia',ky:KYC.byCountry.AUSTRALIA||0,ft:FTD.byCountry.AUSTRALIA||0,c:'#3B82F6'},
+    {l:'UK',ky:KYC.byCountry['UNITED KINGDOM']||0,ft:FTD.byCountry['UNITED KINGDOM']||0,c:'#8B5CF6'},
+    {l:'Brazil',ky:KYC.byCountry.BRAZIL||0,ft:FTD.byCountry.BRAZIL||0,c:'#10B981'},
+    {l:'Canada',ky:KYC.byCountry.CANADA||0,ft:FTD.byCountry.CANADA||0,c:'#F59E0B'},
   ];
-  C.ovMkt=mkChart('c-ov-mkt',{
-    type:'bar',
-    data:{labels:mktData.map(m=>m.l),datasets:[
+  const hasMarket=mktData.some(m=>m.ky>0||m.ft>0);
+  if(hasMarket){
+    C.ovMkt=mkChart('c-ov-mkt',{type:'bar',data:{labels:mktData.map(m=>m.l),datasets:[
       {label:'KYC',data:mktData.map(m=>m.ky),backgroundColor:mktData.map(m=>m.c+'30'),borderColor:mktData.map(m=>m.c),borderWidth:1.5,borderRadius:4},
       {label:'FTD',data:mktData.map(m=>m.ft),backgroundColor:mktData.map(m=>m.c+'88'),borderColor:mktData.map(m=>m.c),borderWidth:1.5,borderRadius:4}
-    ]},
-    options:{responsive:true,indexAxis:'y',interaction:{intersect:false,mode:'index'},plugins:{legend:{labels:{color:'#5E7191',font:{size:10},boxWidth:10}},tooltip:{...TO,callbacks:{afterBody:it=>{const d=mktData[it[0].dataIndex];return d.ky>0?['FTD rate: '+((d.ft/d.ky)*100).toFixed(1)+'%']:[];}}}},scales:{x:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}},y:{grid:{display:false},ticks:{color:'#5E7191',font:{size:10}}}}}
-  });
+    ]},options:{responsive:true,indexAxis:'y',interaction:{intersect:false,mode:'index'},plugins:{legend:{labels:{color:'#5E7191',font:{size:10},boxWidth:10}},tooltip:{...TO,callbacks:{afterBody:it=>{const d=mktData[it[0].dataIndex];return d.ky>0?['FTD rate: '+((d.ft/d.ky)*100).toFixed(1)+'%']:[];}}}},scales:{x:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}},y:{grid:{display:false},ticks:{color:'#5E7191',font:{size:10}}}}}});
+  } else {
+    const mktCvs=document.getElementById('c-ov-mkt');
+    if(mktCvs){const ex=Chart.getChart(mktCvs);if(ex)ex.destroy();mktCvs.style.display='none';}
+    const mktWrap=mktCvs?.parentElement;
+    if(mktWrap&&!mktWrap.querySelector('.empty-state'))mktWrap.insertAdjacentHTML('beforeend',emptyState('No HubSpot data','Upload HubSpot contacts to see KYC vs FTD by market'));
+  }
 
-  // AI static texts
-  setAiText('fn','<strong>Funnel:</strong> Steps 1-3 (Impressions→Clicks→Registrations) update with period filter. KYC/FTD use backend monthly data when available. KYC→FTD rate: <strong>15.4%</strong>. Cost per tracked FTD: <strong>$29</strong>. Key gap: 61% of FTDs unattributed (Direct/Unknown).');
-  setAiText('ib','<strong>IB-18050031-One</strong> leads with 50 FTDs. <strong>IB-18051770-ECN3</strong> has 35. Total IB: 141 FTDs vs 34 from MKT — IB converts 4× better. Prioritize top 2 IB partners for fastest growth.');
-  setAiText('mkt','<strong>myFXbook</strong> (13) and <strong>OL_Thiago</strong> (12) lead MKT. Cost/registration: $12.81. Focus Japan (187 FTDs) and Australia (142) — highest ROI markets.');
-  
-  // Draw world map
+  // AI texts
+  setAiText('fn',hasAnyData()
+    ?'Analysis available once data is loaded. Upload Google Ads and HubSpot files to see funnel metrics.'
+    :'<strong>No data loaded.</strong> Upload your CSV files to populate this funnel with real data.');
+  setAiText('ib',hasHs()?'IB partner data loaded — check the bars above.':'Upload a HubSpot CSV to see IB partner performance.');
+  setAiText('mkt',hasHs()?'MKT campaign data loaded — check the bars above.':'Upload a HubSpot CSV to see MKT campaign performance.');
+
   renderWorldMap();
 }
 
 
+
+
 function renderOverview(){
   renderOverviewStatic();
-  const gads=MAN.gads||D.gads, ga4=MAN.ga4||D.ga4;
+  const gads=MAN.gads||MAN.uk, ga4=MAN.ga4;
   const period=getOvPeriod(), mkt=getOvMkt();
   const ratio=mkt==='all'?1:getMktRatio(mkt);
   const nameMap={JAPAN:'Japan',AUSTRALIA:'Australia','UNITED KINGDOM':'United Kingdom',BRAZIL:'Brazil',CANADA:'Canada'};
   const ga4MktName=nameMap[mkt]||'';
+  const pMap={all:'All time',thismonth:'This month',lastmonth:'Last month',thisyear:'This year',lastyear:'Last year',7:'Last 7d',30:'Last 30d',90:'Last 90d'};
+  const pl=period.startsWith('custom:')?period.split(':')[1]+' → '+period.split(':')[2]:(pMap[period]||period+' days');
+  ['fn-badge','ov-badge','gads-bdg'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=pl;});
 
-  // Period label
-  const pMap={all:'All time',thismonth:'This month',lastmonth:'Last month',thisyear:'This year',lastyear:'Last year',7:'Last 7 days',14:'Last 14 days',30:'Last 30 days',90:'Last 90 days'};
-  const pLabel=period.startsWith('custom:')?period.split(':')[1]+' → '+period.split(':')[2]:(pMap[period]||period+' days');
-  ['fn-badge','ov-badge','gads-bdg'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=pLabel;});
-
-  // ── Period-filtered sums from byMonth ──
+  // ── Period-filtered sums ──
   const gadsM=filterMonths(gads?.byMonth,period);
   const ga4M=filterMonths(ga4?.byMonth,period);
   const sum=(obj,k)=>Object.values(obj).reduce((a,v)=>a+(v[k]||0),0);
-
-  const gadsCost=sum(gadsM,'cost');
-  const gadsConv=sum(gadsM,'conv');
-  const gadsImpr=sum(gadsM,'impr');
-  const gadsClicks=sum(gadsM,'clicks');
+  const gadsCost=sum(gadsM,'cost')*ratio;
+  const gadsConv=sum(gadsM,'conv')*ratio;
+  const gadsImpr=sum(gadsM,'impr')*ratio;
+  const gadsClicks=sum(gadsM,'clicks')*ratio;
   const ga4Sess=sum(ga4M,'sessions');
 
-  // ── Compute actual period values (fall back to all-time summary only when byMonth is truly empty) ──
-  const impr=Math.round((gadsImpr||gads?.summary?.totalImpressions||0)*ratio);
-  const clicks=Math.round((gadsClicks||gads?.summary?.totalClicks||0)*ratio);
-  const reg=Math.round((gadsConv||gads?.summary?.totalConversions||0)*ratio);
-  const spend=(gadsCost||gads?.summary?.totalCost||5099.85)*ratio;
-  // KYC/FTD: use backend monthly data if available and period != 'all'
-  const hsM=filterMonths(D.hs?.byMonth, period);
-  const kycFromPeriod=Object.values(hsM).reduce((a,v)=>a+(typeof v==='object'?v.kyc||0:0),0);
-  const ftdFromPeriod=Object.values(hsM).reduce((a,v)=>a+(typeof v==='object'?v.ftd||0:0),0);
-  const hasHsMonthly=kycFromPeriod>0||ftdFromPeriod>0;
-  // Use period-filtered if backend has monthly breakdown, else use all-time
-  const kyc=mkt==='all'
-    ? (hasHsMonthly&&period!=='all'?kycFromPeriod:KYC.total)
-    : (KYC.byCountry[mkt]||0);
-  const ftd=mkt==='all'
-    ? (hasHsMonthly&&period!=='all'?ftdFromPeriod:FTD.total)
-    : (FTD.byCountry[mkt]||0);
+  // ── HubSpot monthly ──
+  const hsM=filterMonths(MAN.hs?.byMonth,period);
+  const hsMon=Object.values(hsM);
+  const hasHsMon=hsMon.length>0&&typeof hsMon[0]==='object'&&hsMon[0]!==null&&'kyc' in hsMon[0];
+  const kycP=hasHsMon?hsMon.reduce((a,v)=>a+(v.kyc||0),0):null;
+  const ftdP=hasHsMon?hsMon.reduce((a,v)=>a+(v.ftd||0),0):null;
+  const kyc=mkt==='all'?(kycP!==null&&period!=='all'?kycP:(MAN.hs?.kycApproved||KYC.total)):(KYC.byCountry[mkt]||0);
+  const ftd=mkt==='all'?(ftdP!==null&&period!=='all'?ftdP:(MAN.hs?.withDeposit||FTD.total)):(FTD.byCountry[mkt]||0);
+  const trackedFtd=(FTD.ibTotal||0)+(FTD.mktTotal||0)||1;
 
   // ── KPI cards ──
   const sessKpi=mkt==='all'?ga4Sess:Math.round((ga4Sess||0)*((ga4?.byCountry?.[ga4MktName]||0)/(ga4?.summary?.totalSessions||1)));
-  document.getElementById('ok-sess').textContent=fmt(sessKpi||Math.round((ga4?.summary?.totalSessions||121626)*ratio));
-  document.getElementById('ok-reg').textContent=fmt(reg);
-  document.getElementById('ok-spend').textContent=fmtD(spend);
-  const cpa=reg>0?(spend/reg).toFixed(2):'—';
-  document.getElementById('ok-cpa-s').textContent=cpa!=='—'?'$'+cpa+' per registration':'per registration';
-
-  // ── FUNNEL RINGS (circular donut style like reference) ──
-  const funnelData=[
-    {label:'Impressions',val:impr,sub:impr>0?((clicks/impr)*100).toFixed(2)+'% CTR':'—',sublabel:'CTR',color:'#3B82F6',pct:100},
-    {label:'Clicks',val:clicks,sub:clicks>0?fmtD(spend/clicks,2)+' CPC':'—',sublabel:'avg CPC',color:'#F59E0B',pct:impr>0?(clicks/impr*100):0},
-    {label:'Registrations',val:reg,sub:reg>0?fmtD(spend/reg,2)+'/reg':'—',sublabel:'cost/reg',color:'#8B5CF6',pct:impr>0?(reg/impr*100):0},
-    {label:'KYC',val:kyc,sub:kyc>0?((ftd/kyc)*100).toFixed(1)+'% → FTD':'15.4%',sublabel:'all-time',color:'#C1FF47',pct:100},
-    {label:'FTD Clients',val:ftd,sub:spend>0?fmtD(spend/(FTD.ibTotal+FTD.mktTotal),0)+'/tracked FTD':'$29',sublabel:'cost/FTD',color:'#10B981',pct:100},
-  ];
-
-  const container=document.getElementById('fn-rings-row');
-  if(container){
-    container.innerHTML='';
-    funnelData.forEach((fd,i)=>{
-      const isLast=i===funnelData.length-1;
-      // Create ring item
-      const item=document.createElement('div');
-      item.style.cssText='display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;min-width:90px;max-width:150px';
-
-      // Canvas for donut ring
-      const canvasId='fn-ring-'+i;
-      item.innerHTML=`
-        <div style="position:relative;width:95px;height:95px;flex-shrink:0">
-          <canvas id="${canvasId}" width="95" height="95"></canvas>
-          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:1px">
-            <span style="font-size:14px;font-weight:800;letter-spacing:-.3px;color:${fd.color};line-height:1">${fd.val>999?fd.val.toLocaleString():fmt(fd.val)}</span>
-            <span style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ts);margin-top:1px">${fd.label}</span>
-          </div>
-        </div>
-        <div style="font-size:10px;color:var(--ts);text-align:center;line-height:1.3"><strong style="color:${fd.color}">${fd.sub}</strong><br><span style="font-size:9px;color:var(--tm)">${fd.sublabel}</span></div>
-      `;
-      container.appendChild(item);
-
-      // Add arrow between rings
-      if(!isLast){
-        const arrow=document.createElement('div');
-        arrow.innerHTML='<span style="color:var(--tm);font-size:20px;margin-bottom:30px">→</span>';
-        arrow.style.cssText='display:flex;align-items:center;flex-shrink:0';
-        container.appendChild(arrow);
-      }
-
-      // Draw donut ring after DOM insertion
-      requestAnimationFrame(()=>{
-        const cvs=document.getElementById(canvasId);
-        if(!cvs)return;
-        const existingChart=Chart.getChart(cvs);
-        if(existingChart)existingChart.destroy();
-        const fillPct=Math.max(2,Math.min(100,fd.pct||10));
-        new Chart(cvs.getContext('2d'),{
-          type:'doughnut',
-          data:{datasets:[{
-            data:[fillPct,100-fillPct],
-            backgroundColor:[fd.color,fd.color+'18'],
-            borderWidth:0,
-            borderRadius:4
-          }]},
-          options:{responsive:false,cutout:'70%',plugins:{legend:{display:false},tooltip:{enabled:false}},animation:{duration:600}}
-        });
-      });
-    });
-  }
-
-  // ── Sessions vs Spend trend (period-filtered) ──
-  const allM=[...new Set([...Object.keys(ga4M),...Object.keys(gadsM)])].sort();
-  C.ovTrend=mkChart('c-ov-trend',{
-    data:{labels:allM.map(mlb),datasets:[
-      {type:'bar',label:'Sessions',data:allM.map(m=>(ga4M[m]?.sessions||0)*ratio),backgroundColor:getA()+'20',borderColor:getA(),borderWidth:1.5,borderRadius:4,yAxisID:'y'},
-      {type:'line',label:'Spend ($)',data:allM.map(m=>(gadsM[m]?.cost||0)*ratio),borderColor:'#3B82F6',borderWidth:2,pointRadius:2,fill:false,yAxisID:'y1',tension:.35}
-    ]},
-    options:{responsive:true,interaction:{intersect:false,mode:'index'},plugins:{legend:{labels:{color:'#5E7191',font:{size:10},boxWidth:10}},tooltip:{...TO}},scales:{x:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#5E7191',font:{size:9}}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}},y1:{position:'right',grid:{display:false},ticks:{color:'#3B82F6',font:{size:9}}}}}
-  });
-
-  // ── Google Ads daily (period-filtered) ──
-  const daily=filterDaily(gads?.daily,period,'');
-  const dF=daily.map(d=>({...d,clicks:(d.clicks||0)*ratio,cost:(d.cost||0)*ratio}));
-  C.ovGads=mkChart('c-ov-gads',{
-    data:{labels:dF.map(d=>(d.day||'').slice(5)),datasets:[
-      {type:'bar',label:'Clicks',data:dF.map(d=>d.clicks),backgroundColor:getA()+'25',borderColor:getA(),borderWidth:1.5,borderRadius:3,yAxisID:'y'},
-      {type:'line',label:'Cost ($)',data:dF.map(d=>d.cost),borderColor:'#F59E0B',borderWidth:1.5,pointRadius:0,fill:false,yAxisID:'y1',tension:.3}
-    ]},
-    options:{responsive:true,interaction:{intersect:false,mode:'index'},plugins:{legend:{labels:{color:'#5E7191',font:{size:10},boxWidth:10}},tooltip:{...TO}},scales:{x:{grid:{display:false},ticks:{color:'#5E7191',font:{size:9},maxTicksLimit:14}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}},y1:{position:'right',grid:{display:false},ticks:{color:'#F59E0B',font:{size:9}}}}}
-  });
+  document.getElementById('ok-sess').textContent=ga4?fmt(sessKpi||Math.round((ga4.summary?.totalSessions||0)*ratio)):'—';
+  const reg=Math.round(gadsConv||(gads?.summary?.totalConversions||0)*ratio);
+  document.getElementById('ok-reg').textContent=gads?fmt(reg):'—';
+  document.getElementById('ok-kyc').textContent=hasHs()?fmt(kyc):'—';
+  document.getElementById('ok-ftd').textContent=hasHs()?fmt(ftd):'—';
+  const spend=gadsCost||(gads?.summary?.totalCost||0)*ratio;
+  document.getElementById('ok-spend').textContent=gads?fmtD(spend):'—';
+  const cpa=reg>0&&spend>0?(spend/reg).toFixed(2):null;
+  document.getElementById('ok-cpa-s').textContent=cpa?'$'+cpa+' per registration':'— per registration';
 
   // ── ROI KPIs ──
-  const kycCount=kyc||KYC.total;
-  const cpKyc=kycCount>0?(spend/kycCount).toFixed(2):'—';
-  const el_cpkyc=document.getElementById('roi-cpkyc');
-  if(el_cpkyc)el_cpkyc.textContent=cpKyc!=='—'?'$'+cpKyc:'—';
-  const el_sub=document.getElementById('roi-cpkyc-sub');
-  if(el_sub)el_sub.textContent=fmtD(spend)+' ÷ '+fmt(kycCount)+' KYC';
-  const trackedFtd=FTD.ibTotal+FTD.mktTotal; // 175
-  const cpFtd=trackedFtd>0?(spend/trackedFtd).toFixed(0):'29';
-  const el_cpftd=document.getElementById('roi-cpftd');
-  if(el_cpftd)el_cpftd.textContent='$'+cpFtd;
+  document.getElementById('R-cpreg').textContent=cpa?'$'+cpa:'—';
+  document.getElementById('R-cpreg-s').textContent=gads?fmtD(spend)+' ÷ '+fmt(reg)+' registrations':'Upload Google Ads data';
+  const cpKyc=kyc>0&&spend>0?fmtD(spend/kyc,2):'—';
+  document.getElementById('R-cpkyc').textContent=cpKyc;
+  document.getElementById('R-cpkyc-s').textContent=(hasHs()&&gads)?fmtD(spend)+' ÷ '+fmt(kyc)+' KYC':'Upload Google Ads + HubSpot';
+  document.getElementById('R-cpftd').textContent=gads&&trackedFtd>1?fmtD(spend/trackedFtd,0):'—';
 
-  // ── Medium bars (GA4 scaled to period) ──
-  const periodRatio=(ga4Sess||0)/(ga4?.summary?.totalSessions||1)||1;
-  const maxM=Object.values(ga4?.byMedium||{})[0]||1;
-  buildCB('cb-ov-med',Object.entries(ga4?.byMedium||{}).slice(0,7).map(([k,v])=>({
-    label:k,val:fmt(Math.round(v*periodRatio*ratio)),pct:((v/(ga4?.summary?.totalSessions||1))*100).toFixed(1)+'%',w:(v/maxM*100)+'%',color:'#3B82F6'
-  })));
+  // ── Funnel rings ──
+  const container=document.getElementById('fn-steps')||document.getElementById('fn-rings-row');
+  if(container){
+    if(!hasAnyData()){
+      container.innerHTML=emptyState('No data loaded','Upload Google Ads + HubSpot CSV files to see your acquisition funnel');
+    } else {
+      const ringData=[
+        {label:'Impressions',val:gads?gadsImpr:null,sub:gadsImpr>0?((gadsClicks/gadsImpr)*100).toFixed(2)+'%':'—',sublabel:'CTR',color:'#3B82F6',fill:100},
+        {label:'Clicks',val:gads?gadsClicks:null,sub:gadsClicks>0?fmtD(spend/gadsClicks,2):'—',sublabel:'avg CPC',color:'#F59E0B',fill:gadsImpr>0?gadsClicks/gadsImpr*100:5},
+        {label:'Registrations',val:gads?reg:null,sub:reg>0?fmtD(spend/reg,2):'—',sublabel:'cost/reg',color:'#8B5CF6',fill:gadsImpr>0?reg/gadsImpr*100:3},
+        {label:'KYC',val:hasHs()?kyc:null,sub:kyc>0&&ftd>0?((ftd/kyc)*100).toFixed(1)+'% → FTD':'—',sublabel:'→ FTD rate',color:getA(),fill:100},
+        {label:'FTD Clients',val:hasHs()?ftd:null,sub:gads&&trackedFtd>1?fmtD(spend/trackedFtd,0):'—',sublabel:'cost/tracked FTD',color:'#10B981',fill:100},
+      ];
+      container.innerHTML='';
+      ringData.forEach((rd,i)=>{
+        const isLast=i===ringData.length-1;
+        const item=document.createElement('div');
+        item.className='fring';
+        const cid='ring-c-'+i;
+        const displayVal=rd.val!==null?fmt(rd.val):'—';
+        item.innerHTML=`<div class="fring-cv"><canvas id="${cid}" width="90" height="90"></canvas>
+          <div class="fring-mid"><span class="fring-v" style="color:${rd.val!==null?rd.color:'var(--tm)'}">${displayVal}</span><span class="fring-n">${rd.label}</span></div>
+        </div>
+        <div class="fring-info"><div class="fring-rate" style="color:${rd.color}">${rd.sub}</div><div class="fring-rl">${rd.sublabel}</div></div>`;
+        container.appendChild(item);
+        if(!isLast){const arr=document.createElement('div');arr.className='farrow';arr.textContent='→';container.appendChild(arr);}
+        if(rd.val!==null){requestAnimationFrame(()=>{
+          const cvs=document.getElementById(cid);if(!cvs)return;
+          const ex=Chart.getChart(cvs);if(ex)ex.destroy();
+          const f=Math.max(2,Math.min(100,rd.fill||5));
+          new Chart(cvs.getContext('2d'),{type:'doughnut',data:{datasets:[{data:[f,100-f],backgroundColor:[rd.color,rd.color+'18'],borderWidth:0,borderRadius:3}]},options:{responsive:false,cutout:'72%',plugins:{legend:{display:false},tooltip:{enabled:false}},animation:{duration:700}}});
+        });}
+      });
+    }
+  }
 
-  // ── Monthly FTD (period-filtered) ──
+  // ── Trend chart ──
+  const allM=[...new Set([...Object.keys(ga4M),...Object.keys(gadsM)])].sort();
+  if(allM.length>0){
+    C.ovTrend=mkChart('c-ov-trend',{data:{labels:allM.map(mlb),datasets:[
+      {type:'bar',label:'Sessions',data:allM.map(m=>(ga4M[m]?.sessions||0)*ratio),backgroundColor:getA()+'20',borderColor:getA(),borderWidth:1.5,borderRadius:4,yAxisID:'y'},
+      {type:'line',label:'Spend ($)',data:allM.map(m=>(gadsM[m]?.cost||0)*ratio),borderColor:'#3B82F6',borderWidth:2,pointRadius:2,fill:false,yAxisID:'y1',tension:.35}
+    ]},options:{responsive:true,interaction:{intersect:false,mode:'index'},plugins:{legend:{labels:{color:'#5E7191',font:{size:10},boxWidth:10}},tooltip:{...TO}},scales:{x:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#5E7191',font:{size:9}}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}},y1:{position:'right',grid:{display:false},ticks:{color:'#3B82F6',font:{size:9}}}}}});
+  } else {
+    const tEl=document.getElementById('c-ov-trend')?.parentElement;
+    if(tEl&&!tEl.querySelector('.empty-state'))tEl.insertAdjacentHTML('beforeend',emptyState('No data','Upload Google Ads + GA4 CSV files',true));
+  }
+
+  // ── Monthly FTD ──
   const ftdMo=filterMonths(FTD.byMonth,period);
-  const ftdM2=Object.entries(ftdMo).sort((a,b)=>a[0].localeCompare(b[0]));
-  C.ovFtdMo=mkChart('c-ov-ftdmo',{
-    type:'line',data:{labels:ftdM2.map(([k])=>mlb(k)),datasets:[{label:'FTDs',data:ftdM2.map(([,v])=>v),borderColor:'#10B981',borderWidth:2,pointRadius:2,fill:true,backgroundColor:'rgba(16,185,129,0.06)',tension:.4}]},
-    options:{responsive:true,plugins:{legend:{display:false},tooltip:{...TO}},scales:{x:{grid:{display:false},ticks:{color:'#5E7191',font:{size:9},maxTicksLimit:10}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}}}}
-  });
+  const ftdME=Object.entries(ftdMo).sort((a,b)=>a[0].localeCompare(b[0]));
+  if(ftdME.length>0){
+    C.ovFtdMo=mkChart('c-ov-ftdmo',{type:'line',data:{labels:ftdME.map(([k])=>mlb(k)),datasets:[{label:'FTDs',data:ftdME.map(([,v])=>v),borderColor:'#10B981',borderWidth:2,pointRadius:2,fill:true,backgroundColor:'rgba(16,185,129,0.06)',tension:.4}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{...TO}},scales:{x:{grid:{display:false},ticks:{color:'#5E7191',font:{size:9},maxTicksLimit:10}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}}}}});
+  } else {
+    const fEl=document.getElementById('c-ov-ftdmo')?.parentElement;
+    if(fEl&&!fEl.querySelector('.empty-state'))fEl.insertAdjacentHTML('beforeend',emptyState('No FTD data','Upload a HubSpot CSV to see monthly deposits'));
+  }
+
+  // ── Google Ads daily ──
+  const daily=filterDaily(gads?.daily,period==='all'?'all':period,'');
+  if(daily.length>0){
+    const dF=daily.map(d=>({...d,clicks:(d.clicks||0)*ratio,cost:(d.cost||0)*ratio}));
+    C.ovGads=mkChart('c-ov-gads',{data:{labels:dF.map(d=>(d.day||'').slice(5)),datasets:[
+      {type:'bar',label:'Clicks',data:dF.map(d=>d.clicks),backgroundColor:getA()+'25',borderColor:getA(),borderWidth:1.5,borderRadius:3,yAxisID:'y'},
+      {type:'line',label:'Cost ($)',data:dF.map(d=>d.cost),borderColor:'#F59E0B',borderWidth:1.5,pointRadius:0,fill:false,yAxisID:'y1',tension:.3}
+    ]},options:{responsive:true,interaction:{intersect:false,mode:'index'},plugins:{legend:{labels:{color:'#5E7191',font:{size:10},boxWidth:10}},tooltip:{...TO}},scales:{x:{grid:{display:false},ticks:{color:'#5E7191',font:{size:9},maxTicksLimit:14}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}},y1:{position:'right',grid:{display:false},ticks:{color:'#F59E0B',font:{size:9}}}}}});
+  } else {
+    const gEl=document.getElementById('c-ov-gads')?.parentElement;
+    if(gEl&&!gEl.querySelector('.empty-state'))gEl.insertAdjacentHTML('beforeend',emptyState('No Google Ads data','Upload a Google Ads CSV to see daily performance'));
+  }
+
+  // ── Medium bars ──
+  const maxM=Object.values(ga4?.byMedium||{})[0]||1;
+  const pRatio=(ga4Sess||0)/(ga4?.summary?.totalSessions||1)||1;
+  if(Object.keys(ga4?.byMedium||{}).length>0){
+    buildCB('cb-ov-med',Object.entries(ga4.byMedium).slice(0,7).map(([k,v])=>({label:k,val:fmt(Math.round(v*pRatio*ratio)),pct:((v/(ga4.summary?.totalSessions||1))*100).toFixed(1)+'%',w:(v/maxM*100)+'%',color:'#3B82F6'})));
+  } else {
+    const mEl=document.getElementById('cb-ov-med');
+    if(mEl)mEl.innerHTML=emptyState('No GA4 data','Upload a GA4 CSV to see traffic by medium');
+  }
 }
+
+
 
 
 // ─── KYC ──────────────────────────────────────────────────────────
 function renderKyc(){
-  const data=MAN.hs||D.hs;
+  if(!hasHs()){
+    // Show empty states for all KYC elements
+    ['c-kyc-mo','c-kyc-geo'].forEach(id=>{
+      const e=document.getElementById(id);if(!e)return;
+      const ex=Chart.getChart(e);if(ex)ex.destroy();
+      e.style.display='none';
+      if(e.parentElement&&!e.parentElement.querySelector('.empty-state'))
+        e.parentElement.insertAdjacentHTML('beforeend',emptyState('No HubSpot data','Upload a HubSpot contacts CSV'));
+    });
+    ['cb-kyc-c','cb-kyc-s'].forEach(id=>{const e=document.getElementById(id);if(e)e.innerHTML=emptyState('No data','Upload HubSpot CSV',false);});
+    ['kk-t','kk-ib','kk-mkt'].forEach(id=>set(id,'—'));
+    set('kk-s','no data loaded');
+    setAiText('kyc','Upload a HubSpot contacts CSV to see KYC analysis.');
+    return;
+  }
+  const data=MAN.hs;
   const ctry=document.getElementById('kyc-ctry').value,src=document.getElementById('kyc-src').value;
-
-  let kyc=KYC.total,byC={...KYC.byCountry},byCamp={...KYC.byCampaign},byMo={...KYC.byMonth};
-
-  // If live data available, use it
-  if(data){
-    kyc=data.kycApproved||KYC.total;
-    if(data.byCountry)Object.assign(byC,data.byCountry);
-    if(data.byCampaign)Object.assign(byCamp,data.byCampaign);
-    if(data.byMonth)Object.assign(byMo,data.byMonth);
-  }
-
-  if(ctry){
-    const cv=byC[ctry]||0,r=cv/(kyc||1);
-    kyc=cv;byC={[ctry]:cv};
-    Object.keys(byCamp).forEach(k=>byCamp[k]=Math.round(byCamp[k]*r));
-    Object.keys(byMo).forEach(k=>byMo[k]=Math.round(byMo[k]*r));
-  }
-  if(src){
-    if(src==='Direct'){kyc=byCamp['Direct/Unknown']||0;byCamp={'Direct/Unknown':kyc}}
-    else{const f=Object.fromEntries(Object.entries(byCamp).filter(([k])=>k.startsWith(src)));kyc=Object.values(f).reduce((s,v)=>s+v,0);byCamp=f}
-  }
-
-  const ibKyc=Object.entries(KYC.byCampaign).filter(([k])=>k.startsWith('IB')).reduce((s,[,v])=>s+v,0);
-  const mktKyc=Object.entries(KYC.byCampaign).filter(([k])=>k.startsWith('MKT')).reduce((s,[,v])=>s+v,0);
-  const top=Object.entries(byC)[0];
-
-  document.getElementById('kk-total').textContent=fmt(kyc);
-  document.getElementById('kk-sub').textContent=ctry?ctry.charAt(0)+ctry.slice(1).toLowerCase():'all countries';
-  document.getElementById('kk-top').textContent=top?top[0].charAt(0)+top[0].slice(1).toLowerCase():'—';
-  document.getElementById('kk-ib').textContent=fmt(ibKyc);
-  document.getElementById('kk-mkt').textContent=fmt(mktKyc);
-
-  const a=getA();
-  const months=Object.entries(byMo).sort((x,y)=>x[0].localeCompare(y[0]));
-  C.kycMo=mkChart('c-kyc-mo',{type:'bar',data:{labels:months.map(([k])=>mlb(k)),datasets:[{label:'KYC',data:months.map(([,v])=>v||0),backgroundColor:a+'20',borderColor:a,borderWidth:1.5,borderRadius:4}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{...TO}},scales:{x:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#5E7191',font:{size:9}}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}}}}});
-
+  let kyc=data.kycApproved||0,byC={...data.byCountry||{}},byCamp={...data.byCampaign||{}};
+  let byMo={};
+  if(data.byMonth){Object.entries(data.byMonth).forEach(([k,v])=>{byMo[k]=typeof v==='object'?v.contacts||0:v;});}
+  if(ctry){const cv=byC[ctry]||0,r=cv/(kyc||1);kyc=cv;byC={[ctry]:cv};Object.keys(byMo).forEach(k=>byMo[k]=Math.round(byMo[k]*r));Object.keys(byCamp).forEach(k=>byCamp[k]=Math.round(byCamp[k]*r));}
+  if(src){if(src==='Direct'){kyc=byCamp['Direct/Unknown']||0;byCamp={'Direct/Unknown':kyc}}else{const f=Object.fromEntries(Object.entries(byCamp).filter(([k])=>k.startsWith(src)));kyc=Object.values(f).reduce((a,v)=>a+v,0);byCamp=f;}}
+  const ibKyc=Object.entries(data.byCampaign||{}).filter(([k])=>k.startsWith('IB')).reduce((a,[,v])=>a+v,0);
+  const mktKyc=Object.entries(data.byCampaign||{}).filter(([k])=>k.startsWith('MKT')).reduce((a,[,v])=>a+v,0);
+  set('kk-t',fmt(kyc));set('kk-s',ctry?ctry.charAt(0)+ctry.slice(1).toLowerCase():'all countries');set('kk-ib',fmt(ibKyc));set('kk-mkt',fmt(mktKyc));
+  const a=getA(),months=Object.entries(byMo).sort((x,y)=>x[0].localeCompare(y[0]));
+  // Re-show canvas if hidden
+  ['c-kyc-mo','c-kyc-geo'].forEach(id=>{const e=document.getElementById(id);if(e){e.style.display='';e.parentElement?.querySelectorAll('.empty-state').forEach(el=>el.remove());}});
+  C.kycmo=mkChart('c-kyc-mo',{type:'bar',data:{labels:months.map(([k])=>mlb(k)),datasets:[{label:'KYC',data:months.map(([,v])=>v||0),backgroundColor:a+'20',borderColor:a,borderWidth:1.5,borderRadius:4}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{...TO}},scales:{x:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#5E7191',font:{size:9}}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}}}}});
   const top6=Object.entries(byC).slice(0,6),cols=['#10B981','#3B82F6','#F59E0B','#EF4444','#8B5CF6','#EC4899'];
-  C.kycGeo=mkChart('c-kyc-geo',{type:'doughnut',data:{labels:top6.map(([k])=>k.charAt(0)+k.slice(1).toLowerCase()),datasets:[{data:top6.map(([,v])=>v),backgroundColor:cols.slice(0,top6.length),borderWidth:0,hoverOffset:5}]},options:{responsive:true,cutout:'70%',plugins:{legend:{position:'bottom',labels:{color:'#5E7191',font:{size:10},padding:8,boxWidth:10}},tooltip:{...TO}}}});
-
-  const kTot=kyc||1,maxC=Object.values(byC)[0]||1,maxCamp=Object.values(byCamp)[0]||1;
-  buildCB('cb-kyc-c',Object.entries(byC).slice(0,10).map(([k,v])=>({label:k.charAt(0)+k.slice(1).toLowerCase(),val:fmt(v),pct:((v/kTot)*100).toFixed(1)+'%',w:(v/maxC*100)+'%',color:a})));
-  buildCB('cb-kyc-s',Object.entries(byCamp).filter(([k])=>k!=='Direct/Unknown').slice(0,8).map(([k,v])=>({label:k,val:fmt(v),pct:((v/kTot)*100).toFixed(1)+'%',w:(v/maxCamp*100)+'%',color:k.startsWith('IB')?a:'#3B82F6'})));
-
-  setAiText('kyc',`<strong>5,242 KYC clients</strong> across all markets. Japan leads with 2,036 clients (38.8%), followed by Brazil (755) and Canada (309). IB partners sourced ${ibKyc} KYC clients, MKT campaigns sourced ${mktKyc}. The KYC→FTD conversion rate is <strong>15.4%</strong> — focus on improving post-KYC onboarding flow to increase deposits.`);
+  C.kycgeo=mkChart('c-kyc-geo',{type:'doughnut',data:{labels:top6.map(([k])=>k.charAt(0)+k.slice(1).toLowerCase()),datasets:[{data:top6.map(([,v])=>v),backgroundColor:cols.slice(0,top6.length),borderWidth:0,hoverOffset:5}]},options:{responsive:true,cutout:'70%',plugins:{legend:{position:'bottom',labels:{color:'#5E7191',font:{size:10},padding:8,boxWidth:10}},tooltip:{...TO}}}});
+  const tot=kyc||1,maxC=Object.values(byC)[0]||1,maxCamp=Object.values(byCamp)[0]||1;
+  buildCB('cb-kyc-c',Object.entries(byC).slice(0,10).map(([k,v])=>({label:k.charAt(0)+k.slice(1).toLowerCase(),val:fmt(v),pct:((v/tot)*100).toFixed(1)+'%',w:(v/maxC*100)+'%',color:a})));
+  buildCB('cb-kyc-s',Object.entries(byCamp).filter(([k])=>k!=='Direct/Unknown').slice(0,8).map(([k,v])=>({label:k,val:fmt(v),pct:((v/tot)*100).toFixed(1)+'%',w:(v/maxCamp*100)+'%',color:k.startsWith('IB')?a:'#3B82F6'})));
+  setAiText('kyc',`<strong>${fmt(kyc)} KYC clients</strong> loaded. Top market: ${Object.entries(byC)[0]?.[0]||'—'}. IB sourced: ${fmt(ibKyc)}. MKT sourced: ${fmt(mktKyc)}.`);
 }
+
+
 
 // ─── FTD ──────────────────────────────────────────────────────────
 function setFtdSrc(src){
@@ -1284,31 +1287,56 @@ function setFtdSrc(src){
 }
 
 function renderFtd(){
+  if(!hasHs()){
+    ['c-ftd-mo','c-ftd-geo'].forEach(id=>{
+      const e=document.getElementById(id);if(!e)return;
+      const ex=Chart.getChart(e);if(ex)ex.destroy();
+      e.style.display='none';
+      if(e.parentElement&&!e.parentElement.querySelector('.empty-state'))
+        e.parentElement.insertAdjacentHTML('beforeend',emptyState('No HubSpot data','Upload a HubSpot contacts CSV to see FTD data'));
+    });
+    ['cb-ftd-ib','cb-ftd-mkt'].forEach(id=>{const e=document.getElementById(id);if(e)e.innerHTML=emptyState('No data','Upload HubSpot CSV',false);});
+    set('fk-t','—');set('fk-s','no data');set('fk-cpf','—');
+    setAiText('ftd','Upload a HubSpot contacts CSV to see FTD analysis.');
+    return;
+  }
+  const data=MAN.hs;
   const ctry=document.getElementById('ftd-ctry').value;
-  let{total,byC,byCamp}=getFtdForFilter(ctry||'all',ftdSrc);
-  if(ctry&&ftdSrc==='all'){byC={[ctry]:FTD.byCountry[ctry]||0};total=FTD.byCountry[ctry]||0}
-  else if(ctry){const r=(FTD.byCountry[ctry]||0)/FTD.total;total=Math.round(total*r)}
+  const withDep=data.withDeposit||0;
+  const byC={...data.byCountry||{}};
+  const byCamp={...data.byCampaign||{}};
 
-  document.getElementById('fk-total').textContent=fmt(total);
-  document.getElementById('fk-sub').textContent=(ftdSrc==='all'?'all channels':ftdSrc)+(ctry?' · '+ctry.charAt(0)+ctry.slice(1).toLowerCase():'');
-  document.getElementById('fk-cpftd').textContent=fmtD((D.gads?.summary?.totalCost||MAN.gads?.summary?.totalCost||5099.85)/(FTD.ibTotal+FTD.mktTotal),0);
+  let total=withDep,displayByC={...byC},displayByCamp={...byCamp};
+  if(ctry){const cv=byC[ctry]||0,r=cv/(total||1);total=cv;displayByC={[ctry]:cv};Object.keys(displayByCamp).forEach(k=>displayByCamp[k]=Math.round(displayByCamp[k]*r));}
+  if(ftdSrc==='IB'){displayByCamp=Object.fromEntries(Object.entries(displayByCamp).filter(([k])=>k.startsWith('IB')));total=Object.values(displayByCamp).reduce((a,v)=>a+v,0);}
+  else if(ftdSrc==='MKT'){displayByCamp=Object.fromEntries(Object.entries(displayByCamp).filter(([k])=>k.startsWith('MKT')));total=Object.values(displayByCamp).reduce((a,v)=>a+v,0);}
 
-  const a=getA();
-  const ftdM=Object.entries(FTD.byMonth).sort((a,b)=>a[0].localeCompare(b[0]));
-  C.ftdMo=mkChart('c-ftd-mo',{type:'line',data:{labels:ftdM.map(([k])=>mlb(k)),datasets:[{label:'FTDs',data:ftdM.map(([,v])=>v),borderColor:'#10B981',borderWidth:2,pointRadius:2,pointBackgroundColor:'#10B981',fill:true,backgroundColor:'rgba(16,185,129,0.07)',tension:.4}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{...TO}},scales:{x:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#5E7191',font:{size:9},maxTicksLimit:10}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}}}}});
+  set('fk-t',fmt(total));
+  set('fk-s',(ftdSrc==='all'?'all channels':ftdSrc)+(ctry?' · '+ctry.charAt(0)+ctry.slice(1).toLowerCase():''));
+  const spend=(MAN.gads?.summary?.totalCost||MAN.uk?.summary?.totalCost||0);
+  const ibFtd=Object.entries(data.byCampaign||{}).filter(([k])=>k.startsWith('IB')).reduce((a,[,v])=>a+v,0);
+  const mktFtd=Object.entries(data.byCampaign||{}).filter(([k])=>k.startsWith('MKT')).reduce((a,[,v])=>a+v,0);
+  const trackedF=(ibFtd+mktFtd)||1;
+  set('fk-cpf',spend>0?fmtD(spend/trackedF,0):'—');
+  set('fk-ib',fmt(ibFtd));set('fk-ib-s',ibFtd>0?((ibFtd/withDep*100).toFixed(1)+'% of FTDs'):'—');
+  set('fk-mkt',fmt(mktFtd));set('fk-mkt-s',mktFtd>0?((mktFtd/withDep*100).toFixed(1)+'% of FTDs'):'—');
 
-  const ftdByC=ctry?{[ctry]:FTD.byCountry[ctry]||0}:FTD.byCountry;
-  const top5=Object.entries(ftdByC).slice(0,5),cols=['#10B981','#3B82F6','#F59E0B','#8B5CF6','#EF4444'];
-  C.ftdGeo=mkChart('c-ftd-geo',{type:'doughnut',data:{labels:top5.map(([k])=>k.charAt(0)+k.slice(1).toLowerCase()),datasets:[{data:top5.map(([,v])=>v),backgroundColor:cols.slice(0,top5.length),borderWidth:0,hoverOffset:5}]},options:{responsive:true,cutout:'70%',plugins:{legend:{position:'bottom',labels:{color:'#5E7191',font:{size:10},padding:8,boxWidth:10}},tooltip:{...TO}}}});
-
-  const ibC=Object.entries(FTD.byCampaign).filter(([k])=>k.startsWith('IB')).sort((a,b)=>b[1]-a[1]);
-  const mktC=Object.entries(FTD.byCampaign).filter(([k])=>k.startsWith('MKT')).sort((a,b)=>b[1]-a[1]);
-  const ibMax=ibC[0]?.[1]||1,mktMax=mktC[0]?.[1]||1;
-  buildCB('cb-ftd-ib',ibC.map(([k,v])=>({label:k,val:fmt(v)+' FTDs',pct:fmtP(v/FTD.total*100),w:(v/ibMax*100)+'%',color:a})));
-  buildCB('cb-ftd-mkt',mktC.map(([k,v])=>({label:k.replace('MKT-',''),val:fmt(v)+' FTDs',pct:fmtP(v/FTD.total*100),w:(v/mktMax*100)+'%',color:'#3B82F6'})));
-
-  setAiText('ftd',`<strong>808 FTD clients</strong> total. Japan leads with 187 (23.1%), followed by Brazil (157) and Australia (142). IB partners generated 141 FTDs — <strong>IB-18050031-One is the top performer (50 FTDs)</strong>. MKT campaigns generated 34 FTDs. 497 FTDs (61%) are unattributed. Cost per tracked FTD: <strong>$29</strong> ($5,100 ÷ 175 tracked). KYC→FTD rate: 15.4%.`);
+  // Monthly FTD from hs byMonth
+  const byMoFtd={};
+  if(data.byMonth){Object.entries(data.byMonth).forEach(([k,v])=>{byMoFtd[k]=typeof v==='object'?v.ftd||0:0;});}
+  const ftdM=Object.entries(byMoFtd).sort((a,b)=>a[0].localeCompare(b[0]));
+  ['c-ftd-mo','c-ftd-geo'].forEach(id=>{const e=document.getElementById(id);if(e){e.style.display='';e.parentElement?.querySelectorAll('.empty-state').forEach(el=>el.remove());}});
+  C.ftdmo=mkChart('c-ftd-mo',{type:'line',data:{labels:ftdM.map(([k])=>mlb(k)),datasets:[{label:'FTDs',data:ftdM.map(([,v])=>v),borderColor:'#10B981',borderWidth:2,pointRadius:2,fill:true,backgroundColor:'rgba(16,185,129,0.07)',tension:.4}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{...TO}},scales:{x:{grid:{display:false},ticks:{color:'#5E7191',font:{size:9},maxTicksLimit:10}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}}}}});
+  const topC=Object.entries(displayByC).slice(0,5),cols=['#10B981','#3B82F6','#F59E0B','#8B5CF6','#EF4444'];
+  C.ftdgeo=mkChart('c-ftd-geo',{type:'doughnut',data:{labels:topC.map(([k])=>k.charAt(0)+k.slice(1).toLowerCase()),datasets:[{data:topC.map(([,v])=>v),backgroundColor:cols.slice(0,topC.length),borderWidth:0,hoverOffset:5}]},options:{responsive:true,cutout:'70%',plugins:{legend:{position:'bottom',labels:{color:'#5E7191',font:{size:10},padding:8,boxWidth:10}},tooltip:{...TO}}}});
+  const ibC=Object.entries(data.byCampaign||{}).filter(([k])=>k.startsWith('IB')).sort((a,b)=>b[1]-a[1]),ibMax=ibC[0]?.[1]||1;
+  buildCB('cb-ftd-ib',ibC.map(([k,v])=>({label:k,val:fmt(v)+' FTDs',pct:fmtP(v/(total||1)*100),w:(v/ibMax*100)+'%',color:getA()})));
+  const mktC=Object.entries(data.byCampaign||{}).filter(([k])=>k.startsWith('MKT')).sort((a,b)=>b[1]-a[1]),mktMax=mktC[0]?.[1]||1;
+  buildCB('cb-ftd-mkt',mktC.map(([k,v])=>({label:k.replace('MKT-',''),val:fmt(v)+' FTDs',pct:fmtP(v/(total||1)*100),w:(v/mktMax*100)+'%',color:'#3B82F6'})));
+  setAiText('ftd',`<strong>${fmt(withDep)} FTD clients</strong> loaded. IB: ${fmt(ibFtd)}. MKT: ${fmt(mktFtd)}. Cost/tracked FTD: ${spend>0?fmtD(spend/trackedF,0):'upload Google Ads for ROI'}.`);
 }
+
+
 
 // ─── GOOGLE ADS ───────────────────────────────────────────────────
 function setMkt(mkt){
@@ -1319,83 +1347,84 @@ function setMkt(mkt){
 }
 
 function renderGads(){
-  const period=document.getElementById('gads-period').value,year=document.getElementById('gads-yr').value;
-  let data=curMkt==='uk'&&MAN.uk?MAN.uk:(MAN.gads||D.gads);
+  const data=MAN.gads||MAN.uk;
   if(!data){
-    // Show static fallback
-    document.getElementById('gk-spend').textContent='$5,100';
-    document.getElementById('gk-impr').textContent='369,594';
-    document.getElementById('gk-clicks').textContent='12,071';
-    document.getElementById('gk-ctr').textContent='3.27%';
-    document.getElementById('gk-conv').textContent='398';
-    document.getElementById('gk-cpa').textContent='12.81';
-    setAiText('gads',`<strong>Google Ads overview:</strong> $5,100 total spend · 369,594 impressions · 12,071 clicks · 3.27% CTR · 398 registrations · $12.81 cost per registration. Markets: Japan + Australia live via SyncWith. UK requires manual upload. Best opportunity: increase Japan budget (187 FTDs from that market).`);
+    ['c-gads-d','c-gads-mkt','c-gads-mo','c-gads-cv'].forEach(id=>{
+      const e=document.getElementById(id);if(!e)return;
+      const ex=Chart.getChart(e);if(ex)ex.destroy();e.style.display='none';
+      if(e.parentElement&&!e.parentElement.querySelector('.empty-state'))
+        e.parentElement.insertAdjacentHTML('beforeend',emptyState('No Google Ads data','Upload a Google Ads CSV export'));
+    });
+    ['gk-spend','gk-impr','gk-clicks','gk-ctr','gk-conv','gk-cpa'].forEach(id=>set(id,'—'));
+    setAiText('gads','Upload a Google Ads CSV to see ad performance analysis.');
     return;
   }
-
-  let ratio=1;
-  const mktKeyMap={jp:'JAPAN',au:'AUSTRALIA',uk:'UNITED KINGDOM'};
-  if(curMkt!=='all')ratio=getMktRatio(mktKeyMap[curMkt]||'all');
-
-  const daily=filterDaily(data.daily,period,year);
-  const byMonth=filterMonths(data.byMonth,period);
-  const tCost=daily.reduce((s,d)=>s+(d.cost||0)*ratio,0);
-  const tClicks=daily.reduce((s,d)=>s+(d.clicks||0)*ratio,0);
-  const tImpr=daily.reduce((s,d)=>s+(d.impr||0)*ratio,0);
-  const tConv=daily.reduce((s,d)=>s+(d.conv||0)*ratio,0);
-
-  document.getElementById('gk-spend').textContent=fmtD(tCost);
-  document.getElementById('gk-impr').textContent=fmt(tImpr);
-  document.getElementById('gk-clicks').textContent=fmt(tClicks);
-  document.getElementById('gk-ctr').textContent=tImpr>0?((tClicks/tImpr)*100).toFixed(2)+'%':'—';
-  document.getElementById('gk-conv').textContent=fmt(tConv);
-  document.getElementById('gk-cpa').textContent=tConv>0?(tCost/tConv).toFixed(2):'—';
-  document.getElementById('gk-mkt-lbl').textContent=curMkt==='all'?'all markets':{jp:'Japan',au:'Australia',uk:'UK'}[curMkt];
-
-  const pl={thismonth:'This month',lastmonth:'Last month',thisyear:'2026',lastyear:'2025'}[period]||period+' days';
-  document.getElementById('gads-bp').textContent=(year?year+' · ':'')+pl;
-
-  const a=getA();
-  C.gadsD=mkChart('c-gads-d',{data:{labels:daily.map(d=>d.day?.slice(5)),datasets:[{type:'bar',label:'Clicks',data:daily.map(d=>(d.clicks||0)*ratio),backgroundColor:a+'25',borderColor:a,borderWidth:1.5,borderRadius:3,yAxisID:'y'},{type:'line',label:'Cost ($)',data:daily.map(d=>(d.cost||0)*ratio),borderColor:'#F59E0B',borderWidth:1.5,pointRadius:0,fill:false,yAxisID:'y1',tension:.3}]},options:{responsive:true,interaction:{intersect:false,mode:'index'},plugins:{legend:{labels:{color:'#5E7191',font:{size:10},boxWidth:10}},tooltip:{...TO}},scales:{x:{grid:{display:false},ticks:{color:'#5E7191',font:{size:9},maxTicksLimit:14}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}},y1:{position:'right',grid:{display:false},ticks:{color:'#F59E0B',font:{size:9}}}}}});
-
-  const mkts=[{n:'Japan',k:'Japan',c:'#EF4444'},{n:'Australia',k:'Australia',c:'#3B82F6'},{n:'UK',k:'United Kingdom',c:'#8B5CF6'}];
-  const ga4t=Object.values(D.ga4?.byCountry||{}).reduce((s,v)=>s+v,0)||1;
-  C.gadsMkt=mkChart('c-gads-mkt',{type:'bar',data:{labels:mkts.map(m=>m.n),datasets:[{label:'Spend ($)',data:mkts.map(m=>((data.summary?.totalCost||0)*(D.ga4?.byCountry?.[m.k]||0)/ga4t).toFixed(0)),backgroundColor:mkts.map(m=>m.c+'30'),borderColor:mkts.map(m=>m.c),borderWidth:1.5,borderRadius:5,yAxisID:'y'},{label:'Registrations',data:mkts.map(m=>((data.summary?.totalConversions||0)*(D.ga4?.byCountry?.[m.k]||0)/ga4t).toFixed(0)),backgroundColor:mkts.map(m=>m.c+'77'),borderColor:mkts.map(m=>m.c),borderWidth:1.5,borderRadius:5,type:'line',pointRadius:5,yAxisID:'y1'}]},options:{responsive:true,plugins:{legend:{labels:{color:'#5E7191',font:{size:10},boxWidth:10}},tooltip:{...TO}},scales:{x:{grid:{display:false},ticks:{color:'#5E7191',font:{size:10}}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}},y1:{position:'right',grid:{display:false},ticks:{color:'#5E7191',font:{size:9}}}}}});
-
-  const months=Object.entries(byMonth).sort((a,b)=>a[0].localeCompare(b[0]));
+  const period=document.getElementById('gads-p')?.value||'90',year=document.getElementById('gads-yr')?.value||'';
+  const ratio=curMkt==='all'?1:getMktRatio({jp:'JAPAN',au:'AUSTRALIA',uk:'UNITED KINGDOM'}[curMkt]||'all');
+  const byM=filterMonths(data.byMonth,period),daily=filterDaily(data.daily,period,year);
+  const sum=(obj,k)=>Object.values(obj).reduce((a,v)=>a+(v[k]||0),0);
+  const tCost=sum(byM,'cost')*ratio,tClicks=sum(byM,'clicks')*ratio,tImpr=sum(byM,'impr')*ratio,tConv=sum(byM,'conv')*ratio;
+  set('gk-spend',fmtD(tCost||data.summary?.totalCost*ratio||0));
+  set('gk-impr',fmt(Math.round(tImpr||data.summary?.totalImpressions*ratio||0)));
+  set('gk-clicks',fmt(Math.round(tClicks||data.summary?.totalClicks*ratio||0)));
+  const ctr=(tImpr||(data.summary?.totalImpressions||0)*ratio)>0?((tClicks/(tImpr||data.summary?.totalImpressions*ratio||1))*100).toFixed(2)+'%':'—';
+  set('gk-ctr',ctr);
+  set('gk-conv',fmt(Math.round(tConv||data.summary?.totalConversions*ratio||0)));
+  const conv=tConv||data.summary?.totalConversions*ratio||0,cost=tCost||data.summary?.totalCost*ratio||0;
+  set('gk-cpa',conv>0?(cost/conv).toFixed(2):'—');
+  set('gk-mkt',curMkt==='all'?'all markets':{jp:'Japan',au:'Australia',uk:'UK'}[curMkt]||'all markets');
+  ['c-gads-d','c-gads-mkt','c-gads-mo','c-gads-cv'].forEach(id=>{const e=document.getElementById(id);if(e){e.style.display='';e.parentElement?.querySelectorAll('.empty-state').forEach(el=>el.remove());}});
+  const a=getA(),pl={thismonth:'This month',lastmonth:'Last month',thisyear:'This year',lastyear:'Last year'}[period]||period+'d';
+  const el2=document.getElementById('gads-bp');if(el2)el2.textContent=(year?year+' · ':'')+pl;
+  const dF=daily.map(d=>({...d,clicks:(d.clicks||0)*ratio,cost:(d.cost||0)*ratio}));
+  C.gadsD=mkChart('c-gads-d',{data:{labels:dF.map(d=>(d.day||'').slice(5)),datasets:[{type:'bar',label:'Clicks',data:dF.map(d=>d.clicks),backgroundColor:a+'25',borderColor:a,borderWidth:1.5,borderRadius:3,yAxisID:'y'},{type:'line',label:'Cost ($)',data:dF.map(d=>d.cost),borderColor:'#F59E0B',borderWidth:1.5,pointRadius:0,fill:false,yAxisID:'y1',tension:.3}]},options:{responsive:true,interaction:{intersect:false,mode:'index'},plugins:{legend:{labels:{color:'#5E7191',font:{size:10},boxWidth:10}},tooltip:{...TO}},scales:{x:{grid:{display:false},ticks:{color:'#5E7191',font:{size:9},maxTicksLimit:14}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}},y1:{position:'right',grid:{display:false},ticks:{color:'#F59E0B',font:{size:9}}}}}});
+  const mkts=[{n:'Japan',c:'#EF4444'},{n:'Australia',c:'#3B82F6'},{n:'UK',c:'#8B5CF6'}];
+  const ga4t=Object.values(MAN.ga4?.byCountry||{}).reduce((a,v)=>a+v,0)||1;
+  C.gadsMkt=mkChart('c-gads-mkt',{type:'bar',data:{labels:mkts.map(m=>m.n),datasets:[{label:'Est. Spend ($)',data:mkts.map(m=>((data.summary?.totalCost||0)*(MAN.ga4?.byCountry?.[m.n]||0)/ga4t).toFixed(0)),backgroundColor:mkts.map(m=>m.c+'30'),borderColor:mkts.map(m=>m.c),borderWidth:1.5,borderRadius:5}]},options:{responsive:true,plugins:{legend:{labels:{color:'#5E7191',font:{size:10},boxWidth:10}},tooltip:{...TO}},scales:{x:{grid:{display:false},ticks:{color:'#5E7191',font:{size:10}}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}}}}});
+  const months=Object.entries(byM).sort((a,b)=>a[0].localeCompare(b[0]));
   C.gadsMo=mkChart('c-gads-mo',{type:'bar',data:{labels:months.map(([k])=>mlb(k)),datasets:[{label:'Spend ($)',data:months.map(([,v])=>(v.cost*ratio).toFixed(0)),backgroundColor:'#F59E0B22',borderColor:'#F59E0B',borderWidth:1.5,borderRadius:4}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{...TO}},scales:{x:{grid:{display:false},ticks:{color:'#5E7191',font:{size:9}}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}}}}});
   C.gadsCv=mkChart('c-gads-cv',{type:'bar',data:{labels:months.map(([k])=>mlb(k)),datasets:[{label:'Registrations',data:months.map(([,v])=>Math.round((v.conv||0)*ratio)),backgroundColor:a+'22',borderColor:a,borderWidth:1.5,borderRadius:4}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{...TO}},scales:{x:{grid:{display:false},ticks:{color:'#5E7191',font:{size:9}}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}}}}});
-
-  setAiText('gads',`<strong>${fmtD(tCost)} spend</strong> · ${fmt(tConv)} registrations · $${tConv>0?(tCost/tConv).toFixed(2):'12.81'} per registration. ${curMkt!=='all'?'Filtered to '+{jp:'Japan',au:'Australia',uk:'UK'}[curMkt]+' market.':''} CTR: ${tImpr>0?((tClicks/tImpr)*100).toFixed(2)+'%':'3.27%'}. Tip: compare your $12.81 cost per registration against the $29 cost per FTD — improving post-registration conversion is more impactful than reducing CPC.`);
+  setAiText('gads',`<strong>${fmtD(cost)} spend</strong> · ${fmt(Math.round(conv))} registrations · $${conv>0?(cost/conv).toFixed(2):'—'}/reg. CTR: ${ctr}.`);
 }
+
+
 
 // ─── GA4 ──────────────────────────────────────────────────────────
 function renderGa4(){
-  const data=MAN.ga4||D.ga4;
-  if(!data){
-    document.getElementById('ak-sess').textContent='121,626';
-    document.getElementById('ak-users').textContent='55,789';
-    document.getElementById('ak-new').textContent='55,789';
-    document.getElementById('ak-ev').textContent='431,040';
-    setAiText('ga4',`<strong>121,626 sessions</strong> total. Top markets: Australia (25,448), Japan (24,105), Brazil (11,348). CPC traffic: 28,961 sessions. Organic: 12,721 sessions. Tip: Japan generates more FTDs (187) despite Australia having more sessions (25k) — Japan visitors have higher intent.`);
+  if(!hasGa4()){
+    ['c-ga4-mo','c-ga4-geo'].forEach(id=>{
+      const e=document.getElementById(id);if(!e)return;
+      const ex=Chart.getChart(e);if(ex)ex.destroy();e.style.display='none';
+      if(e.parentElement&&!e.parentElement.querySelector('.empty-state'))
+        e.parentElement.insertAdjacentHTML('beforeend',emptyState('No GA4 data','Upload a Google Analytics CSV export'));
+    });
+    ['cb-ga4-c','cb-ga4-m'].forEach(id=>{const e=document.getElementById(id);if(e)e.innerHTML=emptyState('No data','Upload GA4 CSV',false);});
+    ['ak-sess','ak-users','ak-new','ak-ev'].forEach(id=>set(id,'—'));
+    set('ak-s','no data loaded');
+    setAiText('ga4','Upload a Google Analytics CSV to see traffic analysis.');
     return;
   }
-  const ctry=document.getElementById('ga4-ctry').value,med=document.getElementById('ga4-med').value;
+  const data=MAN.ga4;
+  const ctry=document.getElementById('ga4-ctry')?.value||'',med=document.getElementById('ga4-med')?.value||'';
   let tS=data.summary?.totalSessions||0,tU=data.summary?.totalUsers||0,tN=data.summary?.totalNewUsers||0,tE=data.summary?.totalEvents||0;
-  let byC={...data.byCountry},byM={...data.byMedium},byMo={...data.byMonth};
-  if(ctry){const cv=data.byCountry?.[ctry]||0,r=cv/(tS||1);tS=cv;tU=Math.round(tU*r);tN=Math.round(tN*r);tE=Math.round(tE*r);byC={[ctry]:cv};Object.keys(byM).forEach(k=>byM[k]=Math.round(byM[k]*r));Object.keys(byMo).forEach(k=>byMo[k]={sessions:Math.round((data.byMonth[k]?.sessions||0)*r),users:Math.round((data.byMonth[k]?.users||0)*r)})}
-  if(med&&!ctry){tS=data.byMedium?.[med]||0}
-  document.getElementById('ak-sess').textContent=fmt(tS);document.getElementById('ak-users').textContent=fmt(tU);document.getElementById('ak-new').textContent=fmt(tN);document.getElementById('ak-ev').textContent=fmt(tE);document.getElementById('ak-sub').textContent=ctry||'all countries';
-  const a=getA(),months=Object.entries(byMo).sort((x,y)=>x[0].localeCompare(y[0]));
+  let byC={...data.byCountry||{}},byM={...data.byMedium||{}},byMo={...data.byMonth||{}};
+  if(ctry){const cv=data.byCountry?.[ctry]||0,r=cv/(tS||1);tS=cv;tU=Math.round(tU*r);tN=Math.round(tN*r);tE=Math.round(tE*r);byC={[ctry]:cv};Object.keys(byMo).forEach(k=>byMo[k]={sessions:Math.round((data.byMonth[k]?.sessions||0)*r),users:Math.round((data.byMonth[k]?.users||0)*r)});}
+  if(med&&!ctry)tS=data.byMedium?.[med]||0;
+  set('ak-sess',fmt(tS));set('ak-users',fmt(tU));set('ak-new',fmt(tN));set('ak-ev',fmt(tE));set('ak-s',ctry||'all countries');
+  const a=getA();
+  const months=Object.entries(byMo).sort((x,y)=>x[0].localeCompare(y[0]));
+  ['c-ga4-mo','c-ga4-geo'].forEach(id=>{const e=document.getElementById(id);if(e){e.style.display='';e.parentElement?.querySelectorAll('.empty-state').forEach(el=>el.remove());}});
   C.ga4Mo=mkChart('c-ga4-mo',{type:'bar',data:{labels:months.map(([k])=>mlb(k)),datasets:[{label:'Sessions',data:months.map(([,v])=>v.sessions||0),backgroundColor:'#3B82F622',borderColor:'#3B82F6',borderWidth:1.5,borderRadius:4}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{...TO}},scales:{x:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#5E7191',font:{size:9}}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}}}}});
   const top6=Object.entries(byC).slice(0,6),cols=['#3B82F6','#10B981','#F59E0B','#EF4444','#8B5CF6','#EC4899'];
   C.ga4Geo=mkChart('c-ga4-geo',{type:'doughnut',data:{labels:top6.map(([k])=>k),datasets:[{data:top6.map(([,v])=>v),backgroundColor:cols.slice(0,top6.length),borderWidth:0,hoverOffset:5}]},options:{responsive:true,cutout:'70%',plugins:{legend:{position:'bottom',labels:{color:'#5E7191',font:{size:10},padding:8,boxWidth:10}},tooltip:{...TO}}}});
-  const tot=tS||1,maxC=Object.values(byC)[0]||1,maxM=Object.values(byM)[0]||1;
+  const tot=tS||1,maxC=Object.values(byC)[0]||1,maxMed=Object.values(byM)[0]||1;
   buildCB('cb-ga4-c',Object.entries(byC).slice(0,10).map(([k,v])=>({label:k,val:fmt(v),pct:((v/tot)*100).toFixed(1)+'%',w:(v/maxC*100)+'%',color:'#3B82F6'})));
-  buildCB('cb-ga4-m',Object.entries(byM).slice(0,10).map(([k,v])=>({label:k,val:fmt(v),pct:((v/tot)*100).toFixed(1)+'%',w:(v/maxM*100)+'%',color:a})));
+  buildCB('cb-ga4-m',Object.entries(byM).slice(0,10).map(([k,v])=>({label:k,val:fmt(v),pct:((v/tot)*100).toFixed(1)+'%',w:(v/maxMed*100)+'%',color:a})));
   const top1=Object.entries(byC)[0],top2=Object.entries(byC)[1];
-  setAiText('ga4',`<strong>${fmt(tS)} sessions${ctry?' ('+ctry+')':''}</strong>. ${top1?`Top country: ${top1[0]} with ${fmt(top1[1])} sessions.`:''} ${top2?`Second: ${top2[0]} (${fmt(top2[1])}).`:''} CPC traffic: ${fmt(byM['cpc']||0)} sessions. Organic: ${fmt(byM['organic']||0)}. Japan has higher FTD intent despite fewer sessions than Australia.`);
+  setAiText('ga4',`<strong>${fmt(tS)} sessions</strong> loaded. ${top1?`Top: ${top1[0]} (${fmt(top1[1])}).`:''} ${top2?`2nd: ${top2[0]} (${fmt(top2[1])}).`:''} Mediums: ${Object.keys(byM).slice(0,3).join(', ')}.`);
 }
+
+
 
 // ─── COMP BARS ────────────────────────────────────────────────────
 function buildCB(id,items){
@@ -1452,6 +1481,12 @@ function hUp(file,type){
     }catch(err){const st=document.getElementById('us-'+type);st.style.display='block';st.innerHTML=`<span style="color:var(--red)">Error: ${err.message}</span>`}
   };
   updateDataStatus();
+  // Clear cached empty states so charts redraw
+  document.querySelectorAll('.empty-state').forEach(el=>el.remove());
+  document.querySelectorAll('canvas[style*="display: none"], canvas[style*="display:none"]').forEach(el=>el.style.display='');
+  renderAll();
+  // Switch to overview to show results
+  if(type!=='cfg') sv('overview');
   if(file.name.toLowerCase().endsWith('.csv'))r.readAsText(file);else r.readAsBinaryString(file);
 }
 function parseCSV(text){const lines=text.trim().split('\n');let hi=-1;for(let i=0;i<Math.min(lines.length,10);i++){const c=lines[i].split(',').map(h=>h.trim().replace(/^"|"$/g,'').toLowerCase()).filter(h=>h);if(c.length>=3&&(c.some(x=>x==='day'||x==='date')||c.some(x=>x==='sessions')||c.some(x=>x==='clicks'))){hi=i;break}}if(hi===-1)return[];const h=lines[hi].split(',').map(x=>x.trim().replace(/^"|"$/g,''));return lines.slice(hi+1).filter(l=>l.trim()).map(l=>{const v=l.split(',').map(x=>x.trim().replace(/^"|"$/g,''));const o={};h.forEach((k,i)=>o[k]=v[i]||'');return o})}
