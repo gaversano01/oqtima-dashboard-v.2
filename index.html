@@ -205,6 +205,20 @@ input[type=color]{width:32px;height:32px;border-radius:6px;border:1px solid var(
 }
 @media(max-width:480px){.krow-5,.krow-4{grid-template-columns:1fr 1fr}.sg{grid-template-columns:1fr}.kv{font-size:19px}}
 ::-webkit-scrollbar{width:3px;height:3px}::-webkit-scrollbar-thumb{background:var(--bl);border-radius:2px}
+
+/* ── FUNNEL RINGS (reference style) ── */
+.fring-wrap{display:flex;align-items:center;justify-content:space-around;flex-wrap:wrap;gap:4px;width:100%}
+.fring-item{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;min-width:100px;max-width:160px}
+.fring-canvas-wrap{position:relative;width:100px;height:100px;flex-shrink:0}
+.fring-inner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:1px}
+.fring-val{font-size:15px;font-weight:800;letter-spacing:-.4px;line-height:1}
+.fring-lbl{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ts);margin-top:2px}
+.fring-meta{font-size:10px;color:var(--ts);text-align:center;line-height:1.3}
+.fring-meta strong{color:var(--tp);font-weight:700}
+.fring-arrow{color:var(--tm);font-size:20px;flex-shrink:0;margin-bottom:30px;align-self:center}
+/* ── MAP ── */
+.map-tooltip{position:absolute;background:var(--card2);border:1px solid var(--bl);border-radius:6px;padding:5px 10px;font-size:11px;color:var(--tp);pointer-events:none;white-space:nowrap;display:none;z-index:20}
+
 </style>
 </head>
 <body>
@@ -270,13 +284,14 @@ input[type=color]{width:32px;height:32px;border-radius:6px;border:1px solid var(
       <option value="all">All time</option>
       <option value="90" selected>Last 90 days</option>
       <option value="30">Last 30 days</option>
+      <option value="7">Last 7 days</option>
       <option value="thismonth">This month</option>
       <option value="lastmonth">Last month</option>
-      <option value="thisyear">This year (2026)</option>
-      <option value="lastyear">Last year (2025)</option>
-    <option value="custom">📅 Custom range</option>
+      <option value="thisyear">This year</option>
+      <option value="lastyear">Last year</option>
+      <option value="custom">📅 Custom range</option>
     </select>
-    <div class="drange" id="drange-wrap" style="display:none;align-items:center;gap:6px">
+    <div id="drange-wrap" style="display:none;align-items:center;gap:6px">
       <input class="drange-inp" type="date" id="dr-start" onchange="onPeriodChange()"/>
       <span style="font-size:11px;color:var(--ts)">→</span>
       <input class="drange-inp" type="date" id="dr-end" onchange="onPeriodChange()"/>
@@ -301,58 +316,43 @@ input[type=color]{width:32px;height:32px;border-radius:6px;border:1px solid var(
   </div>
 
   <!-- KPI STRIP -->
-  <div class="krow krow-5" id="ov-kpis">
-    <div class="kcard" style="--kc:var(--blue)"><div class="kl">Sessions <span class="kdelta kd-up" id="d-sess"></span></div><div class="kv" id="ok-sess">—</div><div class="ksub">GA4 · website traffic</div></div>
+  <div class="krow krow-5">
+    <div class="kcard" style="--kc:var(--blue)"><div class="kl">Sessions</div><div class="kv" id="ok-sess">—</div><div class="ksub">GA4 · website traffic</div></div>
     <div class="kcard" style="--kc:var(--purple)"><div class="kl">Registrations</div><div class="kv" id="ok-reg">—</div><div class="ksub">Google Ads conversions</div></div>
     <div class="kcard" style="--kc:var(--a)"><div class="kl">KYC approved</div><div class="kv" id="ok-kyc">—</div><div class="ksub">HubSpot verified</div></div>
     <div class="kcard" style="--kc:#10B981"><div class="kl">FTD clients</div><div class="kv" id="ok-ftd">—</div><div class="ksub" id="ok-ftd-s">first deposits</div></div>
     <div class="kcard" style="--kc:var(--amber)"><div class="kl">Ad spend</div><div class="kv" id="ok-spend">—</div><div class="ksub" id="ok-cpa-s">—</div></div>
   </div>
 
-  <!-- FUNNEL + CHARTS ROW -->
-  <div class="cg2">
-    <!-- FUNNEL -->
-    <div class="cc">
-      <div class="cc-h"><div><div class="cc-t">OQtima Client Journey</div><div class="cc-s">Full acquisition funnel — impression to deposit</div></div><span class="cc-bdg" id="fn-badge">All time</span></div>
-      <div class="fn-wrap" id="fn-steps"></div>
-      <!-- AI insight on funnel -->
-      <div class="ai-box">
-        <div class="ai-box-hdr"><span class="ai-dot"></span><span class="ai-box-title">AI Funnel Insight</span></div>
-        <div class="ai-box-text" id="ai-fn-text">Loading insight...</div>
-        <div class="ai-ask-row">
-          <input class="ai-inp" id="ai-fn-q" type="text" placeholder="Ask about your funnel..."/>
-          <button class="ai-sbtn" onclick="askSection('fn')">Ask</button>
-        </div>
-        <div class="ai-resp" id="ai-fn-resp"></div>
-      </div>
+  <!-- FUNNEL RINGS ROW (inspired by reference design) -->
+  <div class="cc" style="margin-bottom:12px">
+    <div class="cc-h">
+      <div><div class="cc-t">OQtima Client Journey</div><div class="cc-s">Full acquisition funnel — impression to deposit</div></div>
+      <span class="cc-bdg" id="fn-badge">All time</span>
     </div>
-
-    <div style="display:flex;flex-direction:column;gap:12px">
-      <!-- KYC→FTD by market -->
-      <div class="cc">
-        <div class="cc-h"><div><div class="cc-t">KYC vs FTD by market</div><div class="cc-s">Conversion rate per country</div></div></div>
-        <canvas id="c-ov-mkt" height="170"></canvas>
+    <div id="fn-rings-row" style="display:flex;align-items:center;justify-content:space-around;flex-wrap:wrap;gap:8px;padding:8px 0"></div>
+    <div class="ai-box" style="margin-top:12px">
+      <div class="ai-box-hdr"><span class="ai-dot"></span><span class="ai-box-title">AI Funnel Insight</span></div>
+      <div class="ai-box-text" id="ai-fn-text">Loading insight...</div>
+      <div class="ai-ask-row">
+        <input class="ai-inp" id="ai-fn-q" type="text" placeholder="Ask about your funnel..."/>
+        <button class="ai-sbtn" onclick="askSection('fn')">Ask</button>
       </div>
-      <!-- Monthly trend -->
-      <div class="cc">
-        <div class="cc-h"><div><div class="cc-t">Monthly FTDs</div><div class="cc-s">Deposit trend</div></div></div>
-        <canvas id="c-ov-ftdmo" height="110"></canvas>
-      </div>
+      <div class="ai-resp" id="ai-fn-resp"></div>
     </div>
   </div>
 
-  <!-- DIGITAL MARKETING OVERVIEW -->
-  <div class="sh">
+  <!-- DIGITAL MARKETING PERFORMANCE -->
+  <div class="sh" style="margin-top:4px">
     <div class="sh-left"><div class="sh-title">Digital Marketing Performance</div><div class="sh-sub">Google Ads · GA4 sessions · paid channels</div></div>
   </div>
-
   <div class="cg3">
     <div class="cc">
-      <div class="cc-h"><div><div class="cc-t">Sessions vs Spend</div><div class="cc-s">Monthly trend</div></div></div>
+      <div class="cc-h"><div><div class="cc-t">Sessions vs Ad Spend</div><div class="cc-s">Monthly trend</div></div><span class="cc-bdg" id="ov-badge">90 days</span></div>
       <canvas id="c-ov-trend" height="160"></canvas>
     </div>
     <div class="cc">
-      <div class="cc-h"><div><div class="cc-t">Google Ads performance</div><div class="cc-s">Clicks & cost daily</div></div></div>
+      <div class="cc-h"><div><div class="cc-t">Google Ads — daily</div><div class="cc-s">Clicks & cost</div></div><span class="cc-bdg" id="gads-bdg">90 days</span></div>
       <canvas id="c-ov-gads" height="160"></canvas>
     </div>
     <div class="cc">
@@ -361,40 +361,53 @@ input[type=color]{width:32px;height:32px;border-radius:6px;border:1px solid var(
     </div>
   </div>
 
-  <!-- IB + MKT OVERVIEW -->
-  <div class="sh">
+  <!-- CHANNEL ATTRIBUTION + MAP -->
+  <div class="sh" style="margin-top:4px">
     <div class="sh-left"><div class="sh-title">Channel attribution</div><div class="sh-sub">IB partners & MKT campaigns — FTD performance</div></div>
   </div>
-
-  <div class="cg22">
+  <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px;margin-bottom:12px">
+    <!-- WORLD MAP -->
     <div class="cc">
-      <div class="cc-h"><div><div class="cc-t">IB partners — FTDs</div><div class="cc-s" id="ib-sub-ov">6 IB partners · 141 total FTDs</div></div></div>
-      <div class="cb" id="cb-ov-ib" style="margin-top:4px"></div>
-      <!-- AI on IB -->
-      <div class="ai-box" style="margin-top:12px">
+      <div class="cc-h"><div><div class="cc-t">Top countries by FTDs</div><div class="cc-s">Geographic distribution</div></div></div>
+      <div id="map-container" style="position:relative;background:var(--card2);border-radius:8px;overflow:hidden;min-height:180px">
+        <canvas id="c-ov-mkt" height="180"></canvas>
+      </div>
+      <div id="map-legend" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px"></div>
+    </div>
+    <!-- IB PARTNERS -->
+    <div class="cc">
+      <div class="cc-h"><div><div class="cc-t">IB partners</div><div class="cc-s" id="ib-sub-ov">FTD performance</div></div></div>
+      <div class="cb" id="cb-ov-ib"></div>
+      <div class="ai-box" style="margin-top:10px">
         <div class="ai-box-hdr"><span class="ai-dot"></span><span class="ai-box-title">IB Analysis</span></div>
         <div class="ai-box-text" id="ai-ib-text">Loading...</div>
         <div class="ai-ask-row">
-          <input class="ai-inp" id="ai-ib-q" type="text" placeholder="Ask about IB performance..."/>
+          <input class="ai-inp" id="ai-ib-q" type="text" placeholder="Ask about IB..."/>
           <button class="ai-sbtn" onclick="askSection('ib')">Ask</button>
         </div>
         <div class="ai-resp" id="ai-ib-resp"></div>
       </div>
     </div>
+    <!-- MKT CAMPAIGNS -->
     <div class="cc">
-      <div class="cc-h"><div><div class="cc-t">MKT campaigns — FTDs</div><div class="cc-s">3 tracked MKT campaigns · 34 total FTDs</div></div></div>
-      <div class="cb" id="cb-ov-mkt" style="margin-top:4px"></div>
-      <!-- AI on MKT -->
-      <div class="ai-box" style="margin-top:12px">
+      <div class="cc-h"><div><div class="cc-t">MKT campaigns</div><div class="cc-s">FTD performance</div></div></div>
+      <div class="cb" id="cb-ov-mkt"></div>
+      <div class="ai-box" style="margin-top:10px">
         <div class="ai-box-hdr"><span class="ai-dot"></span><span class="ai-box-title">Campaign Analysis</span></div>
         <div class="ai-box-text" id="ai-mkt-text">Loading...</div>
         <div class="ai-ask-row">
-          <input class="ai-inp" id="ai-mkt-q" type="text" placeholder="Ask about MKT campaigns..."/>
+          <input class="ai-inp" id="ai-mkt-q" type="text" placeholder="Ask about campaigns..."/>
           <button class="ai-sbtn" onclick="askSection('mkt')">Ask</button>
         </div>
         <div class="ai-resp" id="ai-mkt-resp"></div>
       </div>
     </div>
+  </div>
+
+  <!-- MONTHLY FTDs -->
+  <div class="cc" style="margin-bottom:12px">
+    <div class="cc-h"><div><div class="cc-t">Monthly FTDs</div><div class="cc-s">First deposit trend over time</div></div></div>
+    <canvas id="c-ov-ftdmo" height="120"></canvas>
   </div>
 
 </div><!-- /overview -->
@@ -626,6 +639,7 @@ let C = {};
 let curMkt='all', chFilter='all', ftdSrc='all';
 
 const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+Chart.defaults.locale='en-US';
 const TO={backgroundColor:'#141927',borderColor:'rgba(255,255,255,0.08)',borderWidth:1,titleColor:'#EEF1F8',bodyColor:'#5E7191',padding:12,cornerRadius:6,displayColors:true,boxWidth:8,boxHeight:8};
 
 function mlb(k){const[y,m]=k.split('-');return MN[parseInt(m)-1]+"'"+y.slice(2)}
@@ -823,18 +837,31 @@ function setChFilter(ch){
 
 // ─── OVERVIEW ─────────────────────────────────────────────────────
 function renderOverviewStatic(){
-  const period=getOvPeriod(),mkt=getOvMkt();
+  // KYC and FTD = all-time totals (HubSpot has no per-period date breakdown)
+  const period=getOvPeriod(), mkt=getOvMkt();
   const {total,byC,byCamp}=getFtdForFilter(mkt,chFilter);
+  const a=getA();
 
-  // KPIs (static parts)
+  // KPIs — KYC and FTD are always all-time
   const kycForMkt=mkt==='all'?KYC.total:(KYC.byCountry[mkt]||0);
+  const ftdForMkt=mkt==='all'?FTD.total:(FTD.byCountry[mkt]||0);
   document.getElementById('ok-kyc').textContent=fmt(kycForMkt);
-  const ftdForDisplay=mkt==='all'?total:(FTD.byCountry[mkt]||0);
-  document.getElementById('ok-ftd').textContent=fmt(chFilter==='all'?ftdForDisplay:total);
+  document.getElementById('ok-ftd').textContent=fmt(chFilter==='all'?ftdForMkt:total);
   document.getElementById('ok-ftd-s').textContent=(mkt!=='all'?mkt.charAt(0)+mkt.slice(1).toLowerCase()+' · ':'')+(chFilter==='all'?'all channels':chFilter+' only');
 
-  const a=getA();
-  // KYC vs FTD by market
+  // IB bars
+  const ibC=Object.entries(byCamp).filter(([k])=>k.startsWith('IB')).sort((a,b)=>b[1]-a[1]);
+  const ibMax=ibC[0]?.[1]||1;
+  buildCB('cb-ov-ib',ibC.map(([k,v])=>({label:k.replace('IB-',''),val:fmt(v),pct:fmtP(v/FTD.total*100),w:(v/ibMax*100)+'%',color:a})));
+  const ibSub=document.getElementById('ib-sub-ov');
+  if(ibSub)ibSub.textContent=ibC.length+' IB partners · '+ibC.reduce((s,[,v])=>s+v,0)+' FTDs';
+
+  // MKT bars
+  const mktC=Object.entries(byCamp).filter(([k])=>k.startsWith('MKT')).sort((a,b)=>b[1]-a[1]);
+  const mktMax=mktC[0]?.[1]||1;
+  buildCB('cb-ov-mkt',mktC.map(([k,v])=>({label:k.replace('MKT-',''),val:fmt(v),pct:fmtP(v/FTD.total*100),w:(v/mktMax*100)+'%',color:'#3B82F6'})));
+
+  // KYC vs FTD by market (horizontal bar chart — all-time)
   const mktData=[
     {l:'Japan',ky:KYC.byCountry.JAPAN,ft:FTD.byCountry.JAPAN,c:'#EF4444'},
     {l:'Australia',ky:KYC.byCountry.AUSTRALIA,ft:FTD.byCountry.AUSTRALIA,c:'#3B82F6'},
@@ -843,98 +870,20 @@ function renderOverviewStatic(){
     {l:'Canada',ky:KYC.byCountry.CANADA,ft:FTD.byCountry.CANADA,c:'#F59E0B'},
   ];
   C.ovMkt=mkChart('c-ov-mkt',{
-    type:'bar',data:{labels:mktData.map(m=>m.l),datasets:[
+    type:'bar',
+    data:{labels:mktData.map(m=>m.l),datasets:[
       {label:'KYC',data:mktData.map(m=>m.ky),backgroundColor:mktData.map(m=>m.c+'30'),borderColor:mktData.map(m=>m.c),borderWidth:1.5,borderRadius:4},
       {label:'FTD',data:mktData.map(m=>m.ft),backgroundColor:mktData.map(m=>m.c+'88'),borderColor:mktData.map(m=>m.c),borderWidth:1.5,borderRadius:4}
     ]},
-    options:{responsive:true,interaction:{intersect:false,mode:'index'},plugins:{legend:{labels:{color:'#5E7191',font:{size:10},boxWidth:10}},tooltip:{...TO,callbacks:{afterBody:it=>{const d=mktData[it[0].dataIndex];return d.ky>0?[`FTD rate: ${((d.ft/d.ky)*100).toFixed(1)}%`]:[];}}}},scales:{x:{grid:{display:false},ticks:{color:'#5E7191',font:{size:10}}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:10}}}}}
+    options:{responsive:true,indexAxis:'y',interaction:{intersect:false,mode:'index'},plugins:{legend:{labels:{color:'#5E7191',font:{size:10},boxWidth:10}},tooltip:{...TO,callbacks:{afterBody:it=>{const d=mktData[it[0].dataIndex];return d.ky>0?['FTD rate: '+((d.ft/d.ky)*100).toFixed(1)+'%']:[];}}}},scales:{x:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}},y:{grid:{display:false},ticks:{color:'#5E7191',font:{size:10}}}}}
   });
 
-  // Monthly FTD
-  const ftdMo=filterMonths(FTD.byMonth,period);
-  const ftdM=Object.entries(ftdMo).sort((a,b)=>a[0].localeCompare(b[0]));
-  C.ovFtdMo=mkChart('c-ov-ftdmo',{
-    type:'line',data:{labels:ftdM.map(([k])=>mlb(k)),datasets:[{label:'FTDs',data:ftdM.map(([,v])=>v),borderColor:'#10B981',borderWidth:2,pointRadius:2,fill:true,backgroundColor:'rgba(16,185,129,0.06)',tension:.4}]},
-    options:{responsive:true,plugins:{legend:{display:false},tooltip:{...TO}},scales:{x:{grid:{display:false},ticks:{color:'#5E7191',font:{size:9},maxTicksLimit:8}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}}}}
-  });
-
-  // IB bars
-  const ibC=Object.entries(byCamp).filter(([k])=>k.startsWith('IB')).sort((a,b)=>b[1]-a[1]);
-  const ibMax=ibC[0]?.[1]||1;
-  buildCB('cb-ov-ib',ibC.map(([k,v])=>({label:k.replace('IB-',''),val:fmt(v),pct:fmtP(v/FTD.total*100),w:(v/ibMax*100)+'%',color:a})));
-  document.getElementById('ib-sub-ov').textContent=`${ibC.length} IB partners · ${ibC.reduce((s,[,v])=>s+v,0)} total FTDs`;
-
-  // MKT bars
-  const mktC=Object.entries(byCamp).filter(([k])=>k.startsWith('MKT')).sort((a,b)=>b[1]-a[1]);
-  const mktMax=mktC[0]?.[1]||1;
-  buildCB('cb-ov-mkt',mktC.map(([k,v])=>({label:k.replace('MKT-',''),val:fmt(v),pct:fmtP(v/FTD.total*100),w:(v/mktMax*100)+'%',color:'#3B82F6'})));
-
-  // Funnel — period-filtered sums from byMonth
-  const gads=MAN.gads||D.gads;
-  const ratio=mkt==='all'?1:getMktRatio(mkt);
-  const gadsMonthsFn=filterMonths(gads?.byMonth,period);
-  const sumFn=(key)=>Object.values(gadsMonthsFn).reduce((a,v)=>a+(v[key]||0),0);
-  const hasGadsMo=Object.keys(gadsMonthsFn).length>0;
-  // Use period-filtered byMonth sums; fall back to all-time summary only if no month data
-  const impr=Math.round((sumFn('impr')||gads?.summary?.totalImpressions||0)*ratio);
-  const clicks=Math.round((sumFn('clicks')||gads?.summary?.totalClicks||0)*ratio);
-  const reg=Math.round((sumFn('conv')||gads?.summary?.totalConversions||0)*ratio);
-  const spend=(sumFn('cost')||gads?.summary?.totalCost||5099.85)*ratio;
-  // KYC+FTD: all-time only — no date breakdown in HubSpot export
-  const kyc=mkt==='all'?KYC.total:(KYC.byCountry[mkt]||0);
-  const ftd=mkt==='all'?FTD.total:(FTD.byCountry[mkt]||0);
-  const pLabel={all:'All time',thismonth:'This month',lastmonth:'Last month',thisyear:'This year',lastyear:'Last year',7:'Last 7d',14:'Last 14d',30:'Last 30d',90:'Last 90d'}[period]||(period?period+' days':'All time');
-  document.getElementById('fn-badge').textContent=pLabel;
-  const ovB=document.getElementById('ov-badge');if(ovB)ovB.textContent=pLabel;
-  const gadsB=document.getElementById('gads-bdg');if(gadsB)gadsB.textContent=pLabel;
-  const steps=[
-    {n:1,label:'Ad Impressions',val:fmt(impr),sub:'Google Ads · '+pLabel,c:'#3B82F6',rate:impr>0?((clicks/impr)*100).toFixed(2)+'%':'—',rl:'CTR',drop:impr>0?'↓ '+((clicks/impr)*100).toFixed(2)+'% click rate':''},
-    {n:2,label:'Ad Clicks',val:fmt(clicks),sub:'Paid traffic · '+pLabel,c:'#F59E0B',rate:clicks>0?fmtD(spend/clicks,2):'—',rl:'avg CPC',drop:clicks>0?'↓ '+((reg/clicks)*100).toFixed(1)+'% form completion':''},
-    {n:3,label:'Registrations',val:fmt(reg),sub:'Form completions · '+pLabel,c:'#8B5CF6',rate:reg>0?fmtD(spend/reg,2):'—',rl:'cost/reg',drop:'↓ Identity verification (all-time below)'},
-    {n:4,label:'KYC Approved',val:fmt(kyc),sub:'All-time total · HubSpot',c:a,rate:kyc>0?fmtP(ftd/kyc*100):'—',rl:'→ FTD rate',drop:kyc>0?'↓ '+fmtP(ftd/kyc*100)+' deposit rate':''},
-    {n:5,label:'FTD Clients',val:fmt(ftd),sub:'All-time total · first deposit',c:'#10B981',rate:spend>0&&ftd>0?fmtD(spend/(FTD.ibTotal+FTD.mktTotal),0):'—',rl:'cost/tracked FTD*',highlight:true},
-  ];
-
-  const container=document.getElementById('fn-steps');
-  const funnelWidths=['100%','85%','70%','58%','46%'];
-  const funnelColors=[
-    {bg:'rgba(59,130,246,0.15)',border:'rgba(59,130,246,0.5)',text:'#60A5FA'},
-    {bg:'rgba(245,158,11,0.15)',border:'rgba(245,158,11,0.5)',text:'#FCD34D'},
-    {bg:'rgba(139,92,246,0.15)',border:'rgba(139,92,246,0.5)',text:'#C4B5FD'},
-    {bg:'rgba(193,255,71,0.12)',border:'rgba(193,255,71,0.4)',text:'#C1FF47'},
-    {bg:'rgba(16,185,129,0.15)',border:'rgba(16,185,129,0.5)',text:'#34D399'},
-  ];
-  container.innerHTML='<div class="funnel-container">'+steps.map((st,i)=>{
-    const fw=funnelWidths[i], fc=funnelColors[i];
-    const connector=i<steps.length-1?`
-      <div class="funnel-connector" style="width:${funnelWidths[i+1]};margin:0 auto">
-        <div class="funnel-arrow-line"></div>
-        <div class="funnel-drop-text">${st.drop||''}</div>
-        <div class="funnel-arrow-line"></div>
-      </div>`:'';
-    return `
-      <div class="funnel-stage" style="width:100%">
-        <div class="funnel-bar" style="width:${fw};margin:0 auto;background:${fc.bg};border:1px solid ${fc.border}">
-          <div class="funnel-left">
-            <div class="funnel-icon" style="background:${fc.border.replace('0.5','0.25')};color:${fc.text}">${i+1}</div>
-            <div>
-              <span class="funnel-label" style="color:${fc.text}">${st.label}</span>
-              <span class="funnel-value" style="color:${fc.text}">${st.val}</span>
-              <span style="font-size:10px;color:rgba(255,255,255,.4);display:block;margin-top:1px">${st.sub}</span>
-            </div>
-          </div>
-          <div class="funnel-right">
-            <div class="funnel-rate" style="color:${fc.text}">${st.rate}</div>
-            <div class="funnel-rlabel" style="color:${fc.text}">${st.rl}</div>
-          </div>
-        </div>
-        ${connector}
-      </div>`;
-  }).join('')+'</div>';
-    setAiText('fn',`<strong>Funnel health:</strong> ${fmt(reg)} Google Ads registrations → ${fmt(kyc)} KYC (${KYC.total.toLocaleString()} total) → ${fmt(ftd)} FTDs (${kyc>0?fmtP(ftd/kyc*100):'15.4%'} KYC→FTD rate). Cost per tracked FTD: $29 (ad spend ÷ IB+MKT FTDs only). <strong>Key gap:</strong> 61% of FTDs have no UTM attribution — fixing this is the #1 priority.`);
-  setAiText('ib',`<strong>IB-18050031-One</strong> is your top partner with 50 FTDs (35% of all IB deposits). <strong>IB-18051770-ECN3</strong> follows with 35 FTDs. Together your 6 IB partners generated 141 FTDs vs only 34 from paid MKT campaigns — IB channel shows 4x higher conversion quality. Consider prioritizing your top 2 IBs for volume growth.`);
-  setAiText('mkt',`<strong>MKT-myFXbook</strong> (13 FTDs) and <strong>MKT-OL_Thiago</strong> (12 FTDs) lead your paid campaigns. All 3 MKT campaigns together generated only 34 FTDs vs 141 from IB partners. Google Ads cost per registration is $12.81 — competitive for Forex. Focus budget on Japan (top FTD market: 187 deposits) and Australia (142).`);
+  // AI static texts
+  setAiText('fn','<strong>Funnel:</strong> Steps 1-3 (Impressions→Clicks→Registrations) update with period filter. Steps 4-5 (KYC/FTD) are all-time totals — HubSpot has no per-period export. KYC→FTD rate: <strong>15.4%</strong>. Cost per tracked FTD: <strong>$29</strong>. Key gap: 61% of FTDs unattributed (Direct/Unknown).');
+  setAiText('ib','<strong>IB-18050031-One</strong> leads with 50 FTDs. <strong>IB-18051770-ECN3</strong> has 35. Total IB: 141 FTDs vs 34 from MKT — IB converts 4× better. Prioritize top 2 IB partners for fastest growth.');
+  setAiText('mkt','<strong>myFXbook</strong> (13) and <strong>OL_Thiago</strong> (12) lead MKT. Cost/registration: $12.81. Focus Japan (187 FTDs) and Australia (142) — highest ROI markets.');
 }
+
 
 function renderOverview(){
   renderOverviewStatic();
@@ -944,75 +893,134 @@ function renderOverview(){
   const nameMap={JAPAN:'Japan',AUSTRALIA:'Australia','UNITED KINGDOM':'United Kingdom',BRAZIL:'Brazil',CANADA:'Canada'};
   const ga4MktName=nameMap[mkt]||'';
 
-  // ── Compute period-filtered summaries from raw monthly/daily data ──
-  // Google Ads: sum from byMonth for the selected period
-  const gadsMonths=filterMonths(gads?.byMonth, period);
-  const gadsPeriodCost=Object.values(gadsMonths).reduce((s,v)=>s+(v.cost||0),0);
-  const gadsPeriodConv=Object.values(gadsMonths).reduce((s,v)=>s+(v.conv||0),0);
-  const gadsPeriodClicks=Object.values(gadsMonths).reduce((s,v)=>s+(v.clicks||0),0);
-  const gadsPeriodImpr=Object.values(gadsMonths).reduce((s,v)=>s+(v.impr||0),0);
+  // Period label
+  const pMap={all:'All time',thismonth:'This month',lastmonth:'Last month',thisyear:'This year',lastyear:'Last year',7:'Last 7 days',14:'Last 14 days',30:'Last 30 days',90:'Last 90 days'};
+  const pLabel=period.startsWith('custom:')?period.split(':')[1]+' → '+period.split(':')[2]:(pMap[period]||period+' days');
+  ['fn-badge','ov-badge','gads-bdg'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=pLabel;});
 
-  // GA4: sum from byMonth
-  const ga4Months=filterMonths(ga4?.byMonth, period);
-  const ga4PeriodSess=Object.values(ga4Months).reduce((s,v)=>s+(v.sessions||0),0);
+  // ── Period-filtered sums from byMonth ──
+  const gadsM=filterMonths(gads?.byMonth,period);
+  const ga4M=filterMonths(ga4?.byMonth,period);
+  const sum=(obj,k)=>Object.values(obj).reduce((a,v)=>a+(v[k]||0),0);
 
-  // Apply market ratio
-  const costFiltered=gadsPeriodCost*ratio;
-  const convFiltered=Math.round(gadsPeriodConv*ratio);
-  const sessFiltered=mkt==='all'?ga4PeriodSess:Math.round(ga4PeriodSess*(ga4?.byCountry?.[ga4MktName]||0)/(ga4?.summary?.totalSessions||1));
+  const gadsCost=sum(gadsM,'cost');
+  const gadsConv=sum(gadsM,'conv');
+  const gadsImpr=sum(gadsM,'impr');
+  const gadsClicks=sum(gadsM,'clicks');
+  const ga4Sess=sum(ga4M,'sessions');
+
+  // ── Compute actual period values (fall back to all-time summary only when byMonth is truly empty) ──
+  const impr=Math.round((gadsImpr||gads?.summary?.totalImpressions||0)*ratio);
+  const clicks=Math.round((gadsClicks||gads?.summary?.totalClicks||0)*ratio);
+  const reg=Math.round((gadsConv||gads?.summary?.totalConversions||0)*ratio);
+  const spend=(gadsCost||gads?.summary?.totalCost||5099.85)*ratio;
+  const kyc=mkt==='all'?KYC.total:(KYC.byCountry[mkt]||0);
+  const ftd=mkt==='all'?FTD.total:(FTD.byCountry[mkt]||0);
 
   // ── KPI cards ──
-  // KPIs — always use period-filtered byMonth sums, fallback to all-time only if zero
-  const reg_kpi = convFiltered||Math.round((gads?.summary?.totalConversions||398)*ratio);
-  const spend_kpi = costFiltered||((gads?.summary?.totalCost||5100)*ratio);
-  const cpa_kpi = reg_kpi>0?(spend_kpi/reg_kpi).toFixed(2):'12.81';
-  document.getElementById('ok-reg').textContent=fmt(reg_kpi);
-  document.getElementById('ok-spend').textContent=fmtD(spend_kpi);
-  document.getElementById('ok-cpa-s').textContent='$'+cpa_kpi+' per registration';
+  const sessKpi=mkt==='all'?ga4Sess:Math.round((ga4Sess||0)*((ga4?.byCountry?.[ga4MktName]||0)/(ga4?.summary?.totalSessions||1)));
+  document.getElementById('ok-sess').textContent=fmt(sessKpi||Math.round((ga4?.summary?.totalSessions||121626)*ratio));
+  document.getElementById('ok-reg').textContent=fmt(reg);
+  document.getElementById('ok-spend').textContent=fmtD(spend);
+  const cpa=reg>0?(spend/reg).toFixed(2):'—';
+  document.getElementById('ok-cpa-s').textContent=cpa!=='—'?'$'+cpa+' per registration':'per registration';
 
-  if(ga4){
-    const sessForKpi=mkt==='all'
-      ? ga4PeriodSess
-      : Math.round((ga4PeriodSess*(ga4.byCountry?.[ga4MktName]||0))/(ga4.summary?.totalSessions||1));
-    document.getElementById('ok-sess').textContent=fmt(sessForKpi||ga4PeriodSess);
-  } else {
-    document.getElementById('ok-sess').textContent=fmt(Math.round(121626*ratio));
+  // ── FUNNEL RINGS (circular donut style like reference) ──
+  const funnelData=[
+    {label:'Impressions',val:impr,sub:impr>0?((clicks/impr)*100).toFixed(2)+'% CTR':'—',sublabel:'CTR',color:'#3B82F6',pct:100},
+    {label:'Clicks',val:clicks,sub:clicks>0?fmtD(spend/clicks,2)+' CPC':'—',sublabel:'avg CPC',color:'#F59E0B',pct:impr>0?(clicks/impr*100):0},
+    {label:'Registrations',val:reg,sub:reg>0?fmtD(spend/reg,2)+'/reg':'—',sublabel:'cost/reg',color:'#8B5CF6',pct:impr>0?(reg/impr*100):0},
+    {label:'KYC',val:kyc,sub:kyc>0?((ftd/kyc)*100).toFixed(1)+'% → FTD':'15.4%',sublabel:'all-time',color:'#C1FF47',pct:100},
+    {label:'FTD Clients',val:ftd,sub:spend>0?fmtD(spend/(FTD.ibTotal+FTD.mktTotal),0)+'/tracked FTD':'$29',sublabel:'cost/FTD',color:'#10B981',pct:100},
+  ];
+
+  const container=document.getElementById('fn-rings-row');
+  if(container){
+    container.innerHTML='';
+    funnelData.forEach((fd,i)=>{
+      const isLast=i===funnelData.length-1;
+      // Create ring item
+      const item=document.createElement('div');
+      item.style.cssText='display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;min-width:90px;max-width:150px';
+
+      // Canvas for donut ring
+      const canvasId='fn-ring-'+i;
+      item.innerHTML=`
+        <div style="position:relative;width:95px;height:95px;flex-shrink:0">
+          <canvas id="${canvasId}" width="95" height="95"></canvas>
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:1px">
+            <span style="font-size:14px;font-weight:800;letter-spacing:-.3px;color:${fd.color};line-height:1">${fd.val>999?fd.val.toLocaleString():fmt(fd.val)}</span>
+            <span style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ts);margin-top:1px">${fd.label}</span>
+          </div>
+        </div>
+        <div style="font-size:10px;color:var(--ts);text-align:center;line-height:1.3"><strong style="color:${fd.color}">${fd.sub}</strong><br><span style="font-size:9px;color:var(--tm)">${fd.sublabel}</span></div>
+      `;
+      container.appendChild(item);
+
+      // Add arrow between rings
+      if(!isLast){
+        const arrow=document.createElement('div');
+        arrow.innerHTML='<span style="color:var(--tm);font-size:20px;margin-bottom:30px">→</span>';
+        arrow.style.cssText='display:flex;align-items:center;flex-shrink:0';
+        container.appendChild(arrow);
+      }
+
+      // Draw donut ring after DOM insertion
+      requestAnimationFrame(()=>{
+        const cvs=document.getElementById(canvasId);
+        if(!cvs)return;
+        const existingChart=Chart.getChart(cvs);
+        if(existingChart)existingChart.destroy();
+        const fillPct=Math.max(2,Math.min(100,fd.pct||10));
+        new Chart(cvs.getContext('2d'),{
+          type:'doughnut',
+          data:{datasets:[{
+            data:[fillPct,100-fillPct],
+            backgroundColor:[fd.color,fd.color+'18'],
+            borderWidth:0,
+            borderRadius:4
+          }]},
+          options:{responsive:false,cutout:'70%',plugins:{legend:{display:false},tooltip:{enabled:false}},animation:{duration:600}}
+        });
+      });
+    });
   }
 
-  // ── Charts ──
-  const allM=[...new Set([...Object.keys(ga4Months),...Object.keys(gadsMonths)])].sort();
-  const a=getA();
+  // ── Sessions vs Spend trend (period-filtered) ──
+  const allM=[...new Set([...Object.keys(ga4M),...Object.keys(gadsM)])].sort();
   C.ovTrend=mkChart('c-ov-trend',{
     data:{labels:allM.map(mlb),datasets:[
-      {type:'bar',label:'Sessions',data:allM.map(m=>(ga4Months[m]?.sessions||0)*ratio),backgroundColor:a+'20',borderColor:a,borderWidth:1.5,borderRadius:4,yAxisID:'y'},
-      {type:'line',label:'Spend ($)',data:allM.map(m=>(gadsMonths[m]?.cost||0)*ratio),borderColor:'#3B82F6',borderWidth:2,pointRadius:2,fill:false,yAxisID:'y1',tension:.35}
+      {type:'bar',label:'Sessions',data:allM.map(m=>(ga4M[m]?.sessions||0)*ratio),backgroundColor:getA()+'20',borderColor:getA(),borderWidth:1.5,borderRadius:4,yAxisID:'y'},
+      {type:'line',label:'Spend ($)',data:allM.map(m=>(gadsM[m]?.cost||0)*ratio),borderColor:'#3B82F6',borderWidth:2,pointRadius:2,fill:false,yAxisID:'y1',tension:.35}
     ]},
     options:{responsive:true,interaction:{intersect:false,mode:'index'},plugins:{legend:{labels:{color:'#5E7191',font:{size:10},boxWidth:10}},tooltip:{...TO}},scales:{x:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#5E7191',font:{size:9}}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}},y1:{position:'right',grid:{display:false},ticks:{color:'#3B82F6',font:{size:9}}}}}
   });
 
-  // Daily gads - use filtered daily
-  const daily=filterDaily(gads?.daily, period==='all'?'all':period, '');
-  const dailyFiltered=daily.map(d=>({...d,clicks:(d.clicks||0)*ratio,cost:(d.cost||0)*ratio,conv:(d.conv||0)*ratio}));
+  // ── Google Ads daily (period-filtered) ──
+  const daily=filterDaily(gads?.daily,period,'');
+  const dF=daily.map(d=>({...d,clicks:(d.clicks||0)*ratio,cost:(d.cost||0)*ratio}));
   C.ovGads=mkChart('c-ov-gads',{
-    data:{labels:dailyFiltered.map(d=>d.day?.slice(5)),datasets:[
-      {type:'bar',label:'Clicks',data:dailyFiltered.map(d=>d.clicks),backgroundColor:a+'25',borderColor:a,borderWidth:1.5,borderRadius:3,yAxisID:'y'},
-      {type:'line',label:'Cost ($)',data:dailyFiltered.map(d=>d.cost),borderColor:'#F59E0B',borderWidth:1.5,pointRadius:0,fill:false,yAxisID:'y1',tension:.3}
+    data:{labels:dF.map(d=>(d.day||'').slice(5)),datasets:[
+      {type:'bar',label:'Clicks',data:dF.map(d=>d.clicks),backgroundColor:getA()+'25',borderColor:getA(),borderWidth:1.5,borderRadius:3,yAxisID:'y'},
+      {type:'line',label:'Cost ($)',data:dF.map(d=>d.cost),borderColor:'#F59E0B',borderWidth:1.5,pointRadius:0,fill:false,yAxisID:'y1',tension:.3}
     ]},
     options:{responsive:true,interaction:{intersect:false,mode:'index'},plugins:{legend:{labels:{color:'#5E7191',font:{size:10},boxWidth:10}},tooltip:{...TO}},scales:{x:{grid:{display:false},ticks:{color:'#5E7191',font:{size:9},maxTicksLimit:14}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}},y1:{position:'right',grid:{display:false},ticks:{color:'#F59E0B',font:{size:9}}}}}
   });
 
-  // Medium bars — filter by period if we have daily GA4 (otherwise use totals)
-  const ga4MediumPeriod={};
-  Object.entries(ga4Months).forEach(([mo,v])=>{
-    // We only have totals per medium not per month, so approximate by ratio
-    // Use total medium breakdown scaled to period sessions ratio
-  });
-  const periodSessRatio=(ga4PeriodSess||0)/(ga4?.summary?.totalSessions||1)||1;
-  const tot=ga4PeriodSess||ga4?.summary?.totalSessions||1;
+  // ── Medium bars (GA4 scaled to period) ──
+  const periodRatio=(ga4Sess||0)/(ga4?.summary?.totalSessions||1)||1;
   const maxM=Object.values(ga4?.byMedium||{})[0]||1;
-  const mediumData=Object.entries(ga4?.byMedium||{}).slice(0,7)
-    .map(([k,v])=>({label:k,val:fmt(Math.round(v*periodSessRatio*ratio)),pct:((v/((ga4?.summary?.totalSessions||1)))*100).toFixed(1)+'%',w:(v/maxM*100)+'%',color:'#3B82F6'}));
-  buildCB('cb-ov-med', mediumData);
+  buildCB('cb-ov-med',Object.entries(ga4?.byMedium||{}).slice(0,7).map(([k,v])=>({
+    label:k,val:fmt(Math.round(v*periodRatio*ratio)),pct:((v/(ga4?.summary?.totalSessions||1))*100).toFixed(1)+'%',w:(v/maxM*100)+'%',color:'#3B82F6'
+  })));
+
+  // ── Monthly FTD (period-filtered) ──
+  const ftdMo=filterMonths(FTD.byMonth,period);
+  const ftdM2=Object.entries(ftdMo).sort((a,b)=>a[0].localeCompare(b[0]));
+  C.ovFtdMo=mkChart('c-ov-ftdmo',{
+    type:'line',data:{labels:ftdM2.map(([k])=>mlb(k)),datasets:[{label:'FTDs',data:ftdM2.map(([,v])=>v),borderColor:'#10B981',borderWidth:2,pointRadius:2,fill:true,backgroundColor:'rgba(16,185,129,0.06)',tension:.4}]},
+    options:{responsive:true,plugins:{legend:{display:false},tooltip:{...TO}},scales:{x:{grid:{display:false},ticks:{color:'#5E7191',font:{size:9},maxTicksLimit:10}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}}}}
+  });
 }
 
 
