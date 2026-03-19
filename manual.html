@@ -688,6 +688,23 @@ function fmt(n){if(n==null)return'—';const v=Math.round(parseFloat(n));return 
 function fmtD(n,d=0){if(!n&&n!==0)return'—';const v=parseFloat(n);return isNaN(v)?'—':'$'+v.toFixed(d).replace(/\B(?=(\d{3})+(?!\d))/g,',')}
 function fmtP(n){return(n==null||isNaN(parseFloat(n)))?'—':parseFloat(n).toFixed(1)+'%'}
 function getA(){return getComputedStyle(document.documentElement).getPropertyValue('--a').trim()||'#C1FF47'}
+function el(id){return document.getElementById(id)}
+
+// ─── MISSING ALIASES (manual.html uses different filter IDs than index.html) ─
+// Map getMkt -> reads ov-mkt selector
+function getMkt(){return el('ov-mkt')?.value||'all'}
+// Map getOvMkt -> same
+function getOvMkt(){return el('ov-mkt')?.value||'all'}
+// Map getOvPeriod -> reads ov-period selector
+function getOvPeriod(){
+  const p=el('ov-period')?.value||'all';
+  if(p==='custom'){const ds=el('dr-s')?.value,de=el('dr-e')?.value;if(ds&&de)return'custom:'+ds+':'+de;}
+  return p;
+}
+// ask() -> askSection() alias
+function ask(section){askSection(section);}
+// renderOv() -> renderOverview() alias
+function renderOv(){renderOverview();}
 
 // ─── BOOT ─────────────────────────────────────────────────────────
 
