@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<meta name="theme-color" content="#07090E">
+<title>OQtima Manual — Marketing Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#080B12;--surf:#0E121C;--card:#111520;--card2:#161C28;
+  --b:rgba(255,255,255,0.07);--bl:rgba(255,255,255,0.13);
+  --a:#C1FF47;--ad:rgba(193,255,71,0.09);--am:rgba(193,255,71,0.35);
+  --tp:#EEF1F8;--ts:#5E7191;--tm:#2D3A52;
+  --red:#F05252;--amber:#F59E0B;--green:#10B981;--blue:#3B82F6;--purple:#8B5CF6;
+  --fd:'Plus Jakarta Sans',sans-serif;--fb:'Plus Jakarta Sans',sans-serif;
+}
+body{font-family:var(--fb);background:var(--bg);color:var(--tp);min-height:100vh;font-size:14px;-webkit-font-smoothing:antialiased}
+
+
+/* ── LOCK SCREEN ── */
+.lock{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px}
+.lock-box{background:var(--surf);border:1px solid var(--bl);border-radius:20px;padding:40px 36px;width:100%;max-width:360px;text-align:center}
+.lock-logo{font-family:var(--fd);font-size:22px;font-weight:800;margin-bottom:4px}
+.lock-logo em{color:var(--a);font-style:normal}
+.lock-tagline{font-size:12px;color:var(--ts);margin-bottom:28px}
+.lock-lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--ts);text-align:left;margin-bottom:6px}
+.lock-inp{width:100%;background:var(--card);border:1px solid var(--bl);border-radius:10px;padding:13px 16px;font-family:var(--fb);font-size:15px;color:var(--tp);outline:none;letter-spacing:.15em;margin-bottom:12px;transition:border-color .15s;-webkit-appearance:none}
+.lock-inp:focus{border-color:var(--am)}
+.lock-btn{width:100%;background:var(--a);color:#07090E;border:none;border-radius:10px;padding:13px;font-family:var(--fd);font-size:14px;font-weight:700;cursor:pointer;-webkit-appearance:none;transition:opacity .15s}
+.lock-btn:hover{opacity:.9}
+.lock-btn:active{opacity:.8}
+.lock-err{font-size:12px;color:var(--red);margin-top:8px;min-height:16px;text-align:center}
+.lock-hint{font-size:11px;color:var(--tm);margin-top:14px}
+
+/* ── LOADING ── */
+.loverlay{position:fixed;inset:0;background:var(--bg);z-index:900;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .4s}
+.loverlay.out{opacity:0;pointer-events:none}
+.lbar{width:180px;height:3px;background:var(--b);border-radius:2px;overflow:hidden}
+.lfill{height:100%;background:var(--a);border-radius:2px;animation:lb 1.8s ease-in-out infinite}
+@keyframes lb{0%{width:0;margin-left:0}50%{width:55%;margin-left:22%}100%{width:0;margin-left:100%}}
+
+/* ── NAV ── */
+.nav{height:50px;background:var(--surf);border-bottom:1px solid var(--b);display:flex;align-items:center;padding:0 20px;gap:10px;position:sticky;top:0;z-index:200;backdrop-filter:blur(12px)}
+.logo{font-family:var(--fd);font-size:14px;font-weight:800;white-space:nowrap;cursor:pointer;flex-shrink:0;letter-spacing:.5px}
+.logo em{color:var(--a);font-style:normal}
+.nav-tabs{display:flex;gap:2px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex:1}
+.nav-tabs::-webkit-scrollbar{display:none}
+.nt{display:flex;align-items:center;gap:5px;padding:6px 10px;border-radius:7px;cursor:pointer;color:var(--ts);font-size:12px;font-weight:500;white-space:nowrap;border:1px solid transparent;transition:all .15s;flex-shrink:0}
+.nt:hover{background:rgba(255,255,255,0.04);color:var(--tp)}
+.nt.on{background:var(--ad);color:var(--a);border-color:var(--am)}
+.nt svg{width:12px;height:12px;flex-shrink:0}
+.nav-r{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.nbtn{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:7px;font-size:11px;font-weight:500;font-family:var(--fb);cursor:pointer;border:1px solid var(--bl);background:var(--card);color:var(--ts);transition:all .15s;white-space:nowrap;-webkit-appearance:none}
+.nbtn:hover{background:var(--card2);color:var(--tp)}
+.nbtn svg{width:11px;height:11px}
+
+/* ── PAGE ── */
+.page{max-width:1440px;margin:0 auto;padding:16px 20px 40px}
+.view{display:none}.view.on{display:block}
+
+/* ── GLOBAL FILTER BAR ── */
+.gfbar{background:var(--surf);border:1px solid var(--b);border-radius:8px;padding:9px 14px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.gfl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--tm);white-space:nowrap}
+.sel{background:var(--card);border:1px solid var(--bl);border-radius:6px;padding:5px 22px 5px 9px;font-family:var(--fb);font-size:12px;font-weight:500;color:var(--tp);cursor:pointer;outline:none;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='5'%3E%3Cpath d='M0 0l4.5 5L9 0z' fill='%2364748B'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 7px center;transition:all .15s}
+.sel:focus{border-color:var(--a);outline:none}
+.sel:hover{border-color:var(--bl)}
+.sel option{background:#111520;color:#EDF0F5}
+.gfsep{width:1px;height:18px;background:var(--b);flex-shrink:0}
+.chip{padding:4px 11px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--b);color:var(--ts);transition:all .15s;white-space:nowrap}
+.chip:hover{border-color:var(--bl);color:var(--tp)}
+.chip.on{border-color:var(--a);background:var(--a);color:#07090E}
+
+/* ── KPI ROW ── */
+.krow{display:grid;gap:10px;margin-bottom:12px}
+.krow-5{grid-template-columns:repeat(5,minmax(0,1fr))}
+.krow-4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.kcard{background:var(--card);border:1px solid var(--b);border-radius:10px;padding:16px 18px;position:relative;overflow:hidden;transition:all .18s}
+.kcard:hover{border-color:var(--bl);background:var(--card2)}
+.kcard::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--kc,transparent);border-radius:0 0 2px 2px}
+.kl{font-size:10px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--ts);margin-bottom:10px}
+.kv{font-family:var(--fd);font-size:26px;font-weight:800;letter-spacing:-.6px;line-height:1;margin-bottom:4px}
+.ksub{font-size:11px;color:var(--tm);line-height:1.4}
+.kdelta{font-size:10px;font-weight:600;padding:1px 6px;border-radius:4px}
+.kd-up{background:rgba(16,185,129,.12);color:#34D399}
+.kd-dn{background:rgba(240,82,82,.12);color:#F87171}
+
+/* ── SECTION HEADER ── */
+.sh{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.sh-left{display:flex;flex-direction:column;gap:2px}
+.sh-title{font-family:var(--fd);font-size:15px;font-weight:800;letter-spacing:-.3px;color:var(--tp)}
+.sh-sub{font-size:11px;color:var(--ts)}
+.sh-right{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+
+/* ── CARDS ── */
+.cg2{display:grid;grid-template-columns:3fr 2fr;gap:10px;margin-bottom:10px}
+.cg22{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.cg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px}
+.cc{background:var(--card);border:1px solid var(--b);border-radius:10px;padding:18px 20px;transition:all .18s}
+.cc:hover{border-color:var(--bl)}
+.cc-h{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;gap:8px}
+.cc-t{font-family:var(--fd);font-size:13px;font-weight:700;letter-spacing:-.1px;color:var(--tp)}
+.cc-s{font-size:11px;color:var(--ts);margin-top:2px;line-height:1.4}
+.cc-bdg{font-size:10px;padding:3px 9px;border-radius:20px;background:var(--ad);color:var(--a);border:1px solid var(--am);white-space:nowrap;flex-shrink:0;font-weight:600}
+
+/* ── FUNNEL VISUAL ── */
+.funnel-container{display:flex;flex-direction:column;align-items:center;gap:0;padding:8px 0 4px}
+.funnel-stage{position:relative;display:flex;flex-direction:column;align-items:center;width:100%}
+.funnel-bar{display:flex;align-items:center;justify-content:space-between;border-radius:6px;padding:11px 16px;cursor:default;transition:filter .15s;position:relative;z-index:1}
+.funnel-bar:hover{filter:brightness(1.08)}
+.funnel-left{display:flex;align-items:center;gap:10px;min-width:0}
+.funnel-icon{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.funnel-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;opacity:.8;display:block}
+.funnel-value{font-family:var(--fd);font-size:18px;font-weight:800;letter-spacing:-.4px;line-height:1.1}
+.funnel-right{text-align:right;flex-shrink:0}
+.funnel-rate{font-family:var(--fd);font-size:13px;font-weight:700}
+.funnel-rlabel{font-size:10px;opacity:.7;margin-top:1px}
+.funnel-connector{display:flex;align-items:center;gap:6px;padding:2px 20px;width:100%;z-index:0}
+.funnel-arrow-line{flex:1;height:1px;background:rgba(255,255,255,.08)}
+.funnel-drop-text{font-size:10px;color:var(--ts);white-space:nowrap}
+
+/* ── COMP BARS ── */
+.cb{display:flex;flex-direction:column;gap:9px}
+.cb-row{display:flex;align-items:center;gap:8px}
+.cb-lbl{font-size:11px;color:var(--tp);width:105px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cb-track{flex:1;height:5px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden}
+.cb-fill{height:100%;border-radius:3px;transition:width .7s ease}
+.cb-val{font-size:11px;color:var(--ts);width:46px;text-align:right;flex-shrink:0}
+.cb-pct{font-size:10px;color:var(--tm);width:34px;text-align:right;flex-shrink:0}
+
+/* ── MARKET TABS ── */
+.mktabs{display:flex;gap:4px;flex-wrap:wrap}
+.mt{padding:5px 11px;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;border:1px solid var(--b);color:var(--ts);transition:all .15s;white-space:nowrap}
+.mt:hover{border-color:var(--bl);color:var(--tp)}
+.mt.on{border-color:var(--am);color:var(--a);background:var(--ad)}
+.mt.jp.on{background:rgba(239,68,68,.07);border-color:rgba(239,68,68,.35);color:#F87171}
+.mt.au.on{background:rgba(59,130,246,.07);border-color:rgba(59,130,246,.35);color:#60A5FA}
+.mt.uk.on{background:rgba(139,92,246,.07);border-color:rgba(139,92,246,.35);color:#A78BFA}
+
+/* ── AI INSIGHT BOX ── */
+.ai-box{background:rgba(193,255,71,0.03);border:1px solid rgba(193,255,71,0.18);border-radius:8px;padding:12px 14px;margin-top:14px}
+.ai-box-hdr{display:flex;align-items:center;gap:6px;margin-bottom:7px}
+.ai-dot{width:5px;height:5px;border-radius:50%;background:var(--a);flex-shrink:0;animation:pd 2s ease-in-out infinite}
+@keyframes pd{0%,100%{opacity:1}50%{opacity:.3}}
+.ai-box-title{font-size:11px;font-weight:600;color:var(--a);text-transform:uppercase;letter-spacing:.06em}
+.ai-box-text{font-size:12px;color:var(--ts);line-height:1.6}
+.ai-box-text strong{color:var(--tp);font-weight:500}
+.ai-ask-row{display:flex;gap:6px;margin-top:8px}
+.ai-inp{flex:1;background:rgba(0,0,0,.3);border:1px solid var(--am);border-radius:7px;padding:7px 10px;font-family:var(--fb);font-size:12px;color:var(--tp);outline:none;-webkit-appearance:none}
+.ai-inp::placeholder{color:var(--tm)}
+.ai-inp:focus{border-color:var(--a)}
+.ai-sbtn{background:var(--a);color:#07090E;border:none;border-radius:7px;padding:7px 12px;font-family:var(--fd);font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;white-space:nowrap}
+.ai-sbtn:active{opacity:.85}
+.ai-resp{display:none;margin-top:8px;font-size:12px;color:var(--ts);line-height:1.6;padding-top:8px;border-top:1px solid var(--am)}
+.ai-resp.on{display:block}
+.ai-resp strong{color:var(--tp);font-weight:500}
+
+/* ── UPLOAD ── */
+.uz{border:1px dashed var(--bl);border-radius:12px;padding:22px;text-align:center;cursor:pointer;transition:all .2s;background:var(--card);margin-bottom:8px}
+.uz:hover,.uz.drag{border-color:var(--am);background:rgba(193,255,71,.03)}
+.uz input{display:none}
+.uz-ico{font-size:18px;margin-bottom:5px;opacity:.4}
+.uz-t{font-size:12px;color:var(--ts)}
+.uz-s{font-size:11px;color:var(--tm);margin-top:3px}
+.us{display:none;padding:8px 11px;border-radius:7px;background:var(--surf);border:1px solid var(--b);font-size:11px;color:var(--ts);margin-top:6px}
+
+/* ── MISC ── */
+.sp{display:inline-block;width:10px;height:10px;border:1.5px solid var(--bl);border-top-color:var(--a);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:4px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ldot{width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block;margin-right:4px;animation:pd 2s ease-in-out infinite}
+.hr{border:none;border-top:1px solid var(--b);margin:14px 0}
+.notice-warn{padding:9px 12px;border-radius:8px;font-size:11px;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);color:#FCD34D;margin-bottom:12px;display:none}
+.tbl{width:100%;border-collapse:collapse;font-size:11px}
+.tbl th{text-align:left;font-size:10px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:var(--tm);padding:0 0 8px;border-bottom:1px solid var(--b)}
+.tbl td{padding:8px 0;border-bottom:1px solid var(--b);color:var(--ts)}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{color:var(--tp)}
+.sg{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.si label{display:block;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--ts);margin-bottom:4px}
+.si-inp,.si-sel{width:100%;background:var(--surf);border:1px solid var(--b);border-radius:7px;padding:8px 10px;font-family:var(--fb);font-size:12px;color:var(--tp);outline:none;-webkit-appearance:none}
+.si-inp:focus,.si-sel:focus{border-color:var(--am)}
+.si-sel{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='5'%3E%3Cpath d='M0 0l4.5 5L9 0z' fill='%2364748B'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;padding-right:26px}
+.si-sel option{background:#111520;color:#EDF0F5}
+.cr{display:flex;align-items:center;gap:6px}
+input[type=color]{width:32px;height:32px;border-radius:6px;border:1px solid var(--b);background:transparent;cursor:pointer;padding:2px;flex-shrink:0;-webkit-appearance:none}
+
+/* ── MOBILE ── */
+.mob-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surf);border-top:1px solid var(--b);z-index:200;padding:5px 0;padding-bottom:calc(5px + env(safe-area-inset-bottom))}
+.mob-tabs{display:flex;justify-content:space-around}
+.mt-tab{display:flex;flex-direction:column;align-items:center;gap:2px;padding:5px 8px;cursor:pointer;color:var(--tm);font-size:9px;font-weight:500;min-width:48px;transition:color .15s}
+.mt-tab svg{width:18px;height:18px}
+.mt-tab.on{color:var(--a)}
+
+@media(max-width:900px){
+  .nav-tabs{display:none}.mob-nav{display:block}.page{padding:12px 12px 78px}
+  .krow-5{grid-template-columns:repeat(2,1fr)}.krow-5 .kcard:nth-child(5){display:none}
+  .krow-4{grid-template-columns:repeat(2,1fr)}
+  .cg2,.cg22,.cg3{grid-template-columns:1fr}
+  .sh{flex-direction:column;align-items:flex-start}
+  .sg{grid-template-columns:1fr 1fr}
+  .gfbar{gap:8px}
+}
+@media(max-width:480px){.krow-5,.krow-4{grid-template-columns:1fr 1fr}.sg{grid-template-columns:1fr}.kv{font-size:19px}}
+::-webkit-scrollbar{width:3px;height:3px}::-webkit-scrollbar-thumb{background:var(--bl);border-radius:2px}
+
+/* ── FUNNEL RINGS (reference style) ── */
+.fring-wrap{display:flex;align-items:center;justify-content:space-around;flex-wrap:wrap;gap:4px;width:100%}
+.fring-item{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;min-width:100px;max-width:160px}
+.fring-canvas-wrap{position:relative;width:100px;height:100px;flex-shrink:0}
+.fring-inner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:1px}
+.fring-val{font-size:15px;font-weight:800;letter-spacing:-.4px;line-height:1}
+.fring-lbl{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ts);margin-top:2px}
+.fring-meta{font-size:10px;color:var(--ts);text-align:center;line-height:1.3}
+.fring-meta strong{color:var(--tp);font-weight:700}
+.fring-arrow{color:var(--tm);font-size:20px;flex-shrink:0;margin-bottom:30px;align-self:center}
+/* ── MAP ── */
+.map-tooltip{position:absolute;background:var(--card2);border:1px solid var(--bl);border-radius:6px;padding:5px 10px;font-size:11px;color:var(--tp);pointer-events:none;white-space:nowrap;display:none;z-index:20}
+
+
+/* ── WORLD MAP ── */
+.map-tooltip{position:absolute;background:var(--card);border:1px solid var(--bl);border-radius:6px;padding:5px 10px;font-size:11px;color:var(--tp);pointer-events:none;white-space:nowrap;display:none;z-index:20}
+.map-country{fill:#1A2236;stroke:var(--bg);stroke-width:0.5;cursor:default;transition:fill .2s}
+.map-country:hover{opacity:.85}
+.attr-grid{grid-template-columns:1.8fr 1fr 1fr}
+@media(max-width:900px){.attr-grid{grid-template-columns:1fr!important}}
+
+</style>
+</head>
+<body>
+
+<!-- LOCK SCREEN -->
+<div class="lock" id="lock">
+  <div class="lock-box">
+    <div class="lock-logo">OQ<em>tima</em></div>
+    <div class="lock-tagline">Marketing Intelligence · Internal tool</div>
+    <div class="lock-lbl">Access password</div>
+    <input class="lock-inp" type="password" id="lock-pw" placeholder="••••••••••••" maxlength="40" autocomplete="current-password"/>
+    <button class="lock-btn" onclick="unlock()">Access dashboard</button>
+    <div class="lock-err" id="lock-err"></div>
+    <div class="lock-hint">Contact your admin if you need access</div>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div class="loverlay" id="loverlay">
+  <div style="font-family:var(--fd);font-size:17px;font-weight:800">OQ<em style="color:var(--a);font-style:normal">tima</em></div>
+  <div class="lbar"><div class="lfill"></div></div>
+  <div style="font-size:12px;color:var(--ts);text-align:center;max-width:240px;line-height:1.6" id="lmsg">Connecting to live data...</div>
+</div>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="logo" id="logo" style="color:var(--amber)" onclick="sv('overview')">OQ<em>tima</em></div>
+  <div class="nav-tabs">
+    <div class="nt on" onclick="sv('overview')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/></svg>Overview</div>
+    <div class="nt" onclick="sv('kyc')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="5" r="3"/><path d="M1 14c0-3.3 2.2-5 5-5"/><path d="M11 10l1.5 1.5L15 9"/></svg>KYC</div>
+    <div class="nt" onclick="sv('ftd')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8h10M8 3l5 5-5 5"/></svg>FTD</div>
+    <div class="nt" onclick="sv('gads')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 11l4-4 3 3 5-6"/></svg>Google Ads</div>
+    <div class="nt" onclick="sv('ga4')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="8" width="3" height="6" rx="1"/><rect x="6" y="5" width="3" height="9" rx="1"/><rect x="11" y="2" width="3" height="12" rx="1"/></svg>Analytics</div>
+    <div class="nt" onclick="sv('upload')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2v9M5 4l3-3 3 3"/><path d="M3 13h10"/></svg>Upload</div>
+    <div class="nt" onclick="sv('settings')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2"/></svg>Settings</div>
+  </div>
+  <div class="nav-r">
+    <span id="lv" style="font-size:10px;color:var(--tm)"><span class="sp"></span></span>
+    <a href="index.html" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:600;border:1px solid var(--b);background:var(--card);color:var(--ts);text-decoration:none;white-space:nowrap">⚡ Live</a>
+    <button class="nbtn" onclick="clearAllData()" style="border-color:rgba(240,82,82,.3);color:var(--red)">🗑 Clear all</button>
+    <button class="nbtn" onclick="refreshAll()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13.5 8A5.5 5.5 0 1 1 8 2.5"/><path d="M13.5 2.5v3h-3"/></svg>Refresh</button>
+  </div>
+</nav>
+
+<!-- MOBILE NAV -->
+<nav class="mob-nav">
+  <div class="mob-tabs">
+    <div class="mt-tab on" onclick="sv('overview')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/></svg>Overview</div>
+    <div class="mt-tab" onclick="sv('kyc')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="5" r="3"/><path d="M1 14c0-3.3 2.2-5 5-5"/></svg>KYC</div>
+    <div class="mt-tab" onclick="sv('ftd')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8h10M8 3l5 5-5 5"/></svg>FTD</div>
+    <div class="mt-tab" onclick="sv('gads')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 11l4-4 3 3 5-6"/></svg>Ads</div>
+    <div class="mt-tab" onclick="sv('ga4')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="8" width="3" height="6" rx="1"/><rect x="6" y="5" width="3" height="9" rx="1"/><rect x="11" y="2" width="3" height="12" rx="1"/></svg>GA4</div>
+  </div>
+</nav>
+
+<div style="background:rgba(245,158,11,0.07);border-bottom:1px solid rgba(245,158,11,0.15);padding:5px 18px;font-size:10px;font-weight:700;color:#F59E0B;display:flex;align-items:center;gap:8px">
+  <span>📁</span>
+  MANUAL MODE — upload your own data files · no live connection
+  <span style="margin-left:auto;font-weight:500;color:var(--ts)">Live version: <a href="index.html" style="color:var(--a);text-decoration:none">index.html ↗</a></span>
+</div>
+<div class="page">
+
+<!-- ══════════════════════════════════════════════════════ OVERVIEW ══ -->
+<div class="view on" id="view-overview">
+
+  <!-- GLOBAL FILTERS -->
+  <div class="gfbar">
+    <span class="gfl">Period</span>
+    <select class="sel" id="ov-period" onchange="onPeriodChange()">
+      <option value="all">All time</option>
+      <option value="90" selected>Last 90 days</option>
+      <option value="30">Last 30 days</option>
+      <option value="7">Last 7 days</option>
+      <option value="thismonth">This month</option>
+      <option value="lastmonth">Last month</option>
+      <option value="thisyear">This year</option>
+      <option value="lastyear">Last year</option>
+      <option value="custom">📅 Custom range</option>
+    </select>
+    <div id="drange-wrap" style="display:none;align-items:center;gap:6px">
+      <input class="drange-inp" type="date" id="dr-start" onchange="onPeriodChange()"/>
+      <span style="font-size:11px;color:var(--ts)">→</span>
+      <input class="drange-inp" type="date" id="dr-end" onchange="onPeriodChange()"/>
+    </div>
+    <div class="gfsep"></div>
+    <span class="gfl">Market</span>
+    <select class="sel" id="ov-mkt" onchange="renderAll()">
+      <option value="all">All markets</option>
+      <option value="JAPAN">🇯🇵 Japan</option>
+      <option value="AUSTRALIA">🇦🇺 Australia</option>
+      <option value="UNITED KINGDOM">🇬🇧 UK</option>
+      <option value="BRAZIL">🇧🇷 Brazil</option>
+      <option value="CANADA">🇨🇦 Canada</option>
+    </select>
+    <div class="gfsep"></div>
+    <span class="gfl">Channel</span>
+    <div style="display:flex;gap:5px;flex-wrap:wrap">
+      <span class="chip on" id="ch-all" onclick="setChFilter('all')">All</span>
+      <span class="chip" id="ch-ib" onclick="setChFilter('IB')">IB partners</span>
+      <span class="chip" id="ch-mkt" onclick="setChFilter('MKT')">MKT campaigns</span>
+    </div>
+  </div>
+
+  <!-- KPI STRIP -->
+  <div class="krow krow-5">
+    <div class="kcard" style="--kc:var(--blue)"><div class="kl">Sessions</div><div class="kv" id="ok-sess">—</div><div class="ksub">GA4 · website traffic</div></div>
+    <div class="kcard" style="--kc:var(--purple)"><div class="kl">Registrations</div><div class="kv" id="ok-reg">—</div><div class="ksub">Google Ads conversions</div></div>
+    <div class="kcard" style="--kc:var(--a)"><div class="kl">KYC approved</div><div class="kv" id="ok-kyc">—</div><div class="ksub">HubSpot verified</div></div>
+    <div class="kcard" style="--kc:#10B981"><div class="kl">FTD clients</div><div class="kv" id="ok-ftd">—</div><div class="ksub" id="ok-ftd-s">first deposits</div></div>
+    <div class="kcard" style="--kc:var(--amber)"><div class="kl">Ad spend</div><div class="kv" id="ok-spend">—</div><div class="ksub" id="ok-cpa-s">—</div></div>
+  </div>
+
+  <!-- FUNNEL RINGS ROW (inspired by reference design) -->
+  <div class="cc" style="margin-bottom:12px">
+    <div class="cc-h">
+      <div><div class="cc-t">OQtima Client Journey</div><div class="cc-s">Full acquisition funnel — impression to deposit</div></div>
+      <span class="cc-bdg" id="fn-badge">All time</span>
+    </div>
+    <div id="fn-rings-row" style="display:flex;align-items:center;justify-content:space-around;flex-wrap:wrap;gap:8px;padding:8px 0"></div>
+    <div class="ai-box" style="margin-top:12px">
+      <div class="ai-box-hdr"><span class="ai-dot"></span><span class="ai-box-title">AI Funnel Insight</span></div>
+      <div class="ai-box-text" id="ai-fn-text">Loading insight...</div>
+      <div class="ai-ask-row">
+        <input class="ai-inp" id="ai-fn-q" type="text" placeholder="Ask about your funnel..."/>
+        <button class="ai-sbtn" onclick="askSection('fn')">Ask</button>
+      </div>
+      <div class="ai-resp" id="ai-fn-resp"></div>
+    </div>
+  </div>
+
+  <!-- DIGITAL MARKETING PERFORMANCE -->
+  <div class="sh" style="margin-top:4px">
+    <div class="sh-left"><div class="sh-title">Digital Marketing Performance</div><div class="sh-sub">Google Ads · GA4 sessions · paid channels</div></div>
+  </div>
+  <div class="cg3">
+    <div class="cc">
+      <div class="cc-h"><div><div class="cc-t">Sessions vs Ad Spend</div><div class="cc-s">Monthly trend</div></div><span class="cc-bdg" id="ov-badge">90 days</span></div>
+      <canvas id="c-ov-trend" height="160"></canvas>
+    </div>
+    <div class="cc">
+      <div class="cc-h"><div><div class="cc-t">Google Ads — daily</div><div class="cc-s">Clicks & cost</div></div><span class="cc-bdg" id="gads-bdg">90 days</span></div>
+      <canvas id="c-ov-gads" height="160"></canvas>
+    </div>
+    <div class="cc">
+      <div class="cc-h"><div><div class="cc-t">Traffic by medium</div><div class="cc-s">GA4 channel breakdown</div></div></div>
+      <div class="cb" id="cb-ov-med" style="margin-top:4px"></div>
+    </div>
+  </div>
+
+  <!-- ROI CALCULATOR -->
+  <div class="sh" style="margin-top:4px">
+    <div class="sh-left"><div class="sh-title">Marketing ROI Analysis</div><div class="sh-sub">Ad spend vs KYC acquisitions vs FTD deposits — separated by channel</div></div>
+  </div>
+  <div class="cg3" style="margin-bottom:10px">
+    <div class="kcard" style="--kc:#3B82F6;padding:16px">
+      <div class="kl">Cost per KYC <span style="font-size:9px;color:var(--tm)">(Digital Marketing only)</span></div>
+      <div class="kv" id="roi-cpkyc">—</div>
+      <div class="ksub">Ad spend ÷ KYC clients<br><span id="roi-cpkyc-sub" style="color:var(--ts)">—</span></div>
+    </div>
+    <div class="kcard" style="--kc:#10B981;padding:16px">
+      <div class="kl">Cost per FTD <span style="font-size:9px;color:var(--tm)">(tracked channels)</span></div>
+      <div class="kv" id="roi-cpftd">$29</div>
+      <div class="ksub">Ad spend ÷ IB+MKT FTDs<br><span style="color:var(--ts)">175 tracked FTDs</span></div>
+    </div>
+    <div class="kcard" style="--kc:#F59E0B;padding:16px">
+      <div class="kl">Unattributed FTDs</div>
+      <div class="kv">61%</div>
+      <div class="ksub">497 Direct/Unknown<br><span style="color:var(--ts)">Fix UTMs = unlock real ROI</span></div>
+    </div>
+  </div>
+
+  <!-- MAP + CHANNEL ATTRIBUTION -->
+  <div class="sh">
+    <div class="sh-left"><div class="sh-title">Geographic & Channel attribution</div><div class="sh-sub">FTD distribution by country · IB partners · MKT campaigns</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1.8fr 1fr 1fr;gap:10px;margin-bottom:10px" class="attr-grid">
+    <!-- WORLD MAP -->
+    <div class="cc">
+      <div class="cc-h"><div><div class="cc-t">FTD clients by country</div><div class="cc-s">Geographic distribution</div></div></div>
+      <div id="world-map-wrap" style="position:relative;border-radius:8px;overflow:hidden;background:var(--card2)">
+        <svg id="world-svg" viewBox="0 0 1000 500" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block"></svg>
+        <div id="map-tooltip" class="map-tooltip"></div>
+      </div>
+      <div id="map-legend" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
+    </div>
+    <!-- IB PARTNERS -->
+    <div class="cc">
+      <div class="cc-h"><div><div class="cc-t">IB partners</div><div class="cc-s" id="ib-sub-ov">FTD performance</div></div></div>
+      <div class="cb" id="cb-ov-ib"></div>
+      <div class="ai-box" style="margin-top:10px">
+        <div class="ai-box-hdr"><span class="ai-dot"></span><span class="ai-box-title">IB Analysis</span></div>
+        <div class="ai-box-text" id="ai-ib-text">Loading...</div>
+        <div class="ai-ask-row"><input class="ai-inp" id="ai-ib-q" placeholder="Ask about IB..."/><button class="ai-sbtn" onclick="askSection('ib')">Ask</button></div>
+        <div class="ai-resp" id="ai-ib-resp"></div>
+      </div>
+    </div>
+    <!-- MKT CAMPAIGNS -->
+    <div class="cc">
+      <div class="cc-h"><div><div class="cc-t">MKT campaigns</div><div class="cc-s">FTD performance</div></div></div>
+      <div class="cb" id="cb-ov-mkt"></div>
+      <div class="ai-box" style="margin-top:10px">
+        <div class="ai-box-hdr"><span class="ai-dot"></span><span class="ai-box-title">Campaign Analysis</span></div>
+        <div class="ai-box-text" id="ai-mkt-text">Loading...</div>
+        <div class="ai-ask-row"><input class="ai-inp" id="ai-mkt-q" placeholder="Ask about campaigns..."/><button class="ai-sbtn" onclick="askSection('mkt')">Ask</button></div>
+        <div class="ai-resp" id="ai-mkt-resp"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MONTHLY TREND: Spend vs KYC vs FTD -->
+  <div class="g22">
+    <div class="cc">
+      <div class="cc-h"><div><div class="cc-t">Monthly FTDs</div><div class="cc-s">Deposit trend</div></div></div>
+      <canvas id="c-ov-ftdmo" height="130"></canvas>
+    </div>
+    <div class="cc">
+      <div class="cc-h"><div><div class="cc-t">KYC vs FTD by market</div><div class="cc-s">All-time · conversion rate on hover</div></div></div>
+      <canvas id="c-ov-mkt" height="130"></canvas>
+    </div>
+  </div>
+
+</div><!-- /overview -->
+
+<!-- ══════════════════════════════════════════════════════ KYC ══ -->
+<div class="view" id="view-kyc">
+  <div class="sh">
+    <div class="sh-left"><div class="sh-title">KYC Clients</div><div class="sh-sub">5,242 identity-verified contacts — HubSpot CRM</div></div>
+    <div class="sh-right">
+      <select class="sel" id="kyc-ctry" onchange="renderKyc()"><option value="">All countries</option><option value="JAPAN">🇯🇵 Japan</option><option value="AUSTRALIA">🇦🇺 Australia</option><option value="UNITED KINGDOM">🇬🇧 UK</option><option value="BRAZIL">🇧🇷 Brazil</option><option value="CANADA">🇨🇦 Canada</option></select>
+      <select class="sel" id="kyc-src" onchange="renderKyc()"><option value="">All sources</option><option value="MKT">MKT only</option><option value="IB">IB only</option><option value="Direct">Direct/unknown</option></select>
+    </div>
+  </div>
+  <div class="krow krow-4">
+    <div class="kcard" style="--kc:var(--a)"><div class="kl">Total KYC</div><div class="kv" id="kk-total">5,242</div><div class="ksub" id="kk-sub">all countries</div></div>
+    <div class="kcard" style="--kc:var(--blue)"><div class="kl">Top market</div><div class="kv" id="kk-top" style="font-size:16px">Japan</div><div class="ksub">2,036 clients (38.8%)</div></div>
+    <div class="kcard" style="--kc:var(--green)"><div class="kl">IB sourced</div><div class="kv" id="kk-ib">—</div><div class="ksub">from IB partners</div></div>
+    <div class="kcard" style="--kc:var(--purple)"><div class="kl">MKT sourced</div><div class="kv" id="kk-mkt">—</div><div class="ksub">from paid campaigns</div></div>
+  </div>
+  <div class="cg2">
+    <div class="cc"><div class="cc-h"><div><div class="cc-t">Monthly KYC registrations</div><div class="cc-s">New verified clients per month</div></div></div><canvas id="c-kyc-mo" height="200"></canvas></div>
+    <div class="cc"><div class="cc-h"><div><div class="cc-t">Geographic distribution</div></div></div><canvas id="c-kyc-geo" height="200"></canvas></div>
+  </div>
+  <div class="cg22">
+    <div class="cc"><div class="cc-h"><div><div class="cc-t">KYC by country</div></div></div><div class="cb" id="cb-kyc-c"></div></div>
+    <div class="cc"><div class="cc-h"><div><div class="cc-t">KYC by source</div></div></div><div class="cb" id="cb-kyc-s"></div></div>
+  </div>
+  <div class="cc">
+    <div class="ai-box" style="margin:0">
+      <div class="ai-box-hdr"><span class="ai-dot"></span><span class="ai-box-title">KYC Intelligence</span></div>
+      <div class="ai-box-text" id="ai-kyc-text">Loading KYC analysis...</div>
+      <div class="ai-ask-row"><input class="ai-inp" id="ai-kyc-q" type="text" placeholder="Ask about KYC data..."/><button class="ai-sbtn" onclick="askSection('kyc')">Ask</button></div>
+      <div class="ai-resp" id="ai-kyc-resp"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ FTD ══ -->
+<div class="view" id="view-ftd">
+  <div class="sh">
+    <div class="sh-left"><div class="sh-title">FTD Clients</div><div class="sh-sub">808 first-time depositors — verified from HubSpot</div></div>
+    <div class="sh-right">
+      <div style="display:flex;gap:5px;flex-wrap:wrap" id="ftd-src-chips">
+        <span class="chip on" data-src="all" onclick="setFtdSrc('all')">All (808)</span>
+        <span class="chip" data-src="IB" onclick="setFtdSrc('IB')">IB (141)</span>
+        <span class="chip" data-src="MKT" onclick="setFtdSrc('MKT')">MKT (34)</span>
+      </div>
+      <select class="sel" id="ftd-ctry" onchange="renderFtd()"><option value="">All countries</option><option value="JAPAN">🇯🇵 Japan (187)</option><option value="BRAZIL">🇧🇷 Brazil (157)</option><option value="AUSTRALIA">🇦🇺 Australia (142)</option><option value="UNITED KINGDOM">🇬🇧 UK (50)</option><option value="CANADA">🇨🇦 Canada (43)</option></select>
+    </div>
+  </div>
+  <div class="krow krow-4">
+    <div class="kcard" style="--kc:#10B981"><div class="kl">FTD clients</div><div class="kv" id="fk-total">808</div><div class="ksub" id="fk-sub">all channels · all countries</div></div>
+    <div class="kcard" style="--kc:var(--a)"><div class="kl">IB partners</div><div class="kv">141</div><div class="ksub">17.5% of total FTDs</div></div>
+    <div class="kcard" style="--kc:var(--blue)"><div class="kl">MKT campaigns</div><div class="kv">34</div><div class="ksub">4.2% of total FTDs</div></div>
+    <div class="kcard" style="--kc:var(--purple)"><div class="kl">Cost / tracked FTD</div><div class="kv" id="fk-cpftd">$29</div><div class="ksub">$5,100 ÷ 175 tracked</div></div>
+  </div>
+  <div class="cg2">
+    <div class="cc"><div class="cc-h"><div><div class="cc-t">Monthly FTDs</div><div class="cc-s">Deposit trend over time</div></div></div><canvas id="c-ftd-mo" height="200"></canvas></div>
+    <div class="cc"><div class="cc-h"><div><div class="cc-t">FTD by country</div></div></div><canvas id="c-ftd-geo" height="200"></canvas></div>
+  </div>
+  <div class="cg22">
+    <div class="cc"><div class="cc-h"><div><div class="cc-t">IB partners performance</div><div class="cc-s">FTDs per IB partner</div></div></div><div class="cb" id="cb-ftd-ib"></div></div>
+    <div class="cc"><div class="cc-h"><div><div class="cc-t">MKT campaigns performance</div><div class="cc-s">FTDs per campaign</div></div></div><div class="cb" id="cb-ftd-mkt"></div></div>
+  </div>
+  <div class="cc">
+    <div class="ai-box" style="margin:0">
+      <div class="ai-box-hdr"><span class="ai-dot"></span><span class="ai-box-title">FTD Intelligence</span></div>
+      <div class="ai-box-text" id="ai-ftd-text">Loading FTD analysis...</div>
+      <div class="ai-ask-row"><input class="ai-inp" id="ai-ftd-q" type="text" placeholder="Ask about deposits, channels, markets..."/><button class="ai-sbtn" onclick="askSection('ftd')">Ask</button></div>
+      <div class="ai-resp" id="ai-ftd-resp"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ GOOGLE ADS ══ -->
+<div class="view" id="view-gads">
+  <div class="sh">
+    <div class="sh-left"><div class="sh-title">Google Ads</div><div class="sh-sub">Japan · Australia · United Kingdom</div></div>
+    <div class="sh-right">
+      <div class="mktabs">
+        <div class="mt on" id="gmt-all" onclick="setMkt('all')">All</div>
+        <div class="mt jp" id="gmt-jp" onclick="setMkt('jp')">🇯🇵 Japan</div>
+        <div class="mt au" id="gmt-au" onclick="setMkt('au')">🇦🇺 Australia</div>
+        <div class="mt uk" id="gmt-uk" onclick="setMkt('uk')">🇬🇧 UK</div>
+      </div>
+      <select class="sel" id="gads-period" onchange="renderGads()"><option value="90" selected>Last 90 days</option><option value="30">Last 30 days</option><option value="14">Last 14 days</option><option value="7">Last 7 days</option><option value="thismonth">This month</option><option value="lastmonth">Last month</option><option value="thisyear">This year</option></select>
+      <select class="sel" id="gads-yr" onchange="renderGads()"><option value="">Any year</option><option value="2026">2026</option><option value="2025">2025</option></select>
+    </div>
+  </div>
+  <div id="uk-notice" class="notice-warn">🇬🇧 UK Google Ads requires manual upload — <span style="cursor:pointer;text-decoration:underline" onclick="sv('upload')">Upload ↗</span></div>
+  <div class="krow krow-4">
+    <div class="kcard" style="--kc:var(--amber)"><div class="kl">Total spend</div><div class="kv" id="gk-spend">—</div><div class="ksub" id="gk-mkt-lbl">all markets</div></div>
+    <div class="kcard" style="--kc:var(--blue)"><div class="kl">Impressions</div><div class="kv" id="gk-impr">—</div><div class="ksub">ad views</div></div>
+    <div class="kcard" style="--kc:var(--a)"><div class="kl">Clicks · CTR</div><div class="kv" id="gk-clicks">—</div><div class="ksub"><span id="gk-ctr">—</span> click-through rate</div></div>
+    <div class="kcard" style="--kc:var(--green)"><div class="kl">Registrations · CPA</div><div class="kv" id="gk-conv">—</div><div class="ksub">$<span id="gk-cpa">—</span> per registration</div></div>
+  </div>
+  <div class="cg2">
+    <div class="cc"><div class="cc-h"><div><div class="cc-t">Daily performance</div><div class="cc-s">Clicks & cost over time</div></div><span class="cc-bdg" id="gads-bp">90 days</span></div><canvas id="c-gads-d" height="220"></canvas></div>
+    <div class="cc"><div class="cc-h"><div><div class="cc-t">Japan vs Australia vs UK</div><div class="cc-s">Market spend comparison</div></div></div><canvas id="c-gads-mkt" height="220"></canvas></div>
+  </div>
+  <div class="cg22">
+    <div class="cc"><div class="cc-h"><div><div class="cc-t">Monthly spend</div></div></div><canvas id="c-gads-mo" height="180"></canvas></div>
+    <div class="cc"><div class="cc-h"><div><div class="cc-t">Monthly registrations</div></div></div><canvas id="c-gads-cv" height="180"></canvas></div>
+  </div>
+  <div class="cc">
+    <div class="ai-box" style="margin:0">
+      <div class="ai-box-hdr"><span class="ai-dot"></span><span class="ai-box-title">Google Ads Intelligence</span></div>
+      <div class="ai-box-text" id="ai-gads-text">Loading Ads analysis...</div>
+      <div class="ai-ask-row"><input class="ai-inp" id="ai-gads-q" type="text" placeholder="Ask about ad performance, CPC, best market..."/><button class="ai-sbtn" onclick="askSection('gads')">Ask</button></div>
+      <div class="ai-resp" id="ai-gads-resp"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ GA4 ══ -->
+<div class="view" id="view-ga4">
+  <div class="sh">
+    <div class="sh-left"><div class="sh-title">Google Analytics</div><div class="sh-sub">Website traffic & user behaviour</div></div>
+    <div class="sh-right">
+      <select class="sel" id="ga4-ctry" onchange="renderGa4()"><option value="">All countries</option><option value="Japan">🇯🇵 Japan</option><option value="Australia">🇦🇺 Australia</option><option value="United Kingdom">🇬🇧 UK</option></select>
+      <select class="sel" id="ga4-med" onchange="renderGa4()"><option value="">All mediums</option></select>
+    </div>
+  </div>
+  <div class="krow krow-4">
+    <div class="kcard" style="--kc:var(--blue)"><div class="kl">Sessions</div><div class="kv" id="ak-sess">—</div><div class="ksub" id="ak-sub">all countries</div></div>
+    <div class="kcard" style="--kc:var(--a)"><div class="kl">Users</div><div class="kv" id="ak-users">—</div><div class="ksub">unique visitors</div></div>
+    <div class="kcard" style="--kc:var(--green)"><div class="kl">New users</div><div class="kv" id="ak-new">—</div><div class="ksub">first-time visitors</div></div>
+    <div class="kcard" style="--kc:var(--amber)"><div class="kl">Events</div><div class="kv" id="ak-ev">—</div><div class="ksub">total interactions</div></div>
+  </div>
+  <div class="cg2">
+    <div class="cc"><div class="cc-h"><div><div class="cc-t">Monthly sessions</div></div></div><canvas id="c-ga4-mo" height="200"></canvas></div>
+    <div class="cc"><div class="cc-h"><div><div class="cc-t">Sessions by country</div></div></div><canvas id="c-ga4-geo" height="200"></canvas></div>
+  </div>
+  <div class="cg22">
+    <div class="cc"><div class="cc-h"><div><div class="cc-t">Country breakdown</div></div></div><div class="cb" id="cb-ga4-c"></div></div>
+    <div class="cc"><div class="cc-h"><div><div class="cc-t">Traffic by medium</div></div></div><div class="cb" id="cb-ga4-m"></div></div>
+  </div>
+  <div class="cc">
+    <div class="ai-box" style="margin:0">
+      <div class="ai-box-hdr"><span class="ai-dot"></span><span class="ai-box-title">Analytics Intelligence</span></div>
+      <div class="ai-box-text" id="ai-ga4-text">Loading Analytics analysis...</div>
+      <div class="ai-ask-row"><input class="ai-inp" id="ai-ga4-q" type="text" placeholder="Ask about traffic, bounce rate, top countries..."/><button class="ai-sbtn" onclick="askSection('ga4')">Ask</button></div>
+      <div class="ai-resp" id="ai-ga4-resp"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ UPLOAD ══ -->
+<div class="view" id="view-upload">
+  <div class="sh"><div class="sh-left"><div class="sh-title">Data upload</div><div class="sh-sub">Files read locally — never sent to any server · all data stays in your browser</div></div>
+  <button onclick="clearAllData()" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid rgba(240,82,82,.3);background:rgba(240,82,82,.07);color:var(--red)">🗑 Clear all data</button>
+</div>
+
+<!-- DATA STATUS -->
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;padding:10px 14px;background:var(--surf);border:1px solid var(--b);border-radius:8px" id="data-status-bar">
+  <span style="font-size:10px;color:var(--ts);font-weight:600">No data loaded yet — upload files below</span>
+</div>
+  <div class="cc" style="margin-bottom:12px">
+    <div style="font-size:10px;font-weight:600;color:var(--amber);margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em">🇬🇧 UK Google Ads — required</div>
+    <div class="uz" id="uz-uk" onclick="document.getElementById('uf-uk').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="hDrop(event,'uk')"><input type="file" id="uf-uk" accept=".xlsx,.xls,.csv" onchange="hUp(this.files[0],'uk')"/><div class="uz-ico">🇬🇧</div><div class="uz-t">Drop UK Google Ads export here</div><div class="uz-s">Day, Impr., Clicks, CTR, Avg. CPC, Conversions, Cost</div></div>
+    <div class="us" id="us-uk"></div>
+  </div>
+  <div class="hr"></div>
+  <div class="cg22">
+    <div class="cc">
+      <div style="font-size:10px;font-weight:600;color:var(--ts);margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em">Google Ads (override)</div>
+      <div class="uz" id="uz-gads" onclick="document.getElementById('uf-gads').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="hDrop(event,'gads')"><input type="file" id="uf-gads" accept=".xlsx,.xls,.csv" onchange="hUp(this.files[0],'gads')"/><div class="uz-ico">📊</div><div class="uz-t">Drop Google Ads export</div></div>
+      <div class="us" id="us-gads"></div>
+    </div>
+    <div class="cc">
+      <div style="font-size:10px;font-weight:600;color:var(--ts);margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em">GA4 (override)</div>
+      <div class="uz" id="uz-ga4" onclick="document.getElementById('uf-ga4').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="hDrop(event,'ga4')"><input type="file" id="uf-ga4" accept=".xlsx,.xls,.csv" onchange="hUp(this.files[0],'ga4')"/><div class="uz-ico">📈</div><div class="uz-t">Drop GA4 export</div></div>
+      <div class="us" id="us-ga4"></div>
+    </div>
+    <div class="cc">
+      <div style="font-size:10px;font-weight:600;color:var(--ts);margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em">HubSpot (override)</div>
+      <div class="uz" id="uz-hs" onclick="document.getElementById('uf-hs').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="hDrop(event,'hs')"><input type="file" id="uf-hs" accept=".xlsx,.xls,.csv" onchange="hUp(this.files[0],'hs')"/><div class="uz-ico">👥</div><div class="uz-t">Drop HubSpot export</div></div>
+      <div class="us" id="us-hs"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ SETTINGS ══ -->
+<div class="view" id="view-settings">
+  <div class="sh"><div class="sh-left"><div class="sh-title">Settings</div></div></div>
+  <div class="cc">
+    <div style="font-size:10px;font-weight:600;color:var(--ts);margin-bottom:12px;text-transform:uppercase;letter-spacing:.06em">Brand customization</div>
+    <div class="sg">
+      <div class="si"><label>Company name</label><input class="si-inp" type="text" id="s-name" value="OQtima" oninput="applyS()"/></div>
+      <div class="si"><label>Accent color</label><div class="cr"><input type="color" id="s-a" value="#C1FF47" oninput="syncA()"/><input class="si-inp" type="text" id="s-ah" value="#C1FF47" oninput="syncAT()" style="flex:1"/></div></div>
+      <div class="si"><label>Background</label><div class="cr"><input type="color" id="s-bg" value="#07090E" oninput="syncBg()"/><input class="si-inp" type="text" id="s-bgh" value="#07090E" oninput="syncBgT()" style="flex:1"/></div></div>
+      <div class="si"><label>Font</label><select class="si-sel" id="s-font" onchange="applyS()"><option value="'Plus Jakarta Sans',sans-serif">Syne</option><option value="'Space Grotesk',sans-serif">Space Grotesk</option><option value="'Plus Jakarta Sans',sans-serif">DM Sans</option><option value="'Inter',sans-serif">Inter</option></select></div>
+      <div class="si"><label>Theme</label><select class="si-sel" id="s-theme" onchange="applyS()"><option value="dark">Dark</option><option value="light">Light</option></select></div>
+      <div class="si"><label>Backend URL</label><input class="si-inp" type="text" id="s-be" value="https://oqtima-backend.onrender.com" oninput="saveS()"/></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+      <button class="nbtn btna" id="save-btn" onclick="saveS()" style="background:var(--a);color:#07090E;border-color:transparent;font-weight:700;padding:7px 14px;font-size:12px">Save</button>
+      <button class="nbtn" onclick="resetS()" style="padding:7px 14px;font-size:12px">Reset</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- /page -->
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// VERIFIED STATIC DATA — from HubSpot exports
+// KYC source: hubspot-crm-exports-kycd-clients-2026-03-16.xlsx
+// FTD source: hubspot-crm-exports-ftds-clients-2026-03-18.xlsx
+// ═══════════════════════════════════════════════════════════════════
+const KYC = {
+  total: 5242,
+  byCountry: {JAPAN:2036,BRAZIL:755,CANADA:309,AUSTRALIA:306,'UNITED KINGDOM':231,MALAYSIA:188,INDONESIA:160},
+  byCampaign: {'Direct/Unknown':4293,'MKT-myFXbook':65,'IB-18051770-ECN3':64,'IB-18050031-One':58,'IB-18050056-One':48,'IB-18050054-One':33,'MKT-TelegramFxstreet':32,'MKT-BRTradingViewApp':32,'MKT-GooglePPCUKnew':28,'MKT-GooglePPCjp':26},
+  byMonth: {'2025-03':142,'2025-04':137,'2025-05':188,'2025-06':164,'2025-07':126,'2025-08':99,'2025-09':195,'2025-10':184,'2025-11':145,'2025-12':114,'2026-01':128,'2026-02':30}
+};
+// KYC IB total = 64+58+48+33+... = 283; MKT total = 65+32+32+28+26+... = 349; Direct = 4293
+const KYC_IB = Object.entries(KYC.byCampaign).filter(([k])=>k.startsWith('IB')).reduce((s,[,v])=>s+v,0); // 283
+const KYC_MKT = Object.entries(KYC.byCampaign).filter(([k])=>k.startsWith('MKT')).reduce((s,[,v])=>s+v,0); // 349
+
+const FTD = {
+  total: 808,
+  ibTotal: 141,  // 50+35+21+17+10+8
+  mktTotal: 34,  // 13+12+9
+  directTotal: 497,
+  byCountry: {JAPAN:187,BRAZIL:157,AUSTRALIA:142,'UNITED KINGDOM':50,CANADA:43,INDONESIA:19,INDIA:18,THAILAND:16,'UNITED ARAB EMIRATES':16},
+  byCampaign: {'Direct/Unknown':497,'IB-18050031-One':50,'IB-18051770-ECN3':35,'IB-18050993':21,'IB-18050056-One':17,'MKT-myFXbook':13,'MKT-OL_Thiago':12,'IB-10050344-One':10,'MKT-TakumiKatoMB':9,'IB-18050054-One':8},
+  byMonth: {'2025-01':209,'2025-02':44,'2025-03':28,'2025-04':22,'2025-05':34,'2025-06':30,'2025-07':44,'2025-08':40,'2025-09':56,'2025-10':52,'2025-11':57,'2025-12':31,'2026-01':20,'2026-02':9}
+};
+
+// ─── STATE ────────────────────────────────────────────────────────
+let BE = localStorage.getItem('oq-be')||'https://oqtima-backend.onrender.com';
+let D = {hs:null,gads:null,ga4:null};
+let MAN = {gads:null,ga4:null,hs:null,uk:null};
+let C = {};
+let curMkt='all', chFilter='all', ftdSrc='all';
+
+const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+Chart.defaults.locale='en-US';
+const TO={backgroundColor:'#141927',borderColor:'rgba(255,255,255,0.08)',borderWidth:1,titleColor:'#EEF1F8',bodyColor:'#5E7191',padding:12,cornerRadius:6,displayColors:true,boxWidth:8,boxHeight:8};
+
+function mlb(k){const[y,m]=k.split('-');return MN[parseInt(m)-1]+"'"+y.slice(2)}
+function fmt(n){if(n==null)return'—';const v=Math.round(parseFloat(n));return isNaN(v)?'—':v.toLocaleString()}
+function fmtD(n,d=0){if(!n&&n!==0)return'—';const v=parseFloat(n);return isNaN(v)?'—':'$'+v.toFixed(d).replace(/\B(?=(\d{3})+(?!\d))/g,',')}
+function fmtP(n){return(n==null||isNaN(parseFloat(n)))?'—':parseFloat(n).toFixed(1)+'%'}
+function getA(){return getComputedStyle(document.documentElement).getPropertyValue('--a').trim()||'#C1FF47'}
+
+// ─── BOOT ─────────────────────────────────────────────────────────
+
+// ─── AUTH ─────────────────────────────────────────────────────────
+const PASS = 'OQtima@2026!';
+function unlock(){
+  const pw = document.getElementById('lock-pw').value;
+  const err = document.getElementById('lock-err');
+  if(pw === PASS){
+    document.getElementById('lock').style.display = 'none';
+    sessionStorage.setItem('oq-auth','1');
+    document.getElementById('loverlay').classList.remove('out');
+    loadAll();
+    setTimeout(updateDataStatus,100);
+  } else {
+    err.textContent = 'Incorrect password. Please try again.';
+    document.getElementById('lock-pw').value = '';
+    document.getElementById('lock-pw').focus();
+    setTimeout(()=>err.textContent='', 3000);
+  }
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  loadS();
+  // Check session auth
+  document.getElementById('lock-pw').addEventListener('keydown', e=>{ if(e.key==='Enter') unlock(); });
+  if(sessionStorage.getItem('oq-auth')==='1'){
+    document.getElementById('lock').style.display='none';
+    loadAll();
+    setTimeout(updateDataStatus,100);
+  } else {
+    // Show lock, hide loading overlay immediately
+    document.getElementById('loverlay').classList.add('out');
+    setTimeout(()=>document.getElementById('lock-pw').focus(), 100);
+    // Still load settings for styling
+  }
+});
+
+function renderStaticSections(){
+  renderOverviewStatic();
+  renderKyc();
+  renderFtd();
+}
+
+// ─── LOAD ─────────────────────────────────────────────────────────
+async function loadAll(){
+  // MANUAL MODE: no backend, render static data only
+  document.getElementById('loverlay').classList.add('out');
+  document.getElementById('lv').innerHTML='<span style="color:var(--amber)">📁 Manual mode</span>';
+  renderAllSections();
+  updateDataStatus();
+}
+
+async function refreshAll(){sv('upload');} // In manual mode, refresh = go to upload
+
+
+// ── WORLD MAP ────────────────────────────────────────────────────────────
+function renderWorldMap(){
+  const svg=document.getElementById('world-svg');
+  const legend=document.getElementById('map-legend');
+  if(!svg)return;
+  
+  // Country FTD data
+  const ftdByCountry={
+    'Japan':187,'Brazil':157,'Australia':142,'United Kingdom':50,
+    'Canada':43,'Indonesia':19,'India':18,'Thailand':16,'UAE':16,
+    'Unknown':31
+  };
+  const maxFtd=Math.max(...Object.values(ftdByCountry));
+  const accent=getComputedStyle(document.documentElement).getPropertyValue('--a').trim()||'#C1FF47';
+  
+  // Simple world map paths (key countries)
+  // Using simplified SVG paths for major countries
+  const countries=[
+    {id:'jp',name:'Japan',d:'M830,165 L840,160 L848,168 L845,178 L835,182 L825,175 Z M820,175 L828,172 L832,180 L825,188 L815,185 Z',ftd:187},
+    {id:'au',name:'Australia',d:'M760,320 L810,310 L840,320 L850,350 L840,380 L810,390 L770,380 L750,355 L755,330 Z',ftd:142},
+    {id:'gb',name:'United Kingdom',d:'M450,130 L458,125 L462,132 L460,142 L452,148 L445,142 L443,132 Z M455,148 L462,145 L465,152 L460,158 L453,155 Z',ftd:50},
+    {id:'br',name:'Brazil',d:'M280,280 L320,265 L350,270 L365,295 L360,330 L340,355 L310,360 L285,345 L270,315 L272,290 Z',ftd:157},
+    {id:'ca',name:'Canada',d:'M120,100 L220,90 L250,100 L260,125 L240,140 L200,145 L160,140 L120,130 L110,115 Z',ftd:43},
+    {id:'id',name:'Indonesia',d:'M760,275 L790,270 L810,278 L808,288 L790,292 L762,285 Z M815,272 L840,268 L850,276 L848,284 L825,286 L812,280 Z',ftd:19},
+    {id:'in',name:'India',d:'M640,185 L670,175 L690,185 L698,210 L690,240 L670,255 L648,248 L635,225 L632,200 Z',ftd:18},
+    {id:'th',name:'Thailand',d:'M715,220 L728,215 L735,225 L732,240 L720,248 L710,240 L708,225 Z',ftd:16},
+    {id:'ae',name:'UAE',d:'M590,205 L605,200 L612,208 L610,218 L598,222 L588,216 Z',ftd:16},
+  ];
+
+  // Color scale
+  function getColor(ftd){
+    if(!ftd) return '#1A2236';
+    const pct=ftd/maxFtd;
+    if(pct>0.7) return accent;
+    if(pct>0.4) return accent+'AA';
+    if(pct>0.2) return accent+'66';
+    return accent+'33';
+  }
+
+  // Build SVG
+  let svgContent=`
+    <!-- Background countries (simplified world) -->
+    <rect width="1000" height="500" fill="#0F1420" rx="8"/>
+    <!-- Ocean grid lines -->
+    <line x1="0" y1="250" x2="1000" y2="250" stroke="#1A2236" stroke-width="1"/>
+    <line x1="500" y1="0" x2="500" y2="500" stroke="#1A2236" stroke-width="1"/>
+    <!-- Country shapes -->
+  `;
+
+  // Draw simplified continent outlines first (background)
+  const continents=[
+    // North America
+    {d:'M80,80 L280,70 L300,120 L280,160 L260,200 L220,230 L180,225 L150,200 L100,180 L70,140 L75,100 Z',fill:'#1A2236'},
+    // South America  
+    {d:'M220,240 L300,220 L370,250 L390,310 L370,380 L330,420 L280,415 L240,380 L215,320 L210,275 Z',fill:'#1A2236'},
+    // Europe
+    {d:'M420,90 L520,80 L540,100 L530,140 L500,160 L460,165 L430,155 L415,130 L418,105 Z',fill:'#1A2236'},
+    // Africa
+    {d:'M440,170 L540,160 L570,190 L575,270 L550,340 L510,370 L470,360 L440,320 L425,250 L428,200 Z',fill:'#1A2236'},
+    // Russia/Central Asia
+    {d:'M530,60 L800,50 L840,90 L820,130 L750,145 L650,140 L570,130 L530,100 Z',fill:'#1A2236'},
+    // Middle East
+    {d:'M560,165 L640,155 L680,175 L675,220 L640,235 L570,230 L545,205 L548,175 Z',fill:'#1A2236'},
+    // South/SE Asia
+    {d:'M620,165 L750,155 L800,175 L815,220 L790,260 L740,270 L680,255 L640,230 L618,195 Z',fill:'#1A2236'},
+    // East Asia
+    {d:'M750,100 L870,90 L890,130 L870,165 L830,175 L770,168 L742,140 L745,115 Z',fill:'#1A2236'},
+    // Australia
+    {d:'M730,305 L860,295 L880,340 L870,390 L830,415 L770,410 L730,375 L715,340 L720,315 Z',fill:'#1A2236'},
+  ];
+  
+  continents.forEach(c=>{svgContent+=`<path d="${c.d}" fill="${c.fill}" stroke="#0D1018" stroke-width="1"/>
+`;});
+
+  countries.forEach(c=>{
+    const col=getColor(c.ftd);
+    svgContent+=`<path class="map-country" id="mc-${c.id}" d="${c.d}" fill="${col}" stroke="#0D1018" stroke-width="1.5" data-name="${c.name}" data-ftd="${c.ftd}"/>
+`;
+  });
+
+  svg.innerHTML=svgContent;
+
+  // Tooltip
+  const tt=document.getElementById('map-tooltip');
+  svg.querySelectorAll('.map-country').forEach(el=>{
+    el.addEventListener('mousemove',e=>{
+      if(!tt)return;
+      const rect=svg.parentElement.getBoundingClientRect();
+      tt.style.display='block';
+      tt.style.left=(e.clientX-rect.left+10)+'px';
+      tt.style.top=(e.clientY-rect.top-30)+'px';
+      tt.textContent=el.dataset.name+': '+el.dataset.ftd+' FTDs';
+    });
+    el.addEventListener('mouseleave',()=>{if(tt)tt.style.display='none';});
+  });
+
+  // Legend
+  if(legend){
+    const topCountries=Object.entries(ftdByCountry).filter(([k])=>k!=='Unknown').sort((a,b)=>b[1]-a[1]).slice(0,5);
+    legend.innerHTML=topCountries.map(([name,ftd])=>`
+      <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--ts)">
+        <div style="width:10px;height:10px;border-radius:2px;background:${getColor(ftd)};flex-shrink:0"></div>
+        <span>${name}: <strong style="color:var(--tp)">${ftd}</strong></span>
+      </div>`).join('');
+  }
+}
+
+function clearAllData(){
+  if(!confirm('Clear all uploaded data? This cannot be undone.'))return;
+  MAN={gads:null,ga4:null,hs:null,uk:null};
+  ['us-uk','us-gads','us-ga4','us-hs'].forEach(id=>{const e=document.getElementById(id);if(e){e.style.display='none';e.innerHTML='';}});
+  ['uf-uk','uf-gads','uf-ga4','uf-hs'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  renderAllSections();
+  updateDataStatus();
+  document.getElementById('lv').innerHTML='<span style="color:var(--amber)">📁 Cleared</span>';
+}
+
+function clearDataset(type){
+  if(!confirm('Clear '+type+' data?'))return;
+  MAN[type]=null;
+  const s=document.getElementById('us-'+type);if(s){s.style.display='none';s.innerHTML='';}
+  const f=document.getElementById('uf-'+type);if(f)f.value='';
+  renderAllSections();
+  updateDataStatus();
+}
+
+function updateDataStatus(){
+  const datasets=[
+    {key:'gads',label:'Google Ads',icon:'📊'},
+    {key:'ga4',label:'GA4 Analytics',icon:'📈'},
+    {key:'hs',label:'HubSpot',icon:'👥'},
+    {key:'uk',label:'UK Google Ads',icon:'🇬🇧'},
+  ];
+  const bar=document.getElementById('data-status-bar');
+  if(!bar)return;
+  bar.innerHTML=datasets.map(d=>{
+    const loaded=MAN[d.key]!==null;
+    return `<div style="display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:6px;background:${loaded?'rgba(16,185,129,0.1)':'rgba(255,255,255,0.04)'};border:1px solid ${loaded?'rgba(16,185,129,0.25)':'var(--b)'}">
+      <span style="font-size:11px">${d.icon}</span>
+      <span style="font-size:10px;font-weight:700;color:${loaded?'#10B981':'var(--ts)'}">${d.label}</span>
+      <span style="font-size:9px;color:${loaded?'#10B981':'var(--tm)'}">●  ${loaded?'Loaded':'Empty'}</span>
+      ${loaded?`<button onclick="clearDataset('${d.key}')" style="margin-left:4px;background:none;border:none;cursor:pointer;color:var(--red);font-size:10px;padding:0" title="Clear ${d.label}">✕</button>`:''}
+    </div>`;
+  }).join('');
+}
+
+function renderAll(){
+  const active=document.querySelector('.view.on')?.id?.replace('view-','');
+  renderOverview();
+  if(active==='kyc')renderKyc();
+  else if(active==='ftd')renderFtd();
+  else if(active==='gads')renderGads();
+  else if(active==='ga4')renderGa4();
+}
+function renderAllSections(){renderOverview();renderKyc();renderFtd();renderGads();renderGa4();}
+
+function populateMediumSel(){
+  const s=document.getElementById('ga4-med'),c=s.value;
+  s.innerHTML='<option value="">All mediums</option>';
+  Object.keys(D.ga4?.byMedium||{}).forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;s.appendChild(o)});
+  s.value=c;
+}
+
+// ─── HELPERS ──────────────────────────────────────────────────────
+function onPeriodChange(){
+  const p=document.getElementById('ov-period').value;
+  const dw=document.getElementById('drange-wrap');
+  if(dw)dw.style.display=(p==='custom'?'flex':'none');
+  if(p==='custom'){const ds=document.getElementById('dr-start').value,de=document.getElementById('dr-end').value;if(!ds||!de)return;}
+  renderAll();
+}
+function getOvPeriod(){
+  const p=document.getElementById('ov-period')?.value||'all';
+  if(p==='custom'){const ds=document.getElementById('dr-start')?.value,de=document.getElementById('dr-end')?.value;if(ds&&de)return 'custom:'+ds+':'+de;}
+  return p;
+}
+function getOvMkt(){return document.getElementById('ov-mkt').value}
+
+
+// Safe chart helper — always destroys before recreating
+function mkChart(id, config){
+  const el=document.getElementById(id);
+  if(!el)return null;
+  const existing=Chart.getChart(el);
+  if(existing)existing.destroy();
+  return new Chart(el.getContext('2d'), config);
+}
+
+function filterMonths(bm,period){
+  if(!bm||!Object.keys(bm).length)return{};
+  if(!period||period==='all') return Object.fromEntries(Object.entries(bm).sort((a,b)=>a[0].localeCompare(b[0])));
+  if(period.startsWith('custom:')){const[,s2,e2]=period.split(':');const sm=s2.slice(0,7),em=e2.slice(0,7);let e=Object.entries(bm).filter(([k])=>k>=sm&&k<=em);if(!e.length)e=Object.entries(bm);return Object.fromEntries(e.sort((a,b)=>a[0].localeCompare(b[0])));}
+  const now=new Date(), yr=now.getFullYear(), mo=now.getMonth()+1;
+  const thisM=yr+'-'+String(mo).padStart(2,'0');
+  const lastM=(mo===1?(yr-1):yr)+'-'+String(mo===1?12:mo-1).padStart(2,'0');
+  let e=Object.entries(bm);
+  if(period==='thismonth') e=e.filter(([k])=>k===thisM);
+  else if(period==='lastmonth') e=e.filter(([k])=>k===lastM);
+  else if(period==='thisyear') e=e.filter(([k])=>k.startsWith(String(yr)));
+  else if(period==='lastyear') e=e.filter(([k])=>k.startsWith(String(yr-1)));
+  else if(!isNaN(parseInt(period))){
+    const days=parseInt(period);
+    const cut=new Date(now); cut.setDate(cut.getDate()-days);
+    const cutM=cut.getFullYear()+'-'+String(cut.getMonth()+1).padStart(2,'0');
+    e=e.filter(([k])=>k>=cutM);
+  }
+  if(!e.length) e=Object.entries(bm); // fallback: never return empty
+  return Object.fromEntries(e.sort((a,b)=>a[0].localeCompare(b[0])));
+}
+
+function filterDaily(daily,period,year){
+  if(!daily||!daily.length)return[];
+  let d=[...daily];
+  const now=new Date(), yr=now.getFullYear(), mo=now.getMonth()+1;
+  const thisM=yr+'-'+String(mo).padStart(2,'0');
+  const lastM=(mo===1?(yr-1):yr)+'-'+String(mo===1?12:mo-1).padStart(2,'0');
+  if(year) d=d.filter(r=>(r.day||'').startsWith(String(year)));
+  if(!period||period==='all') return d;
+  if(period==='thismonth') { const r=d.filter(x=>(x.day||'').startsWith(thisM)); return r.length?r:d; }
+  if(period==='lastmonth') { const r=d.filter(x=>(x.day||'').startsWith(lastM)); return r.length?r:d; }
+  if(period==='thisyear') { const r=d.filter(x=>(x.day||'').startsWith(String(yr))); return r.length?r:d; }
+  if(period==='lastyear') { const r=d.filter(x=>(x.day||'').startsWith(String(yr-1))); return r.length?r:d; }
+  if(!isNaN(parseInt(period))){
+    const days=parseInt(period);
+    const cut=new Date(now); cut.setDate(cut.getDate()-days);
+    const cutS=cut.getFullYear()+'-'+String(cut.getMonth()+1).padStart(2,'0')+'-'+String(cut.getDate()).padStart(2,'0');
+    const r=d.filter(x=>(x.day||'')>=cutS);
+    return r.length?r:d; // fallback: never return empty
+  }
+  return d;
+}
+function getMktRatio(mkt){
+  if(mkt==='all')return 1;
+  if(!D.ga4?.byCountry)return 1;
+  const nameMap={JAPAN:'Japan',AUSTRALIA:'Australia','UNITED KINGDOM':'United Kingdom',BRAZIL:'Brazil',CANADA:'Canada'};
+  const ga4Name=nameMap[mkt]||mkt;
+  const tot=Object.values(D.ga4.byCountry).reduce((s,v)=>s+v,0)||1;
+  const mktSessions=D.ga4.byCountry[ga4Name]||0;
+  if(mktSessions===0)return 0;
+  return mktSessions/tot;
+}
+
+function getFtdForFilter(mkt,ch){
+  let total=FTD.total,byC=FTD.byCountry,byCamp=FTD.byCampaign;
+  if(ch==='IB'){byCamp=Object.fromEntries(Object.entries(byCamp).filter(([k])=>k.startsWith('IB')));total=FTD.ibTotal}
+  else if(ch==='MKT'){byCamp=Object.fromEntries(Object.entries(byCamp).filter(([k])=>k.startsWith('MKT')));total=FTD.mktTotal}
+  if(mkt!=='all'){
+    const cv=FTD.byCountry[mkt]||0,r=cv/FTD.total;
+    total=Math.round(total*r);byC={[mkt]:cv};
+    byCamp=Object.fromEntries(Object.entries(byCamp).map(([k,v])=>[k,Math.round(v*r)]));
+  }
+  return{total,byC,byCamp};
+}
+
+// ─── CHANNEL FILTER ───────────────────────────────────────────────
+function setChFilter(ch){
+  chFilter=ch;
+  ['all','ib','mkt'].forEach(c=>document.getElementById('ch-'+c)?.classList.toggle('on',c===ch||(c==='all'&&ch==='all')));
+  document.getElementById('ch-all').classList.toggle('on',ch==='all');
+  document.getElementById('ch-ib').classList.toggle('on',ch==='IB');
+  document.getElementById('ch-mkt').classList.toggle('on',ch==='MKT');
+  renderOverview();
+}
+
+// ─── OVERVIEW ─────────────────────────────────────────────────────
+function renderOverviewStatic(){
+  // KYC and FTD = all-time totals (HubSpot has no per-period date breakdown)
+  const period=getOvPeriod(), mkt=getOvMkt();
+  const {total,byC,byCamp}=getFtdForFilter(mkt,chFilter);
+  const a=getA();
+
+  // KPIs — KYC and FTD are always all-time
+  const kycForMkt=mkt==='all'?KYC.total:(KYC.byCountry[mkt]||0);
+  const ftdForMkt=mkt==='all'?FTD.total:(FTD.byCountry[mkt]||0);
+  document.getElementById('ok-kyc').textContent=fmt(kycForMkt);
+  document.getElementById('ok-ftd').textContent=fmt(chFilter==='all'?ftdForMkt:total);
+  document.getElementById('ok-ftd-s').textContent=(mkt!=='all'?mkt.charAt(0)+mkt.slice(1).toLowerCase()+' · ':'')+(chFilter==='all'?'all channels':chFilter+' only');
+
+  // IB bars
+  const ibC=Object.entries(byCamp).filter(([k])=>k.startsWith('IB')).sort((a,b)=>b[1]-a[1]);
+  const ibMax=ibC[0]?.[1]||1;
+  buildCB('cb-ov-ib',ibC.map(([k,v])=>({label:k.replace('IB-',''),val:fmt(v),pct:fmtP(v/FTD.total*100),w:(v/ibMax*100)+'%',color:a})));
+  const ibSub=document.getElementById('ib-sub-ov');
+  if(ibSub)ibSub.textContent=ibC.length+' IB partners · '+ibC.reduce((s,[,v])=>s+v,0)+' FTDs';
+
+  // MKT bars
+  const mktC=Object.entries(byCamp).filter(([k])=>k.startsWith('MKT')).sort((a,b)=>b[1]-a[1]);
+  const mktMax=mktC[0]?.[1]||1;
+  buildCB('cb-ov-mkt',mktC.map(([k,v])=>({label:k.replace('MKT-',''),val:fmt(v),pct:fmtP(v/FTD.total*100),w:(v/mktMax*100)+'%',color:'#3B82F6'})));
+
+  // KYC vs FTD by market (horizontal bar chart — all-time)
+  const mktData=[
+    {l:'Japan',ky:KYC.byCountry.JAPAN,ft:FTD.byCountry.JAPAN,c:'#EF4444'},
+    {l:'Australia',ky:KYC.byCountry.AUSTRALIA,ft:FTD.byCountry.AUSTRALIA,c:'#3B82F6'},
+    {l:'UK',ky:KYC.byCountry['UNITED KINGDOM'],ft:FTD.byCountry['UNITED KINGDOM'],c:'#8B5CF6'},
+    {l:'Brazil',ky:KYC.byCountry.BRAZIL,ft:FTD.byCountry.BRAZIL,c:'#10B981'},
+    {l:'Canada',ky:KYC.byCountry.CANADA,ft:FTD.byCountry.CANADA,c:'#F59E0B'},
+  ];
+  C.ovMkt=mkChart('c-ov-mkt',{
+    type:'bar',
+    data:{labels:mktData.map(m=>m.l),datasets:[
+      {label:'KYC',data:mktData.map(m=>m.ky),backgroundColor:mktData.map(m=>m.c+'30'),borderColor:mktData.map(m=>m.c),borderWidth:1.5,borderRadius:4},
+      {label:'FTD',data:mktData.map(m=>m.ft),backgroundColor:mktData.map(m=>m.c+'88'),borderColor:mktData.map(m=>m.c),borderWidth:1.5,borderRadius:4}
+    ]},
+    options:{responsive:true,indexAxis:'y',interaction:{intersect:false,mode:'index'},plugins:{legend:{labels:{color:'#5E7191',font:{size:10},boxWidth:10}},tooltip:{...TO,callbacks:{afterBody:it=>{const d=mktData[it[0].dataIndex];return d.ky>0?['FTD rate: '+((d.ft/d.ky)*100).toFixed(1)+'%']:[];}}}},scales:{x:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}},y:{grid:{display:false},ticks:{color:'#5E7191',font:{size:10}}}}}
+  });
+
+  // AI static texts
+  setAiText('fn','<strong>Funnel:</strong> Steps 1-3 (Impressions→Clicks→Registrations) update with period filter. KYC/FTD use backend monthly data when available. KYC→FTD rate: <strong>15.4%</strong>. Cost per tracked FTD: <strong>$29</strong>. Key gap: 61% of FTDs unattributed (Direct/Unknown).');
+  setAiText('ib','<strong>IB-18050031-One</strong> leads with 50 FTDs. <strong>IB-18051770-ECN3</strong> has 35. Total IB: 141 FTDs vs 34 from MKT — IB converts 4× better. Prioritize top 2 IB partners for fastest growth.');
+  setAiText('mkt','<strong>myFXbook</strong> (13) and <strong>OL_Thiago</strong> (12) lead MKT. Cost/registration: $12.81. Focus Japan (187 FTDs) and Australia (142) — highest ROI markets.');
+  
+  // Draw world map
+  renderWorldMap();
+}
+
+
+function renderOverview(){
+  renderOverviewStatic();
+  const gads=MAN.gads||D.gads, ga4=MAN.ga4||D.ga4;
+  const period=getOvPeriod(), mkt=getOvMkt();
+  const ratio=mkt==='all'?1:getMktRatio(mkt);
+  const nameMap={JAPAN:'Japan',AUSTRALIA:'Australia','UNITED KINGDOM':'United Kingdom',BRAZIL:'Brazil',CANADA:'Canada'};
+  const ga4MktName=nameMap[mkt]||'';
+
+  // Period label
+  const pMap={all:'All time',thismonth:'This month',lastmonth:'Last month',thisyear:'This year',lastyear:'Last year',7:'Last 7 days',14:'Last 14 days',30:'Last 30 days',90:'Last 90 days'};
+  const pLabel=period.startsWith('custom:')?period.split(':')[1]+' → '+period.split(':')[2]:(pMap[period]||period+' days');
+  ['fn-badge','ov-badge','gads-bdg'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=pLabel;});
+
+  // ── Period-filtered sums from byMonth ──
+  const gadsM=filterMonths(gads?.byMonth,period);
+  const ga4M=filterMonths(ga4?.byMonth,period);
+  const sum=(obj,k)=>Object.values(obj).reduce((a,v)=>a+(v[k]||0),0);
+
+  const gadsCost=sum(gadsM,'cost');
+  const gadsConv=sum(gadsM,'conv');
+  const gadsImpr=sum(gadsM,'impr');
+  const gadsClicks=sum(gadsM,'clicks');
+  const ga4Sess=sum(ga4M,'sessions');
+
+  // ── Compute actual period values (fall back to all-time summary only when byMonth is truly empty) ──
+  const impr=Math.round((gadsImpr||gads?.summary?.totalImpressions||0)*ratio);
+  const clicks=Math.round((gadsClicks||gads?.summary?.totalClicks||0)*ratio);
+  const reg=Math.round((gadsConv||gads?.summary?.totalConversions||0)*ratio);
+  const spend=(gadsCost||gads?.summary?.totalCost||5099.85)*ratio;
+  // KYC/FTD: use backend monthly data if available and period != 'all'
+  const hsM=filterMonths(D.hs?.byMonth, period);
+  const kycFromPeriod=Object.values(hsM).reduce((a,v)=>a+(typeof v==='object'?v.kyc||0:0),0);
+  const ftdFromPeriod=Object.values(hsM).reduce((a,v)=>a+(typeof v==='object'?v.ftd||0:0),0);
+  const hasHsMonthly=kycFromPeriod>0||ftdFromPeriod>0;
+  // Use period-filtered if backend has monthly breakdown, else use all-time
+  const kyc=mkt==='all'
+    ? (hasHsMonthly&&period!=='all'?kycFromPeriod:KYC.total)
+    : (KYC.byCountry[mkt]||0);
+  const ftd=mkt==='all'
+    ? (hasHsMonthly&&period!=='all'?ftdFromPeriod:FTD.total)
+    : (FTD.byCountry[mkt]||0);
+
+  // ── KPI cards ──
+  const sessKpi=mkt==='all'?ga4Sess:Math.round((ga4Sess||0)*((ga4?.byCountry?.[ga4MktName]||0)/(ga4?.summary?.totalSessions||1)));
+  document.getElementById('ok-sess').textContent=fmt(sessKpi||Math.round((ga4?.summary?.totalSessions||121626)*ratio));
+  document.getElementById('ok-reg').textContent=fmt(reg);
+  document.getElementById('ok-spend').textContent=fmtD(spend);
+  const cpa=reg>0?(spend/reg).toFixed(2):'—';
+  document.getElementById('ok-cpa-s').textContent=cpa!=='—'?'$'+cpa+' per registration':'per registration';
+
+  // ── FUNNEL RINGS (circular donut style like reference) ──
+  const funnelData=[
+    {label:'Impressions',val:impr,sub:impr>0?((clicks/impr)*100).toFixed(2)+'% CTR':'—',sublabel:'CTR',color:'#3B82F6',pct:100},
+    {label:'Clicks',val:clicks,sub:clicks>0?fmtD(spend/clicks,2)+' CPC':'—',sublabel:'avg CPC',color:'#F59E0B',pct:impr>0?(clicks/impr*100):0},
+    {label:'Registrations',val:reg,sub:reg>0?fmtD(spend/reg,2)+'/reg':'—',sublabel:'cost/reg',color:'#8B5CF6',pct:impr>0?(reg/impr*100):0},
+    {label:'KYC',val:kyc,sub:kyc>0?((ftd/kyc)*100).toFixed(1)+'% → FTD':'15.4%',sublabel:'all-time',color:'#C1FF47',pct:100},
+    {label:'FTD Clients',val:ftd,sub:spend>0?fmtD(spend/(FTD.ibTotal+FTD.mktTotal),0)+'/tracked FTD':'$29',sublabel:'cost/FTD',color:'#10B981',pct:100},
+  ];
+
+  const container=document.getElementById('fn-rings-row');
+  if(container){
+    container.innerHTML='';
+    funnelData.forEach((fd,i)=>{
+      const isLast=i===funnelData.length-1;
+      // Create ring item
+      const item=document.createElement('div');
+      item.style.cssText='display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;min-width:90px;max-width:150px';
+
+      // Canvas for donut ring
+      const canvasId='fn-ring-'+i;
+      item.innerHTML=`
+        <div style="position:relative;width:95px;height:95px;flex-shrink:0">
+          <canvas id="${canvasId}" width="95" height="95"></canvas>
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:1px">
+            <span style="font-size:14px;font-weight:800;letter-spacing:-.3px;color:${fd.color};line-height:1">${fd.val>999?fd.val.toLocaleString():fmt(fd.val)}</span>
+            <span style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ts);margin-top:1px">${fd.label}</span>
+          </div>
+        </div>
+        <div style="font-size:10px;color:var(--ts);text-align:center;line-height:1.3"><strong style="color:${fd.color}">${fd.sub}</strong><br><span style="font-size:9px;color:var(--tm)">${fd.sublabel}</span></div>
+      `;
+      container.appendChild(item);
+
+      // Add arrow between rings
+      if(!isLast){
+        const arrow=document.createElement('div');
+        arrow.innerHTML='<span style="color:var(--tm);font-size:20px;margin-bottom:30px">→</span>';
+        arrow.style.cssText='display:flex;align-items:center;flex-shrink:0';
+        container.appendChild(arrow);
+      }
+
+      // Draw donut ring after DOM insertion
+      requestAnimationFrame(()=>{
+        const cvs=document.getElementById(canvasId);
+        if(!cvs)return;
+        const existingChart=Chart.getChart(cvs);
+        if(existingChart)existingChart.destroy();
+        const fillPct=Math.max(2,Math.min(100,fd.pct||10));
+        new Chart(cvs.getContext('2d'),{
+          type:'doughnut',
+          data:{datasets:[{
+            data:[fillPct,100-fillPct],
+            backgroundColor:[fd.color,fd.color+'18'],
+            borderWidth:0,
+            borderRadius:4
+          }]},
+          options:{responsive:false,cutout:'70%',plugins:{legend:{display:false},tooltip:{enabled:false}},animation:{duration:600}}
+        });
+      });
+    });
+  }
+
+  // ── Sessions vs Spend trend (period-filtered) ──
+  const allM=[...new Set([...Object.keys(ga4M),...Object.keys(gadsM)])].sort();
+  C.ovTrend=mkChart('c-ov-trend',{
+    data:{labels:allM.map(mlb),datasets:[
+      {type:'bar',label:'Sessions',data:allM.map(m=>(ga4M[m]?.sessions||0)*ratio),backgroundColor:getA()+'20',borderColor:getA(),borderWidth:1.5,borderRadius:4,yAxisID:'y'},
+      {type:'line',label:'Spend ($)',data:allM.map(m=>(gadsM[m]?.cost||0)*ratio),borderColor:'#3B82F6',borderWidth:2,pointRadius:2,fill:false,yAxisID:'y1',tension:.35}
+    ]},
+    options:{responsive:true,interaction:{intersect:false,mode:'index'},plugins:{legend:{labels:{color:'#5E7191',font:{size:10},boxWidth:10}},tooltip:{...TO}},scales:{x:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#5E7191',font:{size:9}}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}},y1:{position:'right',grid:{display:false},ticks:{color:'#3B82F6',font:{size:9}}}}}
+  });
+
+  // ── Google Ads daily (period-filtered) ──
+  const daily=filterDaily(gads?.daily,period,'');
+  const dF=daily.map(d=>({...d,clicks:(d.clicks||0)*ratio,cost:(d.cost||0)*ratio}));
+  C.ovGads=mkChart('c-ov-gads',{
+    data:{labels:dF.map(d=>(d.day||'').slice(5)),datasets:[
+      {type:'bar',label:'Clicks',data:dF.map(d=>d.clicks),backgroundColor:getA()+'25',borderColor:getA(),borderWidth:1.5,borderRadius:3,yAxisID:'y'},
+      {type:'line',label:'Cost ($)',data:dF.map(d=>d.cost),borderColor:'#F59E0B',borderWidth:1.5,pointRadius:0,fill:false,yAxisID:'y1',tension:.3}
+    ]},
+    options:{responsive:true,interaction:{intersect:false,mode:'index'},plugins:{legend:{labels:{color:'#5E7191',font:{size:10},boxWidth:10}},tooltip:{...TO}},scales:{x:{grid:{display:false},ticks:{color:'#5E7191',font:{size:9},maxTicksLimit:14}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}},y1:{position:'right',grid:{display:false},ticks:{color:'#F59E0B',font:{size:9}}}}}
+  });
+
+  // ── ROI KPIs ──
+  const kycCount=kyc||KYC.total;
+  const cpKyc=kycCount>0?(spend/kycCount).toFixed(2):'—';
+  const el_cpkyc=document.getElementById('roi-cpkyc');
+  if(el_cpkyc)el_cpkyc.textContent=cpKyc!=='—'?'$'+cpKyc:'—';
+  const el_sub=document.getElementById('roi-cpkyc-sub');
+  if(el_sub)el_sub.textContent=fmtD(spend)+' ÷ '+fmt(kycCount)+' KYC';
+  const trackedFtd=FTD.ibTotal+FTD.mktTotal; // 175
+  const cpFtd=trackedFtd>0?(spend/trackedFtd).toFixed(0):'29';
+  const el_cpftd=document.getElementById('roi-cpftd');
+  if(el_cpftd)el_cpftd.textContent='$'+cpFtd;
+
+  // ── Medium bars (GA4 scaled to period) ──
+  const periodRatio=(ga4Sess||0)/(ga4?.summary?.totalSessions||1)||1;
+  const maxM=Object.values(ga4?.byMedium||{})[0]||1;
+  buildCB('cb-ov-med',Object.entries(ga4?.byMedium||{}).slice(0,7).map(([k,v])=>({
+    label:k,val:fmt(Math.round(v*periodRatio*ratio)),pct:((v/(ga4?.summary?.totalSessions||1))*100).toFixed(1)+'%',w:(v/maxM*100)+'%',color:'#3B82F6'
+  })));
+
+  // ── Monthly FTD (period-filtered) ──
+  const ftdMo=filterMonths(FTD.byMonth,period);
+  const ftdM2=Object.entries(ftdMo).sort((a,b)=>a[0].localeCompare(b[0]));
+  C.ovFtdMo=mkChart('c-ov-ftdmo',{
+    type:'line',data:{labels:ftdM2.map(([k])=>mlb(k)),datasets:[{label:'FTDs',data:ftdM2.map(([,v])=>v),borderColor:'#10B981',borderWidth:2,pointRadius:2,fill:true,backgroundColor:'rgba(16,185,129,0.06)',tension:.4}]},
+    options:{responsive:true,plugins:{legend:{display:false},tooltip:{...TO}},scales:{x:{grid:{display:false},ticks:{color:'#5E7191',font:{size:9},maxTicksLimit:10}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}}}}
+  });
+}
+
+
+// ─── KYC ──────────────────────────────────────────────────────────
+function renderKyc(){
+  const data=MAN.hs||D.hs;
+  const ctry=document.getElementById('kyc-ctry').value,src=document.getElementById('kyc-src').value;
+
+  let kyc=KYC.total,byC={...KYC.byCountry},byCamp={...KYC.byCampaign},byMo={...KYC.byMonth};
+
+  // If live data available, use it
+  if(data){
+    kyc=data.kycApproved||KYC.total;
+    if(data.byCountry)Object.assign(byC,data.byCountry);
+    if(data.byCampaign)Object.assign(byCamp,data.byCampaign);
+    if(data.byMonth)Object.assign(byMo,data.byMonth);
+  }
+
+  if(ctry){
+    const cv=byC[ctry]||0,r=cv/(kyc||1);
+    kyc=cv;byC={[ctry]:cv};
+    Object.keys(byCamp).forEach(k=>byCamp[k]=Math.round(byCamp[k]*r));
+    Object.keys(byMo).forEach(k=>byMo[k]=Math.round(byMo[k]*r));
+  }
+  if(src){
+    if(src==='Direct'){kyc=byCamp['Direct/Unknown']||0;byCamp={'Direct/Unknown':kyc}}
+    else{const f=Object.fromEntries(Object.entries(byCamp).filter(([k])=>k.startsWith(src)));kyc=Object.values(f).reduce((s,v)=>s+v,0);byCamp=f}
+  }
+
+  const ibKyc=Object.entries(KYC.byCampaign).filter(([k])=>k.startsWith('IB')).reduce((s,[,v])=>s+v,0);
+  const mktKyc=Object.entries(KYC.byCampaign).filter(([k])=>k.startsWith('MKT')).reduce((s,[,v])=>s+v,0);
+  const top=Object.entries(byC)[0];
+
+  document.getElementById('kk-total').textContent=fmt(kyc);
+  document.getElementById('kk-sub').textContent=ctry?ctry.charAt(0)+ctry.slice(1).toLowerCase():'all countries';
+  document.getElementById('kk-top').textContent=top?top[0].charAt(0)+top[0].slice(1).toLowerCase():'—';
+  document.getElementById('kk-ib').textContent=fmt(ibKyc);
+  document.getElementById('kk-mkt').textContent=fmt(mktKyc);
+
+  const a=getA();
+  const months=Object.entries(byMo).sort((x,y)=>x[0].localeCompare(y[0]));
+  C.kycMo=mkChart('c-kyc-mo',{type:'bar',data:{labels:months.map(([k])=>mlb(k)),datasets:[{label:'KYC',data:months.map(([,v])=>v||0),backgroundColor:a+'20',borderColor:a,borderWidth:1.5,borderRadius:4}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{...TO}},scales:{x:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#5E7191',font:{size:9}}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}}}}});
+
+  const top6=Object.entries(byC).slice(0,6),cols=['#10B981','#3B82F6','#F59E0B','#EF4444','#8B5CF6','#EC4899'];
+  C.kycGeo=mkChart('c-kyc-geo',{type:'doughnut',data:{labels:top6.map(([k])=>k.charAt(0)+k.slice(1).toLowerCase()),datasets:[{data:top6.map(([,v])=>v),backgroundColor:cols.slice(0,top6.length),borderWidth:0,hoverOffset:5}]},options:{responsive:true,cutout:'70%',plugins:{legend:{position:'bottom',labels:{color:'#5E7191',font:{size:10},padding:8,boxWidth:10}},tooltip:{...TO}}}});
+
+  const kTot=kyc||1,maxC=Object.values(byC)[0]||1,maxCamp=Object.values(byCamp)[0]||1;
+  buildCB('cb-kyc-c',Object.entries(byC).slice(0,10).map(([k,v])=>({label:k.charAt(0)+k.slice(1).toLowerCase(),val:fmt(v),pct:((v/kTot)*100).toFixed(1)+'%',w:(v/maxC*100)+'%',color:a})));
+  buildCB('cb-kyc-s',Object.entries(byCamp).filter(([k])=>k!=='Direct/Unknown').slice(0,8).map(([k,v])=>({label:k,val:fmt(v),pct:((v/kTot)*100).toFixed(1)+'%',w:(v/maxCamp*100)+'%',color:k.startsWith('IB')?a:'#3B82F6'})));
+
+  setAiText('kyc',`<strong>5,242 KYC clients</strong> across all markets. Japan leads with 2,036 clients (38.8%), followed by Brazil (755) and Canada (309). IB partners sourced ${ibKyc} KYC clients, MKT campaigns sourced ${mktKyc}. The KYC→FTD conversion rate is <strong>15.4%</strong> — focus on improving post-KYC onboarding flow to increase deposits.`);
+}
+
+// ─── FTD ──────────────────────────────────────────────────────────
+function setFtdSrc(src){
+  ftdSrc=src;
+  document.querySelectorAll('#ftd-src-chips .chip').forEach(c=>{c.classList.toggle('on',c.dataset.src===src)});
+  renderFtd();
+}
+
+function renderFtd(){
+  const ctry=document.getElementById('ftd-ctry').value;
+  let{total,byC,byCamp}=getFtdForFilter(ctry||'all',ftdSrc);
+  if(ctry&&ftdSrc==='all'){byC={[ctry]:FTD.byCountry[ctry]||0};total=FTD.byCountry[ctry]||0}
+  else if(ctry){const r=(FTD.byCountry[ctry]||0)/FTD.total;total=Math.round(total*r)}
+
+  document.getElementById('fk-total').textContent=fmt(total);
+  document.getElementById('fk-sub').textContent=(ftdSrc==='all'?'all channels':ftdSrc)+(ctry?' · '+ctry.charAt(0)+ctry.slice(1).toLowerCase():'');
+  document.getElementById('fk-cpftd').textContent=fmtD((D.gads?.summary?.totalCost||MAN.gads?.summary?.totalCost||5099.85)/(FTD.ibTotal+FTD.mktTotal),0);
+
+  const a=getA();
+  const ftdM=Object.entries(FTD.byMonth).sort((a,b)=>a[0].localeCompare(b[0]));
+  C.ftdMo=mkChart('c-ftd-mo',{type:'line',data:{labels:ftdM.map(([k])=>mlb(k)),datasets:[{label:'FTDs',data:ftdM.map(([,v])=>v),borderColor:'#10B981',borderWidth:2,pointRadius:2,pointBackgroundColor:'#10B981',fill:true,backgroundColor:'rgba(16,185,129,0.07)',tension:.4}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{...TO}},scales:{x:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#5E7191',font:{size:9},maxTicksLimit:10}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}}}}});
+
+  const ftdByC=ctry?{[ctry]:FTD.byCountry[ctry]||0}:FTD.byCountry;
+  const top5=Object.entries(ftdByC).slice(0,5),cols=['#10B981','#3B82F6','#F59E0B','#8B5CF6','#EF4444'];
+  C.ftdGeo=mkChart('c-ftd-geo',{type:'doughnut',data:{labels:top5.map(([k])=>k.charAt(0)+k.slice(1).toLowerCase()),datasets:[{data:top5.map(([,v])=>v),backgroundColor:cols.slice(0,top5.length),borderWidth:0,hoverOffset:5}]},options:{responsive:true,cutout:'70%',plugins:{legend:{position:'bottom',labels:{color:'#5E7191',font:{size:10},padding:8,boxWidth:10}},tooltip:{...TO}}}});
+
+  const ibC=Object.entries(FTD.byCampaign).filter(([k])=>k.startsWith('IB')).sort((a,b)=>b[1]-a[1]);
+  const mktC=Object.entries(FTD.byCampaign).filter(([k])=>k.startsWith('MKT')).sort((a,b)=>b[1]-a[1]);
+  const ibMax=ibC[0]?.[1]||1,mktMax=mktC[0]?.[1]||1;
+  buildCB('cb-ftd-ib',ibC.map(([k,v])=>({label:k,val:fmt(v)+' FTDs',pct:fmtP(v/FTD.total*100),w:(v/ibMax*100)+'%',color:a})));
+  buildCB('cb-ftd-mkt',mktC.map(([k,v])=>({label:k.replace('MKT-',''),val:fmt(v)+' FTDs',pct:fmtP(v/FTD.total*100),w:(v/mktMax*100)+'%',color:'#3B82F6'})));
+
+  setAiText('ftd',`<strong>808 FTD clients</strong> total. Japan leads with 187 (23.1%), followed by Brazil (157) and Australia (142). IB partners generated 141 FTDs — <strong>IB-18050031-One is the top performer (50 FTDs)</strong>. MKT campaigns generated 34 FTDs. 497 FTDs (61%) are unattributed. Cost per tracked FTD: <strong>$29</strong> ($5,100 ÷ 175 tracked). KYC→FTD rate: 15.4%.`);
+}
+
+// ─── GOOGLE ADS ───────────────────────────────────────────────────
+function setMkt(mkt){
+  curMkt=mkt;
+  ['all','jp','au','uk'].forEach(m=>document.getElementById('gmt-'+m)?.classList.toggle('on',m===mkt));
+  document.getElementById('uk-notice').style.display=(mkt==='uk'&&!MAN.uk)?'block':'none';
+  renderGads();
+}
+
+function renderGads(){
+  const period=document.getElementById('gads-period').value,year=document.getElementById('gads-yr').value;
+  let data=curMkt==='uk'&&MAN.uk?MAN.uk:(MAN.gads||D.gads);
+  if(!data){
+    // Show static fallback
+    document.getElementById('gk-spend').textContent='$5,100';
+    document.getElementById('gk-impr').textContent='369,594';
+    document.getElementById('gk-clicks').textContent='12,071';
+    document.getElementById('gk-ctr').textContent='3.27%';
+    document.getElementById('gk-conv').textContent='398';
+    document.getElementById('gk-cpa').textContent='12.81';
+    setAiText('gads',`<strong>Google Ads overview:</strong> $5,100 total spend · 369,594 impressions · 12,071 clicks · 3.27% CTR · 398 registrations · $12.81 cost per registration. Markets: Japan + Australia live via SyncWith. UK requires manual upload. Best opportunity: increase Japan budget (187 FTDs from that market).`);
+    return;
+  }
+
+  let ratio=1;
+  const mktKeyMap={jp:'JAPAN',au:'AUSTRALIA',uk:'UNITED KINGDOM'};
+  if(curMkt!=='all')ratio=getMktRatio(mktKeyMap[curMkt]||'all');
+
+  const daily=filterDaily(data.daily,period,year);
+  const byMonth=filterMonths(data.byMonth,period);
+  const tCost=daily.reduce((s,d)=>s+(d.cost||0)*ratio,0);
+  const tClicks=daily.reduce((s,d)=>s+(d.clicks||0)*ratio,0);
+  const tImpr=daily.reduce((s,d)=>s+(d.impr||0)*ratio,0);
+  const tConv=daily.reduce((s,d)=>s+(d.conv||0)*ratio,0);
+
+  document.getElementById('gk-spend').textContent=fmtD(tCost);
+  document.getElementById('gk-impr').textContent=fmt(tImpr);
+  document.getElementById('gk-clicks').textContent=fmt(tClicks);
+  document.getElementById('gk-ctr').textContent=tImpr>0?((tClicks/tImpr)*100).toFixed(2)+'%':'—';
+  document.getElementById('gk-conv').textContent=fmt(tConv);
+  document.getElementById('gk-cpa').textContent=tConv>0?(tCost/tConv).toFixed(2):'—';
+  document.getElementById('gk-mkt-lbl').textContent=curMkt==='all'?'all markets':{jp:'Japan',au:'Australia',uk:'UK'}[curMkt];
+
+  const pl={thismonth:'This month',lastmonth:'Last month',thisyear:'2026',lastyear:'2025'}[period]||period+' days';
+  document.getElementById('gads-bp').textContent=(year?year+' · ':'')+pl;
+
+  const a=getA();
+  C.gadsD=mkChart('c-gads-d',{data:{labels:daily.map(d=>d.day?.slice(5)),datasets:[{type:'bar',label:'Clicks',data:daily.map(d=>(d.clicks||0)*ratio),backgroundColor:a+'25',borderColor:a,borderWidth:1.5,borderRadius:3,yAxisID:'y'},{type:'line',label:'Cost ($)',data:daily.map(d=>(d.cost||0)*ratio),borderColor:'#F59E0B',borderWidth:1.5,pointRadius:0,fill:false,yAxisID:'y1',tension:.3}]},options:{responsive:true,interaction:{intersect:false,mode:'index'},plugins:{legend:{labels:{color:'#5E7191',font:{size:10},boxWidth:10}},tooltip:{...TO}},scales:{x:{grid:{display:false},ticks:{color:'#5E7191',font:{size:9},maxTicksLimit:14}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}},y1:{position:'right',grid:{display:false},ticks:{color:'#F59E0B',font:{size:9}}}}}});
+
+  const mkts=[{n:'Japan',k:'Japan',c:'#EF4444'},{n:'Australia',k:'Australia',c:'#3B82F6'},{n:'UK',k:'United Kingdom',c:'#8B5CF6'}];
+  const ga4t=Object.values(D.ga4?.byCountry||{}).reduce((s,v)=>s+v,0)||1;
+  C.gadsMkt=mkChart('c-gads-mkt',{type:'bar',data:{labels:mkts.map(m=>m.n),datasets:[{label:'Spend ($)',data:mkts.map(m=>((data.summary?.totalCost||0)*(D.ga4?.byCountry?.[m.k]||0)/ga4t).toFixed(0)),backgroundColor:mkts.map(m=>m.c+'30'),borderColor:mkts.map(m=>m.c),borderWidth:1.5,borderRadius:5,yAxisID:'y'},{label:'Registrations',data:mkts.map(m=>((data.summary?.totalConversions||0)*(D.ga4?.byCountry?.[m.k]||0)/ga4t).toFixed(0)),backgroundColor:mkts.map(m=>m.c+'77'),borderColor:mkts.map(m=>m.c),borderWidth:1.5,borderRadius:5,type:'line',pointRadius:5,yAxisID:'y1'}]},options:{responsive:true,plugins:{legend:{labels:{color:'#5E7191',font:{size:10},boxWidth:10}},tooltip:{...TO}},scales:{x:{grid:{display:false},ticks:{color:'#5E7191',font:{size:10}}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}},y1:{position:'right',grid:{display:false},ticks:{color:'#5E7191',font:{size:9}}}}}});
+
+  const months=Object.entries(byMonth).sort((a,b)=>a[0].localeCompare(b[0]));
+  C.gadsMo=mkChart('c-gads-mo',{type:'bar',data:{labels:months.map(([k])=>mlb(k)),datasets:[{label:'Spend ($)',data:months.map(([,v])=>(v.cost*ratio).toFixed(0)),backgroundColor:'#F59E0B22',borderColor:'#F59E0B',borderWidth:1.5,borderRadius:4}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{...TO}},scales:{x:{grid:{display:false},ticks:{color:'#5E7191',font:{size:9}}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}}}}});
+  C.gadsCv=mkChart('c-gads-cv',{type:'bar',data:{labels:months.map(([k])=>mlb(k)),datasets:[{label:'Registrations',data:months.map(([,v])=>Math.round((v.conv||0)*ratio)),backgroundColor:a+'22',borderColor:a,borderWidth:1.5,borderRadius:4}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{...TO}},scales:{x:{grid:{display:false},ticks:{color:'#5E7191',font:{size:9}}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}}}}});
+
+  setAiText('gads',`<strong>${fmtD(tCost)} spend</strong> · ${fmt(tConv)} registrations · $${tConv>0?(tCost/tConv).toFixed(2):'12.81'} per registration. ${curMkt!=='all'?'Filtered to '+{jp:'Japan',au:'Australia',uk:'UK'}[curMkt]+' market.':''} CTR: ${tImpr>0?((tClicks/tImpr)*100).toFixed(2)+'%':'3.27%'}. Tip: compare your $12.81 cost per registration against the $29 cost per FTD — improving post-registration conversion is more impactful than reducing CPC.`);
+}
+
+// ─── GA4 ──────────────────────────────────────────────────────────
+function renderGa4(){
+  const data=MAN.ga4||D.ga4;
+  if(!data){
+    document.getElementById('ak-sess').textContent='121,626';
+    document.getElementById('ak-users').textContent='55,789';
+    document.getElementById('ak-new').textContent='55,789';
+    document.getElementById('ak-ev').textContent='431,040';
+    setAiText('ga4',`<strong>121,626 sessions</strong> total. Top markets: Australia (25,448), Japan (24,105), Brazil (11,348). CPC traffic: 28,961 sessions. Organic: 12,721 sessions. Tip: Japan generates more FTDs (187) despite Australia having more sessions (25k) — Japan visitors have higher intent.`);
+    return;
+  }
+  const ctry=document.getElementById('ga4-ctry').value,med=document.getElementById('ga4-med').value;
+  let tS=data.summary?.totalSessions||0,tU=data.summary?.totalUsers||0,tN=data.summary?.totalNewUsers||0,tE=data.summary?.totalEvents||0;
+  let byC={...data.byCountry},byM={...data.byMedium},byMo={...data.byMonth};
+  if(ctry){const cv=data.byCountry?.[ctry]||0,r=cv/(tS||1);tS=cv;tU=Math.round(tU*r);tN=Math.round(tN*r);tE=Math.round(tE*r);byC={[ctry]:cv};Object.keys(byM).forEach(k=>byM[k]=Math.round(byM[k]*r));Object.keys(byMo).forEach(k=>byMo[k]={sessions:Math.round((data.byMonth[k]?.sessions||0)*r),users:Math.round((data.byMonth[k]?.users||0)*r)})}
+  if(med&&!ctry){tS=data.byMedium?.[med]||0}
+  document.getElementById('ak-sess').textContent=fmt(tS);document.getElementById('ak-users').textContent=fmt(tU);document.getElementById('ak-new').textContent=fmt(tN);document.getElementById('ak-ev').textContent=fmt(tE);document.getElementById('ak-sub').textContent=ctry||'all countries';
+  const a=getA(),months=Object.entries(byMo).sort((x,y)=>x[0].localeCompare(y[0]));
+  C.ga4Mo=mkChart('c-ga4-mo',{type:'bar',data:{labels:months.map(([k])=>mlb(k)),datasets:[{label:'Sessions',data:months.map(([,v])=>v.sessions||0),backgroundColor:'#3B82F622',borderColor:'#3B82F6',borderWidth:1.5,borderRadius:4}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{...TO}},scales:{x:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#5E7191',font:{size:9}}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}}}}});
+  const top6=Object.entries(byC).slice(0,6),cols=['#3B82F6','#10B981','#F59E0B','#EF4444','#8B5CF6','#EC4899'];
+  C.ga4Geo=mkChart('c-ga4-geo',{type:'doughnut',data:{labels:top6.map(([k])=>k),datasets:[{data:top6.map(([,v])=>v),backgroundColor:cols.slice(0,top6.length),borderWidth:0,hoverOffset:5}]},options:{responsive:true,cutout:'70%',plugins:{legend:{position:'bottom',labels:{color:'#5E7191',font:{size:10},padding:8,boxWidth:10}},tooltip:{...TO}}}});
+  const tot=tS||1,maxC=Object.values(byC)[0]||1,maxM=Object.values(byM)[0]||1;
+  buildCB('cb-ga4-c',Object.entries(byC).slice(0,10).map(([k,v])=>({label:k,val:fmt(v),pct:((v/tot)*100).toFixed(1)+'%',w:(v/maxC*100)+'%',color:'#3B82F6'})));
+  buildCB('cb-ga4-m',Object.entries(byM).slice(0,10).map(([k,v])=>({label:k,val:fmt(v),pct:((v/tot)*100).toFixed(1)+'%',w:(v/maxM*100)+'%',color:a})));
+  const top1=Object.entries(byC)[0],top2=Object.entries(byC)[1];
+  setAiText('ga4',`<strong>${fmt(tS)} sessions${ctry?' ('+ctry+')':''}</strong>. ${top1?`Top country: ${top1[0]} with ${fmt(top1[1])} sessions.`:''} ${top2?`Second: ${top2[0]} (${fmt(top2[1])}).`:''} CPC traffic: ${fmt(byM['cpc']||0)} sessions. Organic: ${fmt(byM['organic']||0)}. Japan has higher FTD intent despite fewer sessions than Australia.`);
+}
+
+// ─── COMP BARS ────────────────────────────────────────────────────
+function buildCB(id,items){
+  const el=document.getElementById(id);if(!el)return;
+  if(!items||!items.length){el.innerHTML='<div style="font-size:11px;color:var(--tm);padding:6px 0">No data</div>';return}
+  el.innerHTML=items.map(i=>`<div class="cb-row"><div class="cb-lbl" title="${i.label}">${i.label}</div><div class="cb-track"><div class="cb-fill" style="width:${i.w};background:${i.color}"></div></div><div class="cb-val">${i.val}</div><div class="cb-pct">${i.pct}</div></div>`).join('');
+}
+
+// ─── AI INLINE ────────────────────────────────────────────────────
+function setAiText(section,html){const el=document.getElementById('ai-'+section+'-text');if(el)el.innerHTML=html}
+
+async function askSection(section){
+  const qEl=document.getElementById('ai-'+section+'-q');
+  const respEl=document.getElementById('ai-'+section+'-resp');
+  const q=qEl?.value?.trim();if(!q||!respEl)return;
+  qEl.value='';
+  respEl.className='ai-resp on';
+  respEl.innerHTML='<span class="sp"></span>Analysing...';
+
+  const gads=MAN.gads||D.gads,ga4=MAN.ga4||D.ga4;
+  const ctx=`You are an AI analyst for OQtima (Forex/CFD broker, Japan/Australia/UK focus).
+DATA: KYC=${KYC.total.toLocaleString()} clients (Japan:${KYC.byCountry.JAPAN}, Brazil:${KYC.byCountry.BRAZIL}, Australia:${KYC.byCountry.AUSTRALIA}, UK:${KYC.byCountry['UNITED KINGDOM']})
+FTD=808 (Japan:187, Brazil:157, Australia:142, UK:50) | IB:141 FTDs | MKT:34 FTDs | Direct:497
+Top IB: IB-18050031-One(50), IB-18051770-ECN3(35), IB-18050993(21) | Top MKT: myFXbook(13), OL_Thiago(12), TakumiKatoMB(9)
+Google Ads: $${gads?.summary?.totalCost?.toFixed(0)||5100} spend | ${gads?.summary?.totalConversions||398} regs | $${gads?.summary?.costPerConversion||'12.81'}/reg
+KYC→FTD rate: 15.4% | Cost/tracked FTD: $29
+GA4: ${ga4?.summary?.totalSessions?.toLocaleString()||'121,626'} sessions | Japan:${ga4?.byCountry?.Japan||24105} | Australia:${ga4?.byCountry?.Australia||25448}
+Section context: ${section}. Be specific, concise, max 2 paragraphs.`;
+
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:400,system:ctx,messages:[{role:'user',content:q}]})});
+    const d=await r.json();
+    respEl.innerHTML=(d.content?.[0]?.text||'No response.').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+  }catch(e){
+    respEl.innerHTML='<strong>Quick answer based on your data:</strong> Check the static analysis above — it covers the key metrics for this section.';
+  }
+}
+
+// ─── UPLOAD ───────────────────────────────────────────────────────
+function hDrop(e,type){e.preventDefault();document.getElementById('uz-'+type)?.classList.remove('drag');const f=e.dataTransfer.files[0];if(f)hUp(f,type)}
+function hUp(file,type){
+  if(!file)return;
+  const r=new FileReader();
+  r.onload=function(e){
+    try{
+      let rows;
+      if(file.name.toLowerCase().endsWith('.csv'))rows=parseCSV(e.target.result);
+      else{const wb=XLSX.read(e.target.result,{type:'binary',cellDates:true});const ws=wb.Sheets[wb.SheetNames[0]];rows=XLSX.utils.sheet_to_json(ws,{raw:false})}
+      const st=document.getElementById('us-'+type);st.style.display='block';
+      if(type==='uk'){MAN.uk=procGads(rows);if(curMkt==='uk'){renderGads();document.getElementById('uk-notice').style.display='none'}st.innerHTML=`<span style="color:var(--green)">✓ UK loaded: ${rows.length} rows</span>`}
+      else if(type==='gads'){MAN.gads=procGads(rows);renderGads();renderOverview();st.innerHTML=`<span style="color:var(--green)">✓ Google Ads loaded: ${rows.length} rows</span>`}
+      else if(type==='ga4'){MAN.ga4=procGa4(rows);renderGa4();renderOverview();st.innerHTML=`<span style="color:var(--green)">✓ GA4 loaded: ${rows.length} rows</span>`}
+      else if(type==='hs'){MAN.hs=procHs(rows);renderKyc();renderOverview();st.innerHTML=`<span style="color:var(--green)">✓ HubSpot loaded: ${rows.length} rows</span>`}
+    }catch(err){const st=document.getElementById('us-'+type);st.style.display='block';st.innerHTML=`<span style="color:var(--red)">Error: ${err.message}</span>`}
+  };
+  updateDataStatus();
+  if(file.name.toLowerCase().endsWith('.csv'))r.readAsText(file);else r.readAsBinaryString(file);
+}
+function parseCSV(text){const lines=text.trim().split('\n');let hi=-1;for(let i=0;i<Math.min(lines.length,10);i++){const c=lines[i].split(',').map(h=>h.trim().replace(/^"|"$/g,'').toLowerCase()).filter(h=>h);if(c.length>=3&&(c.some(x=>x==='day'||x==='date')||c.some(x=>x==='sessions')||c.some(x=>x==='clicks'))){hi=i;break}}if(hi===-1)return[];const h=lines[hi].split(',').map(x=>x.trim().replace(/^"|"$/g,''));return lines.slice(hi+1).filter(l=>l.trim()).map(l=>{const v=l.split(',').map(x=>x.trim().replace(/^"|"$/g,''));const o={};h.forEach((k,i)=>o[k]=v[i]||'');return o})}
+function cN(v){return parseFloat((v||'').toString().replace(/[$,%]/g,''))||0}
+function procGads(rows){let tI=0,tCl=0,tCo=0,tConv=0;const byM={},daily=[];rows.forEach(r=>{const day=r['Day']||r['day']||r['Date']||'',impr=cN(r['Impr.']||r['Impressions']),clicks=cN(r['Clicks']||r['clicks']),cost=cN(r['Cost']||r['cost']),conv=cN(r['Conversions']||r['conversions']),ctr=cN(r['CTR']||r['ctr']),cpc=cN(r['Avg. CPC']||r['avg. cpc']);tI+=impr;tCl+=clicks;tCo+=cost;tConv+=conv;if(day){daily.push({day,impr,clicks,cost,conv,ctr,cpc});const mo=day.slice(0,7);if(!byM[mo])byM[mo]={impr:0,clicks:0,cost:0,conv:0};byM[mo].impr+=impr;byM[mo].clicks+=clicks;byM[mo].cost+=cost;byM[mo].conv+=conv}});return{summary:{totalImpressions:Math.round(tI),totalClicks:Math.round(tCl),totalCost:parseFloat(tCo.toFixed(2)),totalConversions:parseFloat(tConv.toFixed(1)),avgCTR:tI>0?((tCl/tI)*100).toFixed(2):0,avgCPC:tCl>0?(tCo/tCl).toFixed(2):0,costPerConversion:tConv>0?(tCo/tConv).toFixed(2):0},byMonth:byM,daily:daily.slice(-90)}}
+function procGa4(rows){let tS=0,tU=0,tN=0,tE=0;const byC={},byM={},byMo={};rows.forEach(r=>{const s=cN(r['Sessions']||r['sessions']),u=cN(r['Total users']||r['Users']||r['total users']),n=cN(r['New users']||r['new users']),e=cN(r['Event count']||r['event count']),c=r['Country']||r['country']||'Unknown',m=r['Session medium']||r['session medium']||'Unknown',d=r['Day']||r['day']||'';tS+=s;tU+=u;tN+=n;tE+=e;byC[c]=(byC[c]||0)+s;byM[m]=(byM[m]||0)+s;if(d){const mo=d.slice(0,7);if(!byMo[mo])byMo[mo]={sessions:0,users:0};byMo[mo].sessions+=s;byMo[mo].users+=u}});return{summary:{totalSessions:Math.round(tS),totalUsers:Math.round(tU),totalNewUsers:Math.round(tN),totalEvents:Math.round(tE)},byCountry:Object.fromEntries(Object.entries(byC).sort((a,b)=>b[1]-a[1])),byMedium:Object.fromEntries(Object.entries(byM).sort((a,b)=>b[1]-a[1])),byMonth:byMo}}
+function procHs(rows){const byC={},byCamp={},byMo={};let total=0,kyc=0;rows.forEach(r=>{total++;const c=r['portal - country']||r['Country']||'Unknown';byC[c]=(byC[c]||0)+1;const camp=r['portal - source_marketing_campaign']||'Direct/Unknown';byCamp[camp]=(byCamp[camp]||0)+1;const d=r['Create Date']||r['createdate']||'';if(d){const mo=String(d).slice(0,7);if(mo.match(/^\d{4}-\d{2}$/))byMo[mo]=(byMo[mo]||0)+1}if((r['portal - documentation']||'')=='Approved')kyc++});return{total,kycApproved:kyc,byCountry:Object.fromEntries(Object.entries(byC).sort((a,b)=>b[1]-a[1])),byCampaign:Object.fromEntries(Object.entries(byCamp).sort((a,b)=>b[1]-a[1])),byMonth:byMo}}
+
+// ─── VIEWS ────────────────────────────────────────────────────────
+function sv(name){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
+  document.querySelectorAll('.nt,.mt-tab').forEach(n=>n.classList.remove('on'));
+  document.getElementById('view-'+name)?.classList.add('on');
+  document.querySelectorAll(`.nt[onclick="sv('${name}')"],.mt-tab[onclick="sv('${name}')"]`).forEach(n=>n.classList.add('on'));
+  window.scrollTo({top:0,behavior:'smooth'});
+  // Re-render the section to pick up any filter changes
+  if(D.hs||D.gads||D.ga4){
+    if(name==='overview')renderOverview();
+    else if(name==='kyc')renderKyc();
+    else if(name==='ftd')renderFtd();
+    else if(name==='gads')renderGads();
+    else if(name==='ga4')renderGa4();
+  }
+}
+
+// ─── SETTINGS ────────────────────────────────────────────────────
+function applyS(){const a=document.getElementById('s-a').value,bg=document.getElementById('s-bg').value,font=document.getElementById('s-font').value,name=document.getElementById('s-name').value,theme=document.getElementById('s-theme').value;const r=document.documentElement;r.style.setProperty('--a',a);r.style.setProperty('--ad',a+'17');r.style.setProperty('--am',a+'50');r.style.setProperty('--fd',font);r.style.setProperty('--bg',bg);r.style.setProperty('--surf',shC(bg,7));r.style.setProperty('--card',shC(bg,14));r.style.setProperty('--card2',shC(bg,20));if(theme==='light'){r.style.setProperty('--bg','#F4F6F9');r.style.setProperty('--surf','#FFFFFF');r.style.setProperty('--card','#F0F2F5');r.style.setProperty('--card2','#E8EBF0');r.style.setProperty('--tp','#0F172A');r.style.setProperty('--ts','#64748B');r.style.setProperty('--tm','#94A3B8');r.style.setProperty('--b','rgba(0,0,0,0.07)');r.style.setProperty('--bl','rgba(0,0,0,0.12)')}else{r.style.setProperty('--tp','#EDF0F5');r.style.setProperty('--ts','#64748B');r.style.setProperty('--tm','#2E3A4E');r.style.setProperty('--b','rgba(255,255,255,0.06)');r.style.setProperty('--bl','rgba(255,255,255,0.11)')}document.getElementById('logo').innerHTML=name+'<em>™</em>'}
+function shC(h,a){const r=Math.max(0,Math.min(255,parseInt(h.slice(1,3),16)+a)),g=Math.max(0,Math.min(255,parseInt(h.slice(3,5),16)+a)),b=Math.max(0,Math.min(255,parseInt(h.slice(5,7),16)+a));return'#'+[r,g,b].map(x=>x.toString(16).padStart(2,'0')).join('')}
+function syncA(){document.getElementById('s-ah').value=document.getElementById('s-a').value;applyS()}
+function syncAT(){const v=document.getElementById('s-ah').value;if(/^#[0-9a-fA-F]{6}$/.test(v)){document.getElementById('s-a').value=v;applyS()}}
+function syncBg(){document.getElementById('s-bgh').value=document.getElementById('s-bg').value;applyS()}
+function syncBgT(){const v=document.getElementById('s-bgh').value;if(/^#[0-9a-fA-F]{6}$/.test(v)){document.getElementById('s-bg').value=v;applyS()}}
+function saveS(){const s={a:document.getElementById('s-a').value,bg:document.getElementById('s-bg').value,f:document.getElementById('s-font').value,n:document.getElementById('s-name').value,th:document.getElementById('s-theme').value,be:document.getElementById('s-be').value};localStorage.setItem('oq-v8',JSON.stringify(s));BE=s.be;localStorage.setItem('oq-be',s.be);const b=document.getElementById('save-btn');b.textContent='✓ Saved';setTimeout(()=>b.textContent='Save',2000)}
+function loadS(){try{const s=JSON.parse(localStorage.getItem('oq-v8')||'{}');if(s.a){document.getElementById('s-a').value=s.a;document.getElementById('s-ah').value=s.a}if(s.bg){document.getElementById('s-bg').value=s.bg;document.getElementById('s-bgh').value=s.bg}if(s.f)document.getElementById('s-font').value=s.f;if(s.n)document.getElementById('s-name').value=s.n;if(s.th)document.getElementById('s-theme').value=s.th;if(s.be){document.getElementById('s-be').value=s.be;BE=s.be}if(Object.keys(s).length>0)applyS()}catch(e){}}
+function resetS(){localStorage.removeItem('oq-v8');location.reload()}
+</script>
+</body>
+</html>
