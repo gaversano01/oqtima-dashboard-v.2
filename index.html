@@ -885,10 +885,6 @@ function renderOverviewStatic(){
   const ftd=mkt==='all'?FTD.total:(FTD.byCountry[mkt]||0);
   const pLabel={all:'All time',thismonth:'This month',lastmonth:'Last month',thisyear:'This year',lastyear:'Last year',7:'Last 7d',14:'Last 14d',30:'Last 30d',90:'Last 90d'}[period]||(period?period+' days':'All time');
   document.getElementById('fn-badge').textContent=pLabel;
-  const ovBadge=document.getElementById('ov-badge'); if(ovBadge)ovBadge.textContent=pLabel;
-
-  const pLabel={all:'All time',thismonth:'This month',lastmonth:'Last month',thisyear:'This year',lastyear:'Last year',7:'Last 7d',14:'Last 14d',30:'Last 30d',90:'Last 90d'}[period]||(period?period+' days':'All time');
-  document.getElementById('fn-badge').textContent=pLabel;
   const ovB=document.getElementById('ov-badge');if(ovB)ovB.textContent=pLabel;
   const gadsB=document.getElementById('gads-bdg');if(gadsB)gadsB.textContent=pLabel;
   const steps=[
