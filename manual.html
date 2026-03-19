@@ -392,11 +392,16 @@ input[type=color]{width:32px;height:32px;border-radius:6px;border:1px solid var(
   <div class="sh" style="margin-top:4px">
     <div class="sh-left"><div class="sh-title">Marketing ROI Analysis</div><div class="sh-sub">Ad spend vs KYC acquisitions vs FTD deposits — separated by channel</div></div>
   </div>
-  <div class="cg3" style="margin-bottom:10px">
-    <div class="kcard" style="--kc:#3B82F6;padding:16px">
-      <div class="kl">Cost per KYC <span style="font-size:9px;color:var(--tm)">(Digital Marketing only)</span></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:10px">
+    <div class="kcard" style="--kc:#8B5CF6;padding:14px">
+      <div class="kl">Cost per Registration</div>
+      <div class="kv" id="roi-cpreg">—</div>
+      <div class="ksub" id="roi-cpreg-s">upload Google Ads</div>
+    </div>
+    <div class="kcard" style="--kc:#3B82F6;padding:14px">
+      <div class="kl">Cost per KYC <span style="font-size:9px;color:var(--tm)">(Mkt only)</span></div>
       <div class="kv" id="roi-cpkyc">—</div>
-      <div class="ksub">Ad spend ÷ KYC clients<br><span id="roi-cpkyc-sub" style="color:var(--ts)">—</span></div>
+      <div class="ksub">Ad spend ÷ KYC<br><span id="roi-cpkyc-sub" style="color:var(--ts)">—</span></div>
     </div>
     <div class="kcard" style="--kc:#10B981;padding:16px">
       <div class="kl">Cost per FTD <span style="font-size:9px;color:var(--tm)">(tracked channels)</span></div>
@@ -1152,23 +1157,23 @@ function renderOverview(){
 
   // ── KPI cards ──
   const sessKpi=mkt==='all'?ga4Sess:Math.round((ga4Sess||0)*((ga4?.byCountry?.[ga4MktName]||0)/(ga4?.summary?.totalSessions||1)));
-  document.getElementById('ok-sess').textContent=ga4?fmt(sessKpi||Math.round((ga4.summary?.totalSessions||0)*ratio)):'—';
+  set('ok-sess',ga4?fmt(sessKpi||Math.round((ga4.summary?.totalSessions||0)*ratio)):'—');
   const reg=Math.round(gadsConv||(gads?.summary?.totalConversions||0)*ratio);
-  document.getElementById('ok-reg').textContent=gads?fmt(reg):'—';
-  document.getElementById('ok-kyc').textContent=hasHs()?fmt(kyc):'—';
-  document.getElementById('ok-ftd').textContent=hasHs()?fmt(ftd):'—';
+  set('ok-reg',gads?fmt(reg):'—');
+  set('ok-kyc',hasHs()?fmt(kyc):'—');
+  set('ok-ftd',hasHs()?fmt(ftd):'—');
   const spend=gadsCost||(gads?.summary?.totalCost||0)*ratio;
-  document.getElementById('ok-spend').textContent=gads?fmtD(spend):'—';
+  set('ok-spend',gads?fmtD(spend):'—');
   const cpa=reg>0&&spend>0?(spend/reg).toFixed(2):null;
-  document.getElementById('ok-cpa-s').textContent=cpa?'$'+cpa+' per registration':'— per registration';
+  set('ok-cpa-s',cpa?'$'+cpa+' per registration':'— per registration');
 
   // ── ROI KPIs ──
-  document.getElementById('R-cpreg').textContent=cpa?'$'+cpa:'—';
-  document.getElementById('R-cpreg-s').textContent=gads?fmtD(spend)+' ÷ '+fmt(reg)+' registrations':'Upload Google Ads data';
+  set('roi-cpreg',cpa?'$'+cpa:'—');
+  set('roi-cpreg-s',gads?fmtD(spend)+' ÷ '+fmt(reg)+' registrations':'Upload Google Ads data');
   const cpKyc=kyc>0&&spend>0?fmtD(spend/kyc,2):'—';
-  document.getElementById('R-cpkyc').textContent=cpKyc;
-  document.getElementById('R-cpkyc-s').textContent=(hasHs()&&gads)?fmtD(spend)+' ÷ '+fmt(kyc)+' KYC':'Upload Google Ads + HubSpot';
-  document.getElementById('R-cpftd').textContent=gads&&trackedFtd>1?fmtD(spend/trackedFtd,0):'—';
+  set('roi-cpkyc',cpKyc);
+  set('roi-cpkyc-sub',(hasHs()&&gads)?fmtD(spend)+' ÷ '+fmt(kyc)+' KYC':'Upload Google Ads + HubSpot');
+  set('roi-cpftd',gads&&trackedFtd>1?fmtD(spend/trackedFtd,0):'—');
   // Update ROI section
   const roiCpftd=document.getElementById('roi-cpftd');
   if(roiCpftd)roiCpftd.textContent=gads&&trackedFtd>1?fmtD(spend/trackedFtd,0):'—';
@@ -1177,7 +1182,7 @@ function renderOverview(){
   // Unattributed %
   const hs=MAN.hs;
   const roiUnattr=document.getElementById('roi-unattr');
-  const roiUnattrS=document.getElementById('roi-unattr-s');
+  const roiUnattrS=document.getElementById('roi-unattr');
   if(hs&&hs.total>0){
     const directCount=(hs.byCampaign||{})['Direct/Unknown']||0;
     const pct=((directCount/hs.total)*100).toFixed(0);
@@ -1189,7 +1194,7 @@ function renderOverview(){
   }
 
   // ── Funnel rings ──
-  const container=document.getElementById('fn-steps')||document.getElementById('fn-rings-row');
+  const container=document.getElementById('fn-rings-row')||document.getElementById('fn-rings-row');
   if(container){
     if(!hasAnyData()){
       container.innerHTML=emptyState('No data loaded','Upload Google Ads + HubSpot CSV files to see your acquisition funnel');
@@ -1285,8 +1290,8 @@ function renderKyc(){
         e.parentElement.insertAdjacentHTML('beforeend',emptyState('No HubSpot data','Upload a HubSpot contacts CSV'));
     });
     ['cb-kyc-c','cb-kyc-s'].forEach(id=>{const e=document.getElementById(id);if(e)e.innerHTML=emptyState('No data','Upload HubSpot CSV',false);});
-    ['kk-t','kk-ib','kk-mkt'].forEach(id=>set(id,'—'));
-    set('kk-s','no data loaded');
+    ['kk-total','kk-ib','kk-mkt'].forEach(id=>set(id,'—'));
+    set('kk-sub','no data loaded');
     setAiText('kyc','Upload a HubSpot contacts CSV to see KYC analysis.');
     return;
   }
@@ -1299,7 +1304,7 @@ function renderKyc(){
   if(src){if(src==='Direct'){kyc=byCamp['Direct/Unknown']||0;byCamp={'Direct/Unknown':kyc}}else{const f=Object.fromEntries(Object.entries(byCamp).filter(([k])=>k.startsWith(src)));kyc=Object.values(f).reduce((a,v)=>a+v,0);byCamp=f;}}
   const ibKyc=Object.entries(data.byCampaign||{}).filter(([k])=>k.startsWith('IB')).reduce((a,[,v])=>a+v,0);
   const mktKyc=Object.entries(data.byCampaign||{}).filter(([k])=>k.startsWith('MKT')).reduce((a,[,v])=>a+v,0);
-  set('kk-t',fmt(kyc));set('kk-s',ctry?ctry.charAt(0)+ctry.slice(1).toLowerCase():'all countries');set('kk-ib',fmt(ibKyc));set('kk-mkt',fmt(mktKyc));
+  set('kk-total',fmt(kyc));set('kk-sub',ctry?ctry.charAt(0)+ctry.slice(1).toLowerCase():'all countries');set('kk-ib',fmt(ibKyc));set('kk-mkt',fmt(mktKyc));
   // Top market - dynamic
   const topMktEntry=Object.entries(byC).sort((a,b)=>b[1]-a[1])[0];
   if(topMktEntry){
@@ -1337,7 +1342,7 @@ function renderFtd(){
         e.parentElement.insertAdjacentHTML('beforeend',emptyState('No HubSpot data','Upload a HubSpot contacts CSV to see FTD data'));
     });
     ['cb-ftd-ib','cb-ftd-mkt'].forEach(id=>{const e=document.getElementById(id);if(e)e.innerHTML=emptyState('No data','Upload HubSpot CSV',false);});
-    set('fk-t','—');set('fk-s','no data');set('fk-cpf','—');
+    set('fk-total','—');set('fk-sub','no data');set('fk-cpftd','—');
     setAiText('ftd','Upload a HubSpot contacts CSV to see FTD analysis.');
     return;
   }
@@ -1352,15 +1357,15 @@ function renderFtd(){
   if(ftdSrc==='IB'){displayByCamp=Object.fromEntries(Object.entries(displayByCamp).filter(([k])=>k.startsWith('IB')));total=Object.values(displayByCamp).reduce((a,v)=>a+v,0);}
   else if(ftdSrc==='MKT'){displayByCamp=Object.fromEntries(Object.entries(displayByCamp).filter(([k])=>k.startsWith('MKT')));total=Object.values(displayByCamp).reduce((a,v)=>a+v,0);}
 
-  set('fk-t',fmt(total));
-  set('fk-s',(ftdSrc==='all'?'all channels':ftdSrc)+(ctry?' · '+ctry.charAt(0)+ctry.slice(1).toLowerCase():''));
+  set('fk-total',fmt(total));
+  set('fk-sub',(ftdSrc==='all'?'all channels':ftdSrc)+(ctry?' · '+ctry.charAt(0)+ctry.slice(1).toLowerCase():''));
   const spend=(MAN.gads?.summary?.totalCost||MAN.uk?.summary?.totalCost||0);
   const ibFtd=Object.entries(data.byCampaign||{}).filter(([k])=>k.startsWith('IB')).reduce((a,[,v])=>a+v,0);
   const mktFtd=Object.entries(data.byCampaign||{}).filter(([k])=>k.startsWith('MKT')).reduce((a,[,v])=>a+v,0);
   const trackedF=(ibFtd+mktFtd)||1;
-  set('fk-cpf',spend>0?fmtD(spend/trackedF,0):'—');
-  set('fk-ib',fmt(ibFtd));set('fk-ib-s',ibFtd>0?((ibFtd/withDep*100).toFixed(1)+'% of FTDs'):'—');
-  set('fk-mkt',fmt(mktFtd));set('fk-mkt-s',mktFtd>0?((mktFtd/withDep*100).toFixed(1)+'% of FTDs'):'—');
+  set('fk-cpftd',spend>0?fmtD(spend/trackedF,0):'—');
+  set('fk-ib-v',fmt(ibFtd));set('fk-ib-s',ibFtd>0?((ibFtd/withDep*100).toFixed(1)+'% of FTDs'):'—');
+  set('fk-mkt-v',fmt(mktFtd));set('fk-mkt-s',mktFtd>0?((mktFtd/withDep*100).toFixed(1)+'% of FTDs'):'—');
 
   // Monthly FTD from hs byMonth
   const byMoFtd={};
@@ -1400,7 +1405,7 @@ function renderGads(){
     setAiText('gads','Upload a Google Ads CSV to see ad performance analysis.');
     return;
   }
-  const period=document.getElementById('gads-p')?.value||'90',year=document.getElementById('gads-yr')?.value||'';
+  const period=document.getElementById('gads-period')?.value||'90',year=document.getElementById('gads-yr')?.value||'';
   const ratio=curMkt==='all'?1:getMktRatio({jp:'JAPAN',au:'AUSTRALIA',uk:'UNITED KINGDOM'}[curMkt]||'all');
   const byM=filterMonths(data.byMonth,period),daily=filterDaily(data.daily,period,year);
   const sum=(obj,k)=>Object.values(obj).reduce((a,v)=>a+(v[k]||0),0);
@@ -1413,7 +1418,7 @@ function renderGads(){
   set('gk-conv',fmt(Math.round(tConv||data.summary?.totalConversions*ratio||0)));
   const conv=tConv||data.summary?.totalConversions*ratio||0,cost=tCost||data.summary?.totalCost*ratio||0;
   set('gk-cpa',conv>0?(cost/conv).toFixed(2):'—');
-  set('gk-mkt',curMkt==='all'?'all markets':{jp:'Japan',au:'Australia',uk:'UK'}[curMkt]||'all markets');
+  set('gk-mkt-lbl',curMkt==='all'?'all markets':{jp:'Japan',au:'Australia',uk:'UK'}[curMkt]||'all markets');
   ['c-gads-d','c-gads-mkt','c-gads-mo','c-gads-cv'].forEach(id=>{const e=document.getElementById(id);if(e){e.style.display='';e.parentElement?.querySelectorAll('.empty-state').forEach(el=>el.remove());}});
   const a=getA(),pl={thismonth:'This month',lastmonth:'Last month',thisyear:'This year',lastyear:'Last year'}[period]||period+'d';
   const el2=document.getElementById('gads-bp');if(el2)el2.textContent=(year?year+' · ':'')+pl;
@@ -1441,7 +1446,7 @@ function renderGa4(){
     });
     ['cb-ga4-c','cb-ga4-m'].forEach(id=>{const e=document.getElementById(id);if(e)e.innerHTML=emptyState('No data','Upload GA4 CSV',false);});
     ['ak-sess','ak-users','ak-new','ak-ev'].forEach(id=>set(id,'—'));
-    set('ak-s','no data loaded');
+    set('ak-sub','no data loaded');
     setAiText('ga4','Upload a Google Analytics CSV to see traffic analysis.');
     return;
   }
@@ -1451,7 +1456,7 @@ function renderGa4(){
   let byC={...data.byCountry||{}},byM={...data.byMedium||{}},byMo={...data.byMonth||{}};
   if(ctry){const cv=data.byCountry?.[ctry]||0,r=cv/(tS||1);tS=cv;tU=Math.round(tU*r);tN=Math.round(tN*r);tE=Math.round(tE*r);byC={[ctry]:cv};Object.keys(byMo).forEach(k=>byMo[k]={sessions:Math.round((data.byMonth[k]?.sessions||0)*r),users:Math.round((data.byMonth[k]?.users||0)*r)});}
   if(med&&!ctry)tS=data.byMedium?.[med]||0;
-  set('ak-sess',fmt(tS));set('ak-users',fmt(tU));set('ak-new',fmt(tN));set('ak-ev',fmt(tE));set('ak-s',ctry||'all countries');
+  set('ak-sess',fmt(tS));set('ak-users',fmt(tU));set('ak-new',fmt(tN));set('ak-ev',fmt(tE));set('ak-sub',ctry||'all countries');
   const a=getA();
   const months=Object.entries(byMo).sort((x,y)=>x[0].localeCompare(y[0]));
   ['c-ga4-mo','c-ga4-geo'].forEach(id=>{const e=document.getElementById(id);if(e){e.style.display='';e.parentElement?.querySelectorAll('.empty-state').forEach(el=>el.remove());}});
