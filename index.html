@@ -266,7 +266,7 @@ input[type=color]{width:32px;height:32px;border-radius:6px;border:1px solid var(
   <!-- GLOBAL FILTERS -->
   <div class="gfbar">
     <span class="gfl">Period</span>
-    <select class="sel" id="ov-period" onchange="renderAll()">
+    <select class="sel" id="ov-period" onchange="onPeriodChange()">
       <option value="all">All time</option>
       <option value="90" selected>Last 90 days</option>
       <option value="30">Last 30 days</option>
@@ -274,7 +274,13 @@ input[type=color]{width:32px;height:32px;border-radius:6px;border:1px solid var(
       <option value="lastmonth">Last month</option>
       <option value="thisyear">This year (2026)</option>
       <option value="lastyear">Last year (2025)</option>
+    <option value="custom">📅 Custom range</option>
     </select>
+    <div class="drange" id="drange-wrap" style="display:none;align-items:center;gap:6px">
+      <input class="drange-inp" type="date" id="dr-start" onchange="onPeriodChange()"/>
+      <span style="font-size:11px;color:var(--ts)">→</span>
+      <input class="drange-inp" type="date" id="dr-end" onchange="onPeriodChange()"/>
+    </div>
     <div class="gfsep"></div>
     <span class="gfl">Market</span>
     <select class="sel" id="ov-mkt" onchange="renderAll()">
@@ -715,7 +721,18 @@ function populateMediumSel(){
 }
 
 // ─── HELPERS ──────────────────────────────────────────────────────
-function getOvPeriod(){return document.getElementById('ov-period').value}
+function onPeriodChange(){
+  const p=document.getElementById('ov-period').value;
+  const dw=document.getElementById('drange-wrap');
+  if(dw)dw.style.display=(p==='custom'?'flex':'none');
+  if(p==='custom'){const ds=document.getElementById('dr-start').value,de=document.getElementById('dr-end').value;if(!ds||!de)return;}
+  renderAll();
+}
+function getOvPeriod(){
+  const p=document.getElementById('ov-period')?.value||'all';
+  if(p==='custom'){const ds=document.getElementById('dr-start')?.value,de=document.getElementById('dr-end')?.value;if(ds&&de)return 'custom:'+ds+':'+de;}
+  return p;
+}
 function getOvMkt(){return document.getElementById('ov-mkt').value}
 
 
@@ -731,6 +748,7 @@ function mkChart(id, config){
 function filterMonths(bm,period){
   if(!bm||!Object.keys(bm).length)return{};
   if(!period||period==='all') return Object.fromEntries(Object.entries(bm).sort((a,b)=>a[0].localeCompare(b[0])));
+  if(period.startsWith('custom:')){const[,s2,e2]=period.split(':');const sm=s2.slice(0,7),em=e2.slice(0,7);let e=Object.entries(bm).filter(([k])=>k>=sm&&k<=em);if(!e.length)e=Object.entries(bm);return Object.fromEntries(e.sort((a,b)=>a[0].localeCompare(b[0])));}
   const now=new Date(), yr=now.getFullYear(), mo=now.getMonth()+1;
   const thisM=yr+'-'+String(mo).padStart(2,'0');
   const lastM=(mo===1?(yr-1):yr)+'-'+String(mo===1?12:mo-1).padStart(2,'0');
@@ -855,24 +873,30 @@ function renderOverviewStatic(){
   const gads=MAN.gads||D.gads;
   const ratio=mkt==='all'?1:getMktRatio(mkt);
   const gadsMonthsFn=filterMonths(gads?.byMonth,period);
-  const hasGadsMo=Object.keys(gadsMonthsFn).length>0;
   const sumFn=(key)=>Object.values(gadsMonthsFn).reduce((a,v)=>a+(v[key]||0),0);
-  const impr=Math.round((hasGadsMo?sumFn('impr'):(gads?.summary?.totalImpressions||0))*ratio);
-  const clicks=Math.round((hasGadsMo?sumFn('clicks'):(gads?.summary?.totalClicks||0))*ratio);
-  const reg=Math.round((hasGadsMo?sumFn('conv'):(gads?.summary?.totalConversions||0))*ratio);
-  const spend=(hasGadsMo?sumFn('cost'):(gads?.summary?.totalCost||5099.85))*ratio;
+  const hasGadsMo=Object.keys(gadsMonthsFn).length>0;
+  // Use period-filtered byMonth sums; fall back to all-time summary only if no month data
+  const impr=Math.round((sumFn('impr')||gads?.summary?.totalImpressions||0)*ratio);
+  const clicks=Math.round((sumFn('clicks')||gads?.summary?.totalClicks||0)*ratio);
+  const reg=Math.round((sumFn('conv')||gads?.summary?.totalConversions||0)*ratio);
+  const spend=(sumFn('cost')||gads?.summary?.totalCost||5099.85)*ratio;
+  // KYC+FTD: all-time only — no date breakdown in HubSpot export
   const kyc=mkt==='all'?KYC.total:(KYC.byCountry[mkt]||0);
   const ftd=mkt==='all'?FTD.total:(FTD.byCountry[mkt]||0);
   const pLabel={all:'All time',thismonth:'This month',lastmonth:'Last month',thisyear:'This year',lastyear:'Last year',7:'Last 7d',14:'Last 14d',30:'Last 30d',90:'Last 90d'}[period]||(period?period+' days':'All time');
   document.getElementById('fn-badge').textContent=pLabel;
   const ovBadge=document.getElementById('ov-badge'); if(ovBadge)ovBadge.textContent=pLabel;
 
+  const pLabel={all:'All time',thismonth:'This month',lastmonth:'Last month',thisyear:'This year',lastyear:'Last year',7:'Last 7d',14:'Last 14d',30:'Last 30d',90:'Last 90d'}[period]||(period?period+' days':'All time');
+  document.getElementById('fn-badge').textContent=pLabel;
+  const ovB=document.getElementById('ov-badge');if(ovB)ovB.textContent=pLabel;
+  const gadsB=document.getElementById('gads-bdg');if(gadsB)gadsB.textContent=pLabel;
   const steps=[
-    {n:1,label:'Ad Impressions',val:fmt(impr),sub:'Google Ads reach',c:'#3B82F6',rate:impr>0?((clicks/impr)*100).toFixed(2)+'%':'—',rl:'CTR',drop:impr>0?'↓ '+((clicks/impr)*100).toFixed(2)+'% click rate':''},
-    {n:2,label:'Ad Clicks',val:fmt(clicks),sub:'Paid traffic to site',c:'#F59E0B',rate:clicks>0?fmtD(spend/clicks,2):'—',rl:'avg CPC',drop:clicks>0?'↓ '+((reg/clicks)*100).toFixed(1)+'% form completion':''},
-    {n:3,label:'Registrations',val:fmt(reg),sub:'Form completions (Ads conv.)',c:'#8B5CF6',rate:reg>0?fmtD(spend/reg,2):'—',rl:'cost/reg',drop:'↓ Identity verification'},
-    {n:4,label:'KYC Approved',val:fmt(kyc),sub:'Verified in HubSpot',c:a,rate:kyc>0?fmtP(ftd/kyc*100):'—',rl:'→ FTD rate',drop:kyc>0?'↓ '+fmtP(ftd/kyc*100)+' deposit rate':''},
-    {n:5,label:'FTD Clients',val:fmt(ftd),sub:'First deposit = revenue',c:'#10B981',rate:spend>0&&ftd>0?fmtD(spend/(FTD.ibTotal+FTD.mktTotal),0):'—',rl:'cost/tracked FTD*',highlight:true},
+    {n:1,label:'Ad Impressions',val:fmt(impr),sub:'Google Ads · '+pLabel,c:'#3B82F6',rate:impr>0?((clicks/impr)*100).toFixed(2)+'%':'—',rl:'CTR',drop:impr>0?'↓ '+((clicks/impr)*100).toFixed(2)+'% click rate':''},
+    {n:2,label:'Ad Clicks',val:fmt(clicks),sub:'Paid traffic · '+pLabel,c:'#F59E0B',rate:clicks>0?fmtD(spend/clicks,2):'—',rl:'avg CPC',drop:clicks>0?'↓ '+((reg/clicks)*100).toFixed(1)+'% form completion':''},
+    {n:3,label:'Registrations',val:fmt(reg),sub:'Form completions · '+pLabel,c:'#8B5CF6',rate:reg>0?fmtD(spend/reg,2):'—',rl:'cost/reg',drop:'↓ Identity verification (all-time below)'},
+    {n:4,label:'KYC Approved',val:fmt(kyc),sub:'All-time total · HubSpot',c:a,rate:kyc>0?fmtP(ftd/kyc*100):'—',rl:'→ FTD rate',drop:kyc>0?'↓ '+fmtP(ftd/kyc*100)+' deposit rate':''},
+    {n:5,label:'FTD Clients',val:fmt(ftd),sub:'All-time total · first deposit',c:'#10B981',rate:spend>0&&ftd>0?fmtD(spend/(FTD.ibTotal+FTD.mktTotal),0):'—',rl:'cost/tracked FTD*',highlight:true},
   ];
 
   const container=document.getElementById('fn-steps');
@@ -942,16 +966,13 @@ function renderOverview(){
   const sessFiltered=mkt==='all'?ga4PeriodSess:Math.round(ga4PeriodSess*(ga4?.byCountry?.[ga4MktName]||0)/(ga4?.summary?.totalSessions||1));
 
   // ── KPI cards ──
-  if(gads||gadsPeriodCost>0){
-    document.getElementById('ok-reg').textContent=fmt(convFiltered||Math.round((gads?.summary?.totalConversions||398)*ratio));
-    document.getElementById('ok-spend').textContent=fmtD(costFiltered||((gads?.summary?.totalCost||5100)*ratio));
-    const cpa=convFiltered>0?(costFiltered/convFiltered).toFixed(2):(gadsPeriodConv>0?(gadsPeriodCost/gadsPeriodConv).toFixed(2):'12.81');
-    document.getElementById('ok-cpa-s').textContent='$'+cpa+' cost per registration';
-  } else {
-    document.getElementById('ok-reg').textContent=fmt(Math.round(398*ratio));
-    document.getElementById('ok-spend').textContent=fmtD(5100*ratio);
-    document.getElementById('ok-cpa-s').textContent='$12.81 per registration';
-  }
+  // KPIs — always use period-filtered byMonth sums, fallback to all-time only if zero
+  const reg_kpi = convFiltered||Math.round((gads?.summary?.totalConversions||398)*ratio);
+  const spend_kpi = costFiltered||((gads?.summary?.totalCost||5100)*ratio);
+  const cpa_kpi = reg_kpi>0?(spend_kpi/reg_kpi).toFixed(2):'12.81';
+  document.getElementById('ok-reg').textContent=fmt(reg_kpi);
+  document.getElementById('ok-spend').textContent=fmtD(spend_kpi);
+  document.getElementById('ok-cpa-s').textContent='$'+cpa_kpi+' per registration';
 
   if(ga4){
     const sessForKpi=mkt==='all'
