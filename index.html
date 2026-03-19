@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
 <meta name="theme-color" content="#07090E">
 <title>OQtima — Marketing Intelligence</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
@@ -16,7 +16,7 @@
   --a:#C1FF47;--ad:rgba(193,255,71,0.09);--am:rgba(193,255,71,0.3);
   --tp:#EDF0F5;--ts:#64748B;--tm:#2E3A4E;
   --red:#F05252;--amber:#F59E0B;--green:#10B981;--blue:#3B82F6;--purple:#8B5CF6;
-  --fd:'Syne',sans-serif;--fb:'DM Sans',sans-serif;
+  --fd:'Plus Jakarta Sans',sans-serif;--fb:'Plus Jakarta Sans',sans-serif;
 }
 body{font-family:var(--fb);background:var(--bg);color:var(--tp);min-height:100vh;font-size:14px;-webkit-font-smoothing:antialiased}
 
@@ -573,7 +573,7 @@ input[type=color]{width:32px;height:32px;border-radius:6px;border:1px solid var(
       <div class="si"><label>Company name</label><input class="si-inp" type="text" id="s-name" value="OQtima" oninput="applyS()"/></div>
       <div class="si"><label>Accent color</label><div class="cr"><input type="color" id="s-a" value="#C1FF47" oninput="syncA()"/><input class="si-inp" type="text" id="s-ah" value="#C1FF47" oninput="syncAT()" style="flex:1"/></div></div>
       <div class="si"><label>Background</label><div class="cr"><input type="color" id="s-bg" value="#07090E" oninput="syncBg()"/><input class="si-inp" type="text" id="s-bgh" value="#07090E" oninput="syncBgT()" style="flex:1"/></div></div>
-      <div class="si"><label>Font</label><select class="si-sel" id="s-font" onchange="applyS()"><option value="'Syne',sans-serif">Syne</option><option value="'Space Grotesk',sans-serif">Space Grotesk</option><option value="'DM Sans',sans-serif">DM Sans</option><option value="'Inter',sans-serif">Inter</option></select></div>
+      <div class="si"><label>Font</label><select class="si-sel" id="s-font" onchange="applyS()"><option value="'Plus Jakarta Sans',sans-serif">Syne</option><option value="'Space Grotesk',sans-serif">Space Grotesk</option><option value="'Plus Jakarta Sans',sans-serif">DM Sans</option><option value="'Inter',sans-serif">Inter</option></select></div>
       <div class="si"><label>Theme</label><select class="si-sel" id="s-theme" onchange="applyS()"><option value="dark">Dark</option><option value="light">Light</option></select></div>
       <div class="si"><label>Backend URL</label><input class="si-inp" type="text" id="s-be" value="https://oqtima-backend.onrender.com" oninput="saveS()"/></div>
     </div>
@@ -666,9 +666,9 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 
 function renderStaticSections(){
+  renderOverviewStatic();
   renderKyc();
   renderFtd();
-  renderOverviewStatic();
 }
 
 // ─── LOAD ─────────────────────────────────────────────────────────
@@ -685,7 +685,7 @@ async function loadAll(){
       setTimeout(loadAll,30000);return;
     }
     document.getElementById('loverlay').classList.add('out');
-    renderAll();
+    renderAllSections();
     populateMediumSel();
     const lu=hs?.lastUpdated?'Updated '+new Date(hs.lastUpdated).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'Live';
     document.getElementById('lv').innerHTML=`<span class="ldot"></span>${lu}`;
@@ -697,7 +697,15 @@ async function loadAll(){
 
 async function refreshAll(){await fetch(`${BE}/api/refresh`,{method:'POST'}).catch(()=>{});MAN={gads:null,ga4:null,hs:null,uk:null};await loadAll()}
 
-function renderAll(){renderOverview();renderKyc();renderFtd();renderGads();renderGa4()}
+function renderAll(){
+  const active=document.querySelector('.view.on')?.id?.replace('view-','');
+  renderOverview();
+  if(active==='kyc')renderKyc();
+  else if(active==='ftd')renderFtd();
+  else if(active==='gads')renderGads();
+  else if(active==='ga4')renderGa4();
+}
+function renderAllSections(){renderOverview();renderKyc();renderFtd();renderGads();renderGa4();}
 
 function populateMediumSel(){
   const s=document.getElementById('ga4-med'),c=s.value;
@@ -710,48 +718,55 @@ function populateMediumSel(){
 function getOvPeriod(){return document.getElementById('ov-period').value}
 function getOvMkt(){return document.getElementById('ov-mkt').value}
 
+
+// Safe chart helper — always destroys before recreating
+function mkChart(id, config){
+  const el=document.getElementById(id);
+  if(!el)return null;
+  const existing=Chart.getChart(el);
+  if(existing)existing.destroy();
+  return new Chart(el.getContext('2d'), config);
+}
+
 function filterMonths(bm,period){
-  if(!bm)return{};
-  let e=Object.entries(bm);
+  if(!bm||!Object.keys(bm).length)return{};
   const now=new Date();
-  const todayStr=now.toISOString().slice(0,10);
-  if(period==='thismonth'){
-    const m=now.toISOString().slice(0,7);
-    e=e.filter(([k])=>k===m);
-  } else if(period==='lastmonth'){
-    const dt=new Date(now);dt.setMonth(dt.getMonth()-1);
-    e=e.filter(([k])=>k===dt.toISOString().slice(0,7));
-  } else if(period==='thisyear'){
-    e=e.filter(([k])=>k.startsWith(now.getFullYear()+''));
-  } else if(period==='lastyear'){
-    e=e.filter(([k])=>k.startsWith((now.getFullYear()-1)+''));
-  } else if(period!=='all'&&!isNaN(parseInt(period))){
-    // Filter by actual date range, not count
+  const yr=now.getFullYear(), mo=now.getMonth()+1;
+  const thisM=`${yr}-${String(mo).padStart(2,'0')}`;
+  const lastM=mo===1?`${yr-1}-12`:`${yr}-${String(mo-1).padStart(2,'0')}`;
+  let e=Object.entries(bm);
+  if(period==='thismonth') e=e.filter(([k])=>k===thisM);
+  else if(period==='lastmonth') e=e.filter(([k])=>k===lastM);
+  else if(period==='thisyear') e=e.filter(([k])=>k.startsWith(String(yr)));
+  else if(period==='lastyear') e=e.filter(([k])=>k.startsWith(String(yr-1)));
+  else if(period!=='all'&&!isNaN(parseInt(period))){
     const days=parseInt(period);
-    const cutoff=new Date(now);
-    cutoff.setDate(cutoff.getDate()-days);
-    const cutoffMonth=cutoff.toISOString().slice(0,7);
-    e=e.filter(([k])=>k>=cutoffMonth);
+    const cutoff=new Date(now); cutoff.setDate(cutoff.getDate()-days);
+    const cy=cutoff.getFullYear(), cm=cutoff.getMonth()+1;
+    const cutoffM=`${cy}-${String(cm).padStart(2,'0')}`;
+    e=e.filter(([k])=>k>=cutoffM);
   }
   return Object.fromEntries(e.sort((a,b)=>a[0].localeCompare(b[0])));
 }
 
 function filterDaily(daily,period,year){
-  if(!daily)return[];
+  if(!daily||!daily.length)return[];
   let d=[...daily];
   const now=new Date();
-  if(year)d=d.filter(r=>(r.day||'').startsWith(year));
-  if(period==='thismonth')return d.filter(r=>(r.day||'').startsWith(now.toISOString().slice(0,7)));
-  if(period==='lastmonth'){const dt=new Date(now);dt.setMonth(dt.getMonth()-1);return d.filter(r=>(r.day||'').startsWith(dt.toISOString().slice(0,7)))}
-  if(period==='thisyear')return d.filter(r=>(r.day||'').startsWith(now.getFullYear()+''));
-  if(period==='lastyear')return d.filter(r=>(r.day||'').startsWith((now.getFullYear()-1)+''));
+  const yr=now.getFullYear(), mo=now.getMonth()+1;
+  const thisM=`${yr}-${String(mo).padStart(2,'0')}`;
+  const lastM=mo===1?`${yr-1}-12`:`${yr}-${String(mo-1).padStart(2,'0')}`;
+  if(year) d=d.filter(r=>(r.day||'').startsWith(year));
+  if(period==='thismonth') return d.filter(r=>(r.day||'').startsWith(thisM));
+  if(period==='lastmonth') return d.filter(r=>(r.day||'').startsWith(lastM));
+  if(period==='thisyear') return d.filter(r=>(r.day||'').startsWith(String(yr)));
+  if(period==='lastyear') return d.filter(r=>(r.day||'').startsWith(String(yr-1)));
   if(period!=='all'&&!isNaN(parseInt(period))){
     const days=parseInt(period);
-    const cutoff=new Date(now);
-    cutoff.setDate(cutoff.getDate()-days);
-    const cutoffStr=cutoff.toISOString().slice(0,10);
-    const filtered=d.filter(r=>(r.day||'')>=cutoffStr);
-    return filtered.length>0?filtered:d.slice(-days); // fallback
+    const cutoff=new Date(now); cutoff.setDate(cutoff.getDate()-days);
+    const cy=cutoff.getFullYear(),cm=cutoff.getMonth()+1,cd=cutoff.getDate();
+    const cutoffStr=`${cy}-${String(cm).padStart(2,'0')}-${String(cd).padStart(2,'0')}`;
+    return d.filter(r=>(r.day||'')>=cutoffStr);
   }
   return d;
 }
@@ -810,8 +825,7 @@ function renderOverviewStatic(){
     {l:'Brazil',ky:KYC.byCountry.BRAZIL,ft:FTD.byCountry.BRAZIL,c:'#10B981'},
     {l:'Canada',ky:KYC.byCountry.CANADA,ft:FTD.byCountry.CANADA,c:'#F59E0B'},
   ];
-  if(C.ovMkt)C.ovMkt.destroy();
-  C.ovMkt=new Chart(document.getElementById('c-ov-mkt').getContext('2d'),{
+  C.ovMkt=mkChart('c-ov-mkt',{
     type:'bar',data:{labels:mktData.map(m=>m.l),datasets:[
       {label:'KYC',data:mktData.map(m=>m.ky),backgroundColor:mktData.map(m=>m.c+'30'),borderColor:mktData.map(m=>m.c),borderWidth:1.5,borderRadius:4},
       {label:'FTD',data:mktData.map(m=>m.ft),backgroundColor:mktData.map(m=>m.c+'88'),borderColor:mktData.map(m=>m.c),borderWidth:1.5,borderRadius:4}
@@ -822,8 +836,7 @@ function renderOverviewStatic(){
   // Monthly FTD
   const ftdMo=filterMonths(FTD.byMonth,period);
   const ftdM=Object.entries(ftdMo).sort((a,b)=>a[0].localeCompare(b[0]));
-  if(C.ovFtdMo)C.ovFtdMo.destroy();
-  C.ovFtdMo=new Chart(document.getElementById('c-ov-ftdmo').getContext('2d'),{
+  C.ovFtdMo=mkChart('c-ov-ftdmo',{
     type:'line',data:{labels:ftdM.map(([k])=>mlb(k)),datasets:[{label:'FTDs',data:ftdM.map(([,v])=>v),borderColor:'#10B981',borderWidth:2,pointRadius:2,fill:true,backgroundColor:'rgba(16,185,129,0.06)',tension:.4}]},
     options:{responsive:true,plugins:{legend:{display:false},tooltip:{...TO}},scales:{x:{grid:{display:false},ticks:{color:'#64748B',font:{size:9},maxTicksLimit:8}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#64748B',font:{size:9}}}}}
   });
@@ -921,8 +934,7 @@ function renderOverview(){
   const ga4m=filterMonths(ga4?.byMonth,period),gadsm=filterMonths(gads?.byMonth,period);
   const allM=[...new Set([...Object.keys(ga4m),...Object.keys(gadsm)])].sort();
   const a=getA();
-  if(C.ovTrend)C.ovTrend.destroy();
-  C.ovTrend=new Chart(document.getElementById('c-ov-trend').getContext('2d'),{
+  C.ovTrend=mkChart('c-ov-trend',{
     data:{labels:allM.map(mlb),datasets:[
       {type:'bar',label:'Sessions',data:allM.map(m=>ga4m[m]?.sessions||0),backgroundColor:a+'20',borderColor:a,borderWidth:1.5,borderRadius:4,yAxisID:'y'},
       {type:'line',label:'Spend ($)',data:allM.map(m=>gadsm[m]?.cost||0),borderColor:'#3B82F6',borderWidth:2,pointRadius:2,fill:false,yAxisID:'y1',tension:.35}
@@ -932,8 +944,7 @@ function renderOverview(){
 
   // Daily gads chart
   const daily=filterDaily(gads?.daily,period==='all'?'30':period,'');
-  if(C.ovGads)C.ovGads.destroy();
-  C.ovGads=new Chart(document.getElementById('c-ov-gads').getContext('2d'),{
+  C.ovGads=mkChart('c-ov-gads',{
     data:{labels:daily.map(d=>d.day?.slice(5)),datasets:[
       {type:'bar',label:'Clicks',data:daily.map(d=>d.clicks||0),backgroundColor:a+'25',borderColor:a,borderWidth:1.5,borderRadius:3,yAxisID:'y'},
       {type:'line',label:'Cost ($)',data:daily.map(d=>d.cost||0),borderColor:'#F59E0B',borderWidth:1.5,pointRadius:0,fill:false,yAxisID:'y1',tension:.3}
@@ -984,12 +995,10 @@ function renderKyc(){
 
   const a=getA();
   const months=Object.entries(byMo).sort((x,y)=>x[0].localeCompare(y[0]));
-  if(C.kycMo)C.kycMo.destroy();
-  C.kycMo=new Chart(document.getElementById('c-kyc-mo').getContext('2d'),{type:'bar',data:{labels:months.map(([k])=>mlb(k)),datasets:[{label:'KYC',data:months.map(([,v])=>v||0),backgroundColor:a+'20',borderColor:a,borderWidth:1.5,borderRadius:4}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{...TO}},scales:{x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#64748B',font:{size:9}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#64748B',font:{size:9}}}}}});
+  C.kycMo=mkChart('c-kyc-mo',{type:'bar',data:{labels:months.map(([k])=>mlb(k)),datasets:[{label:'KYC',data:months.map(([,v])=>v||0),backgroundColor:a+'20',borderColor:a,borderWidth:1.5,borderRadius:4}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{...TO}},scales:{x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#64748B',font:{size:9}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#64748B',font:{size:9}}}}}});
 
   const top6=Object.entries(byC).slice(0,6),cols=['#10B981','#3B82F6','#F59E0B','#EF4444','#8B5CF6','#EC4899'];
-  if(C.kycGeo)C.kycGeo.destroy();
-  C.kycGeo=new Chart(document.getElementById('c-kyc-geo').getContext('2d'),{type:'doughnut',data:{labels:top6.map(([k])=>k.charAt(0)+k.slice(1).toLowerCase()),datasets:[{data:top6.map(([,v])=>v),backgroundColor:cols.slice(0,top6.length),borderWidth:0,hoverOffset:5}]},options:{responsive:true,cutout:'70%',plugins:{legend:{position:'bottom',labels:{color:'#64748B',font:{size:10},padding:8,boxWidth:10}},tooltip:{...TO}}}});
+  C.kycGeo=mkChart('c-kyc-geo',{type:'doughnut',data:{labels:top6.map(([k])=>k.charAt(0)+k.slice(1).toLowerCase()),datasets:[{data:top6.map(([,v])=>v),backgroundColor:cols.slice(0,top6.length),borderWidth:0,hoverOffset:5}]},options:{responsive:true,cutout:'70%',plugins:{legend:{position:'bottom',labels:{color:'#64748B',font:{size:10},padding:8,boxWidth:10}},tooltip:{...TO}}}});
 
   const kTot=kyc||1,maxC=Object.values(byC)[0]||1,maxCamp=Object.values(byCamp)[0]||1;
   buildCB('cb-kyc-c',Object.entries(byC).slice(0,10).map(([k,v])=>({label:k.charAt(0)+k.slice(1).toLowerCase(),val:fmt(v),pct:((v/kTot)*100).toFixed(1)+'%',w:(v/maxC*100)+'%',color:a})));
@@ -1017,13 +1026,11 @@ function renderFtd(){
 
   const a=getA();
   const ftdM=Object.entries(FTD.byMonth).sort((a,b)=>a[0].localeCompare(b[0]));
-  if(C.ftdMo)C.ftdMo.destroy();
-  C.ftdMo=new Chart(document.getElementById('c-ftd-mo').getContext('2d'),{type:'line',data:{labels:ftdM.map(([k])=>mlb(k)),datasets:[{label:'FTDs',data:ftdM.map(([,v])=>v),borderColor:'#10B981',borderWidth:2,pointRadius:2,pointBackgroundColor:'#10B981',fill:true,backgroundColor:'rgba(16,185,129,0.07)',tension:.4}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{...TO}},scales:{x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#64748B',font:{size:9},maxTicksLimit:10}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#64748B',font:{size:9}}}}}});
+  C.ftdMo=mkChart('c-ftd-mo',{type:'line',data:{labels:ftdM.map(([k])=>mlb(k)),datasets:[{label:'FTDs',data:ftdM.map(([,v])=>v),borderColor:'#10B981',borderWidth:2,pointRadius:2,pointBackgroundColor:'#10B981',fill:true,backgroundColor:'rgba(16,185,129,0.07)',tension:.4}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{...TO}},scales:{x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#64748B',font:{size:9},maxTicksLimit:10}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#64748B',font:{size:9}}}}}});
 
   const ftdByC=ctry?{[ctry]:FTD.byCountry[ctry]||0}:FTD.byCountry;
   const top5=Object.entries(ftdByC).slice(0,5),cols=['#10B981','#3B82F6','#F59E0B','#8B5CF6','#EF4444'];
-  if(C.ftdGeo)C.ftdGeo.destroy();
-  C.ftdGeo=new Chart(document.getElementById('c-ftd-geo').getContext('2d'),{type:'doughnut',data:{labels:top5.map(([k])=>k.charAt(0)+k.slice(1).toLowerCase()),datasets:[{data:top5.map(([,v])=>v),backgroundColor:cols.slice(0,top5.length),borderWidth:0,hoverOffset:5}]},options:{responsive:true,cutout:'70%',plugins:{legend:{position:'bottom',labels:{color:'#64748B',font:{size:10},padding:8,boxWidth:10}},tooltip:{...TO}}}});
+  C.ftdGeo=mkChart('c-ftd-geo',{type:'doughnut',data:{labels:top5.map(([k])=>k.charAt(0)+k.slice(1).toLowerCase()),datasets:[{data:top5.map(([,v])=>v),backgroundColor:cols.slice(0,top5.length),borderWidth:0,hoverOffset:5}]},options:{responsive:true,cutout:'70%',plugins:{legend:{position:'bottom',labels:{color:'#64748B',font:{size:10},padding:8,boxWidth:10}},tooltip:{...TO}}}});
 
   const ibC=Object.entries(FTD.byCampaign).filter(([k])=>k.startsWith('IB')).sort((a,b)=>b[1]-a[1]);
   const mktC=Object.entries(FTD.byCampaign).filter(([k])=>k.startsWith('MKT')).sort((a,b)=>b[1]-a[1]);
@@ -1080,19 +1087,15 @@ function renderGads(){
   document.getElementById('gads-bp').textContent=(year?year+' · ':'')+pl;
 
   const a=getA();
-  if(C.gadsD)C.gadsD.destroy();
-  C.gadsD=new Chart(document.getElementById('c-gads-d').getContext('2d'),{data:{labels:daily.map(d=>d.day?.slice(5)),datasets:[{type:'bar',label:'Clicks',data:daily.map(d=>(d.clicks||0)*ratio),backgroundColor:a+'25',borderColor:a,borderWidth:1.5,borderRadius:3,yAxisID:'y'},{type:'line',label:'Cost ($)',data:daily.map(d=>(d.cost||0)*ratio),borderColor:'#F59E0B',borderWidth:1.5,pointRadius:0,fill:false,yAxisID:'y1',tension:.3}]},options:{responsive:true,interaction:{intersect:false,mode:'index'},plugins:{legend:{labels:{color:'#64748B',font:{size:10},boxWidth:10}},tooltip:{...TO}},scales:{x:{grid:{display:false},ticks:{color:'#64748B',font:{size:9},maxTicksLimit:14}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#64748B',font:{size:9}}},y1:{position:'right',grid:{display:false},ticks:{color:'#F59E0B',font:{size:9}}}}}});
+  C.gadsD=mkChart('c-gads-d',{data:{labels:daily.map(d=>d.day?.slice(5)),datasets:[{type:'bar',label:'Clicks',data:daily.map(d=>(d.clicks||0)*ratio),backgroundColor:a+'25',borderColor:a,borderWidth:1.5,borderRadius:3,yAxisID:'y'},{type:'line',label:'Cost ($)',data:daily.map(d=>(d.cost||0)*ratio),borderColor:'#F59E0B',borderWidth:1.5,pointRadius:0,fill:false,yAxisID:'y1',tension:.3}]},options:{responsive:true,interaction:{intersect:false,mode:'index'},plugins:{legend:{labels:{color:'#64748B',font:{size:10},boxWidth:10}},tooltip:{...TO}},scales:{x:{grid:{display:false},ticks:{color:'#64748B',font:{size:9},maxTicksLimit:14}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#64748B',font:{size:9}}},y1:{position:'right',grid:{display:false},ticks:{color:'#F59E0B',font:{size:9}}}}}});
 
   const mkts=[{n:'Japan',k:'Japan',c:'#EF4444'},{n:'Australia',k:'Australia',c:'#3B82F6'},{n:'UK',k:'United Kingdom',c:'#8B5CF6'}];
   const ga4t=Object.values(D.ga4?.byCountry||{}).reduce((s,v)=>s+v,0)||1;
-  if(C.gadsMkt)C.gadsMkt.destroy();
-  C.gadsMkt=new Chart(document.getElementById('c-gads-mkt').getContext('2d'),{type:'bar',data:{labels:mkts.map(m=>m.n),datasets:[{label:'Spend ($)',data:mkts.map(m=>((data.summary?.totalCost||0)*(D.ga4?.byCountry?.[m.k]||0)/ga4t).toFixed(0)),backgroundColor:mkts.map(m=>m.c+'30'),borderColor:mkts.map(m=>m.c),borderWidth:1.5,borderRadius:5,yAxisID:'y'},{label:'Registrations',data:mkts.map(m=>((data.summary?.totalConversions||0)*(D.ga4?.byCountry?.[m.k]||0)/ga4t).toFixed(0)),backgroundColor:mkts.map(m=>m.c+'77'),borderColor:mkts.map(m=>m.c),borderWidth:1.5,borderRadius:5,type:'line',pointRadius:5,yAxisID:'y1'}]},options:{responsive:true,plugins:{legend:{labels:{color:'#64748B',font:{size:10},boxWidth:10}},tooltip:{...TO}},scales:{x:{grid:{display:false},ticks:{color:'#64748B',font:{size:10}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#64748B',font:{size:9}}},y1:{position:'right',grid:{display:false},ticks:{color:'#64748B',font:{size:9}}}}}});
+  C.gadsMkt=mkChart('c-gads-mkt',{type:'bar',data:{labels:mkts.map(m=>m.n),datasets:[{label:'Spend ($)',data:mkts.map(m=>((data.summary?.totalCost||0)*(D.ga4?.byCountry?.[m.k]||0)/ga4t).toFixed(0)),backgroundColor:mkts.map(m=>m.c+'30'),borderColor:mkts.map(m=>m.c),borderWidth:1.5,borderRadius:5,yAxisID:'y'},{label:'Registrations',data:mkts.map(m=>((data.summary?.totalConversions||0)*(D.ga4?.byCountry?.[m.k]||0)/ga4t).toFixed(0)),backgroundColor:mkts.map(m=>m.c+'77'),borderColor:mkts.map(m=>m.c),borderWidth:1.5,borderRadius:5,type:'line',pointRadius:5,yAxisID:'y1'}]},options:{responsive:true,plugins:{legend:{labels:{color:'#64748B',font:{size:10},boxWidth:10}},tooltip:{...TO}},scales:{x:{grid:{display:false},ticks:{color:'#64748B',font:{size:10}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#64748B',font:{size:9}}},y1:{position:'right',grid:{display:false},ticks:{color:'#64748B',font:{size:9}}}}}});
 
   const months=Object.entries(byMonth).sort((a,b)=>a[0].localeCompare(b[0]));
-  if(C.gadsMo)C.gadsMo.destroy();
-  C.gadsMo=new Chart(document.getElementById('c-gads-mo').getContext('2d'),{type:'bar',data:{labels:months.map(([k])=>mlb(k)),datasets:[{label:'Spend ($)',data:months.map(([,v])=>(v.cost*ratio).toFixed(0)),backgroundColor:'#F59E0B22',borderColor:'#F59E0B',borderWidth:1.5,borderRadius:4}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{...TO}},scales:{x:{grid:{display:false},ticks:{color:'#64748B',font:{size:9}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#64748B',font:{size:9}}}}}});
-  if(C.gadsCv)C.gadsCv.destroy();
-  C.gadsCv=new Chart(document.getElementById('c-gads-cv').getContext('2d'),{type:'bar',data:{labels:months.map(([k])=>mlb(k)),datasets:[{label:'Registrations',data:months.map(([,v])=>Math.round((v.conv||0)*ratio)),backgroundColor:a+'22',borderColor:a,borderWidth:1.5,borderRadius:4}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{...TO}},scales:{x:{grid:{display:false},ticks:{color:'#64748B',font:{size:9}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#64748B',font:{size:9}}}}}});
+  C.gadsMo=mkChart('c-gads-mo',{type:'bar',data:{labels:months.map(([k])=>mlb(k)),datasets:[{label:'Spend ($)',data:months.map(([,v])=>(v.cost*ratio).toFixed(0)),backgroundColor:'#F59E0B22',borderColor:'#F59E0B',borderWidth:1.5,borderRadius:4}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{...TO}},scales:{x:{grid:{display:false},ticks:{color:'#64748B',font:{size:9}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#64748B',font:{size:9}}}}}});
+  C.gadsCv=mkChart('c-gads-cv',{type:'bar',data:{labels:months.map(([k])=>mlb(k)),datasets:[{label:'Registrations',data:months.map(([,v])=>Math.round((v.conv||0)*ratio)),backgroundColor:a+'22',borderColor:a,borderWidth:1.5,borderRadius:4}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{...TO}},scales:{x:{grid:{display:false},ticks:{color:'#64748B',font:{size:9}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#64748B',font:{size:9}}}}}});
 
   setAiText('gads',`<strong>${fmtD(tCost)} spend</strong> · ${fmt(tConv)} registrations · $${tConv>0?(tCost/tConv).toFixed(2):'12.81'} per registration. ${curMkt!=='all'?'Filtered to '+{jp:'Japan',au:'Australia',uk:'UK'}[curMkt]+' market.':''} CTR: ${tImpr>0?((tClicks/tImpr)*100).toFixed(2)+'%':'3.27%'}. Tip: compare your $12.81 cost per registration against the $29 cost per FTD — improving post-registration conversion is more impactful than reducing CPC.`);
 }
@@ -1115,11 +1118,9 @@ function renderGa4(){
   if(med&&!ctry){tS=data.byMedium?.[med]||0}
   document.getElementById('ak-sess').textContent=fmt(tS);document.getElementById('ak-users').textContent=fmt(tU);document.getElementById('ak-new').textContent=fmt(tN);document.getElementById('ak-ev').textContent=fmt(tE);document.getElementById('ak-sub').textContent=ctry||'all countries';
   const a=getA(),months=Object.entries(byMo).sort((x,y)=>x[0].localeCompare(y[0]));
-  if(C.ga4Mo)C.ga4Mo.destroy();
-  C.ga4Mo=new Chart(document.getElementById('c-ga4-mo').getContext('2d'),{type:'bar',data:{labels:months.map(([k])=>mlb(k)),datasets:[{label:'Sessions',data:months.map(([,v])=>v.sessions||0),backgroundColor:'#3B82F622',borderColor:'#3B82F6',borderWidth:1.5,borderRadius:4}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{...TO}},scales:{x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#64748B',font:{size:9}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#64748B',font:{size:9}}}}}});
+  C.ga4Mo=mkChart('c-ga4-mo',{type:'bar',data:{labels:months.map(([k])=>mlb(k)),datasets:[{label:'Sessions',data:months.map(([,v])=>v.sessions||0),backgroundColor:'#3B82F622',borderColor:'#3B82F6',borderWidth:1.5,borderRadius:4}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{...TO}},scales:{x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#64748B',font:{size:9}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#64748B',font:{size:9}}}}}});
   const top6=Object.entries(byC).slice(0,6),cols=['#3B82F6','#10B981','#F59E0B','#EF4444','#8B5CF6','#EC4899'];
-  if(C.ga4Geo)C.ga4Geo.destroy();
-  C.ga4Geo=new Chart(document.getElementById('c-ga4-geo').getContext('2d'),{type:'doughnut',data:{labels:top6.map(([k])=>k),datasets:[{data:top6.map(([,v])=>v),backgroundColor:cols.slice(0,top6.length),borderWidth:0,hoverOffset:5}]},options:{responsive:true,cutout:'70%',plugins:{legend:{position:'bottom',labels:{color:'#64748B',font:{size:10},padding:8,boxWidth:10}},tooltip:{...TO}}}});
+  C.ga4Geo=mkChart('c-ga4-geo',{type:'doughnut',data:{labels:top6.map(([k])=>k),datasets:[{data:top6.map(([,v])=>v),backgroundColor:cols.slice(0,top6.length),borderWidth:0,hoverOffset:5}]},options:{responsive:true,cutout:'70%',plugins:{legend:{position:'bottom',labels:{color:'#64748B',font:{size:10},padding:8,boxWidth:10}},tooltip:{...TO}}}});
   const tot=tS||1,maxC=Object.values(byC)[0]||1,maxM=Object.values(byM)[0]||1;
   buildCB('cb-ga4-c',Object.entries(byC).slice(0,10).map(([k,v])=>({label:k,val:fmt(v),pct:((v/tot)*100).toFixed(1)+'%',w:(v/maxC*100)+'%',color:'#3B82F6'})));
   buildCB('cb-ga4-m',Object.entries(byM).slice(0,10).map(([k,v])=>({label:k,val:fmt(v),pct:((v/tot)*100).toFixed(1)+'%',w:(v/maxM*100)+'%',color:a})));
@@ -1190,7 +1191,21 @@ function procGa4(rows){let tS=0,tU=0,tN=0,tE=0;const byC={},byM={},byMo={};rows.
 function procHs(rows){const byC={},byCamp={},byMo={};let total=0,kyc=0;rows.forEach(r=>{total++;const c=r['portal - country']||r['Country']||'Unknown';byC[c]=(byC[c]||0)+1;const camp=r['portal - source_marketing_campaign']||'Direct/Unknown';byCamp[camp]=(byCamp[camp]||0)+1;const d=r['Create Date']||r['createdate']||'';if(d){const mo=String(d).slice(0,7);if(mo.match(/^\d{4}-\d{2}$/))byMo[mo]=(byMo[mo]||0)+1}if((r['portal - documentation']||'')=='Approved')kyc++});return{total,kycApproved:kyc,byCountry:Object.fromEntries(Object.entries(byC).sort((a,b)=>b[1]-a[1])),byCampaign:Object.fromEntries(Object.entries(byCamp).sort((a,b)=>b[1]-a[1])),byMonth:byMo}}
 
 // ─── VIEWS ────────────────────────────────────────────────────────
-function sv(name){document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));document.querySelectorAll('.nt,.mt-tab').forEach(n=>n.classList.remove('on'));document.getElementById('view-'+name)?.classList.add('on');document.querySelectorAll(`.nt[onclick="sv('${name}')"],.mt-tab[onclick="sv('${name}')"]`).forEach(n=>n.classList.add('on'));window.scrollTo({top:0,behavior:'smooth'})}
+function sv(name){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
+  document.querySelectorAll('.nt,.mt-tab').forEach(n=>n.classList.remove('on'));
+  document.getElementById('view-'+name)?.classList.add('on');
+  document.querySelectorAll(`.nt[onclick="sv('${name}')"],.mt-tab[onclick="sv('${name}')"]`).forEach(n=>n.classList.add('on'));
+  window.scrollTo({top:0,behavior:'smooth'});
+  // Re-render the section to pick up any filter changes
+  if(D.hs||D.gads||D.ga4){
+    if(name==='overview')renderOverview();
+    else if(name==='kyc')renderKyc();
+    else if(name==='ftd')renderFtd();
+    else if(name==='gads')renderGads();
+    else if(name==='ga4')renderGa4();
+  }
+}
 
 // ─── SETTINGS ────────────────────────────────────────────────────
 function applyS(){const a=document.getElementById('s-a').value,bg=document.getElementById('s-bg').value,font=document.getElementById('s-font').value,name=document.getElementById('s-name').value,theme=document.getElementById('s-theme').value;const r=document.documentElement;r.style.setProperty('--a',a);r.style.setProperty('--ad',a+'17');r.style.setProperty('--am',a+'50');r.style.setProperty('--fd',font);r.style.setProperty('--bg',bg);r.style.setProperty('--surf',shC(bg,7));r.style.setProperty('--card',shC(bg,14));r.style.setProperty('--card2',shC(bg,20));if(theme==='light'){r.style.setProperty('--bg','#F4F6F9');r.style.setProperty('--surf','#FFFFFF');r.style.setProperty('--card','#F0F2F5');r.style.setProperty('--card2','#E8EBF0');r.style.setProperty('--tp','#0F172A');r.style.setProperty('--ts','#64748B');r.style.setProperty('--tm','#94A3B8');r.style.setProperty('--b','rgba(0,0,0,0.07)');r.style.setProperty('--bl','rgba(0,0,0,0.12)')}else{r.style.setProperty('--tp','#EDF0F5');r.style.setProperty('--ts','#64748B');r.style.setProperty('--tm','#2E3A4E');r.style.setProperty('--b','rgba(255,255,255,0.06)');r.style.setProperty('--bl','rgba(255,255,255,0.11)')}document.getElementById('logo').innerHTML=name+'<em>™</em>'}
