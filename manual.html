@@ -360,7 +360,7 @@ input[type=color]{width:32px;height:32px;border-radius:6px;border:1px solid var(
     <div id="fn-rings-row" style="display:flex;align-items:center;justify-content:space-around;flex-wrap:wrap;gap:8px;padding:8px 0"></div>
     <div class="ai-box" style="margin-top:12px">
       <div class="ai-box-hdr"><span class="ai-dot"></span><span class="ai-box-title">AI Funnel Insight</span></div>
-      <div class="ai-box-text" id="ai-fn-text">Loading insight...</div>
+      <div class="ai-box-text" id="ai-fn-text">Upload data files to see funnel insights.</div>
       <div class="ai-ask-row">
         <input class="ai-inp" id="ai-fn-q" type="text" placeholder="Ask about your funnel..."/>
         <button class="ai-sbtn" onclick="askSection('fn')">Ask</button>
@@ -400,13 +400,13 @@ input[type=color]{width:32px;height:32px;border-radius:6px;border:1px solid var(
     </div>
     <div class="kcard" style="--kc:#10B981;padding:16px">
       <div class="kl">Cost per FTD <span style="font-size:9px;color:var(--tm)">(tracked channels)</span></div>
-      <div class="kv" id="roi-cpftd">$29</div>
-      <div class="ksub">Ad spend ÷ IB+MKT FTDs<br><span style="color:var(--ts)">175 tracked FTDs</span></div>
+      <div class="kv" id="roi-cpftd">—</div>
+      <div class="ksub">Ad spend ÷ IB+MKT FTDs<br><span style="color:var(--ts)" id="roi-ftd-tracked">upload data</span></div>
     </div>
     <div class="kcard" style="--kc:#F59E0B;padding:16px">
       <div class="kl">Unattributed FTDs</div>
-      <div class="kv">61%</div>
-      <div class="ksub">497 Direct/Unknown<br><span style="color:var(--ts)">Fix UTMs = unlock real ROI</span></div>
+      <div class="kv" id="roi-unattr">—</div>
+      <div class="ksub">upload HubSpot data<br><span style="color:var(--ts)">Fix UTMs = unlock real ROI</span></div>
     </div>
   </div>
 
@@ -430,7 +430,7 @@ input[type=color]{width:32px;height:32px;border-radius:6px;border:1px solid var(
       <div class="cb" id="cb-ov-ib"></div>
       <div class="ai-box" style="margin-top:10px">
         <div class="ai-box-hdr"><span class="ai-dot"></span><span class="ai-box-title">IB Analysis</span></div>
-        <div class="ai-box-text" id="ai-ib-text">Loading...</div>
+        <div class="ai-box-text" id="ai-ib-text">Upload a HubSpot CSV to see IB partner analysis.</div>
         <div class="ai-ask-row"><input class="ai-inp" id="ai-ib-q" placeholder="Ask about IB..."/><button class="ai-sbtn" onclick="askSection('ib')">Ask</button></div>
         <div class="ai-resp" id="ai-ib-resp"></div>
       </div>
@@ -441,7 +441,7 @@ input[type=color]{width:32px;height:32px;border-radius:6px;border:1px solid var(
       <div class="cb" id="cb-ov-mkt"></div>
       <div class="ai-box" style="margin-top:10px">
         <div class="ai-box-hdr"><span class="ai-dot"></span><span class="ai-box-title">Campaign Analysis</span></div>
-        <div class="ai-box-text" id="ai-mkt-text">Loading...</div>
+        <div class="ai-box-text" id="ai-mkt-text">Upload a HubSpot CSV to see campaign analysis.</div>
         <div class="ai-ask-row"><input class="ai-inp" id="ai-mkt-q" placeholder="Ask about campaigns..."/><button class="ai-sbtn" onclick="askSection('mkt')">Ask</button></div>
         <div class="ai-resp" id="ai-mkt-resp"></div>
       </div>
@@ -465,15 +465,15 @@ input[type=color]{width:32px;height:32px;border-radius:6px;border:1px solid var(
 <!-- ══════════════════════════════════════════════════════ KYC ══ -->
 <div class="view" id="view-kyc">
   <div class="sh">
-    <div class="sh-left"><div class="sh-title">KYC Clients</div><div class="sh-sub">5,242 identity-verified contacts — HubSpot CRM</div></div>
+    <div class="sh-left"><div class="sh-title">KYC Clients</div><div class="sh-sub">Upload a HubSpot CSV to populate KYC data</div></div>
     <div class="sh-right">
       <select class="sel" id="kyc-ctry" onchange="renderKyc()"><option value="">All countries</option><option value="JAPAN">🇯🇵 Japan</option><option value="AUSTRALIA">🇦🇺 Australia</option><option value="UNITED KINGDOM">🇬🇧 UK</option><option value="BRAZIL">🇧🇷 Brazil</option><option value="CANADA">🇨🇦 Canada</option></select>
       <select class="sel" id="kyc-src" onchange="renderKyc()"><option value="">All sources</option><option value="MKT">MKT only</option><option value="IB">IB only</option><option value="Direct">Direct/unknown</option></select>
     </div>
   </div>
   <div class="krow krow-4">
-    <div class="kcard" style="--kc:var(--a)"><div class="kl">Total KYC</div><div class="kv" id="kk-total">5,242</div><div class="ksub" id="kk-sub">all countries</div></div>
-    <div class="kcard" style="--kc:var(--blue)"><div class="kl">Top market</div><div class="kv" id="kk-top" style="font-size:16px">Japan</div><div class="ksub">2,036 clients (38.8%)</div></div>
+    <div class="kcard" style="--kc:var(--a)"><div class="kl">Total KYC</div><div class="kv" id="kk-total">—</div><div class="ksub" id="kk-sub">no data loaded</div></div>
+    <div class="kcard" style="--kc:var(--blue)"><div class="kl">Top market</div><div class="kv" id="kk-top" style="font-size:18px">—</div><div class="ksub" id="kk-top-sub">upload data</div></div>
     <div class="kcard" style="--kc:var(--green)"><div class="kl">IB sourced</div><div class="kv" id="kk-ib">—</div><div class="ksub">from IB partners</div></div>
     <div class="kcard" style="--kc:var(--purple)"><div class="kl">MKT sourced</div><div class="kv" id="kk-mkt">—</div><div class="ksub">from paid campaigns</div></div>
   </div>
@@ -488,7 +488,7 @@ input[type=color]{width:32px;height:32px;border-radius:6px;border:1px solid var(
   <div class="cc">
     <div class="ai-box" style="margin:0">
       <div class="ai-box-hdr"><span class="ai-dot"></span><span class="ai-box-title">KYC Intelligence</span></div>
-      <div class="ai-box-text" id="ai-kyc-text">Loading KYC analysis...</div>
+      <div class="ai-box-text" id="ai-kyc-text">Upload a HubSpot CSV to enable KYC analysis.</div>
       <div class="ai-ask-row"><input class="ai-inp" id="ai-kyc-q" type="text" placeholder="Ask about KYC data..."/><button class="ai-sbtn" onclick="askSection('kyc')">Ask</button></div>
       <div class="ai-resp" id="ai-kyc-resp"></div>
     </div>
@@ -498,10 +498,10 @@ input[type=color]{width:32px;height:32px;border-radius:6px;border:1px solid var(
 <!-- ══════════════════════════════════════════════════════ FTD ══ -->
 <div class="view" id="view-ftd">
   <div class="sh">
-    <div class="sh-left"><div class="sh-title">FTD Clients</div><div class="sh-sub">808 first-time depositors — verified from HubSpot</div></div>
+    <div class="sh-left"><div class="sh-title">FTD Clients</div><div class="sh-sub">Upload a HubSpot CSV to populate FTD data</div></div>
     <div class="sh-right">
       <div style="display:flex;gap:5px;flex-wrap:wrap" id="ftd-src-chips">
-        <span class="chip on" data-src="all" onclick="setFtdSrc('all')">All (808)</span>
+        <span class="chip on" data-src="all" onclick="setFtdSrc('all')">All (—)</span>
         <span class="chip" data-src="IB" onclick="setFtdSrc('IB')" id="chip-ib">IB (—)</span>
         <span class="chip" data-src="MKT" onclick="setFtdSrc('MKT')" id="chip-mkt">MKT (—)</span>
       </div>
@@ -509,10 +509,10 @@ input[type=color]{width:32px;height:32px;border-radius:6px;border:1px solid var(
     </div>
   </div>
   <div class="krow krow-4">
-    <div class="kcard" style="--kc:#10B981"><div class="kl">FTD clients</div><div class="kv" id="fk-total">808</div><div class="ksub" id="fk-sub">all channels · all countries</div></div>
-    <div class="kcard" style="--kc:var(--a)"><div class="kl">IB partners</div><div class="kv">141</div><div class="ksub">17.5% of total FTDs</div></div>
-    <div class="kcard" style="--kc:var(--blue)"><div class="kl">MKT campaigns</div><div class="kv">34</div><div class="ksub">4.2% of total FTDs</div></div>
-    <div class="kcard" style="--kc:var(--purple)"><div class="kl">Cost / tracked FTD</div><div class="kv" id="fk-cpftd">$29</div><div class="ksub">$5,100 ÷ 175 tracked</div></div>
+    <div class="kcard" style="--kc:#10B981"><div class="kl">FTD clients</div><div class="kv" id="fk-total">—</div><div class="ksub" id="fk-sub">no data loaded</div></div>
+    <div class="kcard" style="--kc:var(--a)"><div class="kl">IB partners</div><div class="kv" id="fk-ib-v">—</div><div class="ksub" id="fk-ib-s">—</div></div>
+    <div class="kcard" style="--kc:var(--blue)"><div class="kl">MKT campaigns</div><div class="kv" id="fk-mkt-v">—</div><div class="ksub" id="fk-mkt-s">—</div></div>
+    <div class="kcard" style="--kc:var(--purple)"><div class="kl">Cost / tracked FTD</div><div class="kv" id="fk-cpftd">—</div><div class="ksub" id="fk-cpf-s">upload data</div></div>
   </div>
   <div class="cg2">
     <div class="cc"><div class="cc-h"><div><div class="cc-t">Monthly FTDs</div><div class="cc-s">Deposit trend over time</div></div></div><canvas id="c-ftd-mo" height="200"></canvas></div>
@@ -525,7 +525,7 @@ input[type=color]{width:32px;height:32px;border-radius:6px;border:1px solid var(
   <div class="cc">
     <div class="ai-box" style="margin:0">
       <div class="ai-box-hdr"><span class="ai-dot"></span><span class="ai-box-title">FTD Intelligence</span></div>
-      <div class="ai-box-text" id="ai-ftd-text">Loading FTD analysis...</div>
+      <div class="ai-box-text" id="ai-ftd-text">Upload a HubSpot CSV to enable FTD analysis.</div>
       <div class="ai-ask-row"><input class="ai-inp" id="ai-ftd-q" type="text" placeholder="Ask about deposits, channels, markets..."/><button class="ai-sbtn" onclick="askSection('ftd')">Ask</button></div>
       <div class="ai-resp" id="ai-ftd-resp"></div>
     </div>
@@ -565,7 +565,7 @@ input[type=color]{width:32px;height:32px;border-radius:6px;border:1px solid var(
   <div class="cc">
     <div class="ai-box" style="margin:0">
       <div class="ai-box-hdr"><span class="ai-dot"></span><span class="ai-box-title">Google Ads Intelligence</span></div>
-      <div class="ai-box-text" id="ai-gads-text">Loading Ads analysis...</div>
+      <div class="ai-box-text" id="ai-gads-text">Upload a Google Ads CSV to enable Ads analysis.</div>
       <div class="ai-ask-row"><input class="ai-inp" id="ai-gads-q" type="text" placeholder="Ask about ad performance, CPC, best market..."/><button class="ai-sbtn" onclick="askSection('gads')">Ask</button></div>
       <div class="ai-resp" id="ai-gads-resp"></div>
     </div>
@@ -598,7 +598,7 @@ input[type=color]{width:32px;height:32px;border-radius:6px;border:1px solid var(
   <div class="cc">
     <div class="ai-box" style="margin:0">
       <div class="ai-box-hdr"><span class="ai-dot"></span><span class="ai-box-title">Analytics Intelligence</span></div>
-      <div class="ai-box-text" id="ai-ga4-text">Loading Analytics analysis...</div>
+      <div class="ai-box-text" id="ai-ga4-text">Upload a GA4 CSV to enable Analytics analysis.</div>
       <div class="ai-ask-row"><input class="ai-inp" id="ai-ga4-q" type="text" placeholder="Ask about traffic, bounce rate, top countries..."/><button class="ai-sbtn" onclick="askSection('ga4')">Ask</button></div>
       <div class="ai-resp" id="ai-ga4-resp"></div>
     </div>
@@ -1152,6 +1152,24 @@ function renderOverview(){
   document.getElementById('R-cpkyc').textContent=cpKyc;
   document.getElementById('R-cpkyc-s').textContent=(hasHs()&&gads)?fmtD(spend)+' ÷ '+fmt(kyc)+' KYC':'Upload Google Ads + HubSpot';
   document.getElementById('R-cpftd').textContent=gads&&trackedFtd>1?fmtD(spend/trackedFtd,0):'—';
+  // Update ROI section
+  const roiCpftd=document.getElementById('roi-cpftd');
+  if(roiCpftd)roiCpftd.textContent=gads&&trackedFtd>1?fmtD(spend/trackedFtd,0):'—';
+  const roiTracked=document.getElementById('roi-ftd-tracked');
+  if(roiTracked)roiTracked.textContent=trackedFtd>1?fmt(trackedFtd)+' tracked FTDs':'upload data';
+  // Unattributed %
+  const hs=MAN.hs;
+  const roiUnattr=document.getElementById('roi-unattr');
+  const roiUnattrS=document.getElementById('roi-unattr-s');
+  if(hs&&hs.total>0){
+    const directCount=(hs.byCampaign||{})['Direct/Unknown']||0;
+    const pct=((directCount/hs.total)*100).toFixed(0);
+    if(roiUnattr)roiUnattr.textContent=pct+'%';
+    if(roiUnattrS)roiUnattrS.textContent=fmt(directCount)+' Direct/Unknown — fix UTMs';
+  } else {
+    if(roiUnattr)roiUnattr.textContent='—';
+    if(roiUnattrS)roiUnattrS.textContent='upload HubSpot data';
+  }
 
   // ── Funnel rings ──
   const container=document.getElementById('fn-steps')||document.getElementById('fn-rings-row');
@@ -1265,6 +1283,12 @@ function renderKyc(){
   const ibKyc=Object.entries(data.byCampaign||{}).filter(([k])=>k.startsWith('IB')).reduce((a,[,v])=>a+v,0);
   const mktKyc=Object.entries(data.byCampaign||{}).filter(([k])=>k.startsWith('MKT')).reduce((a,[,v])=>a+v,0);
   set('kk-t',fmt(kyc));set('kk-s',ctry?ctry.charAt(0)+ctry.slice(1).toLowerCase():'all countries');set('kk-ib',fmt(ibKyc));set('kk-mkt',fmt(mktKyc));
+  // Top market - dynamic
+  const topMktEntry=Object.entries(byC).sort((a,b)=>b[1]-a[1])[0];
+  if(topMktEntry){
+    const e=document.getElementById('kk-top');if(e)e.textContent=topMktEntry[0].charAt(0)+topMktEntry[0].slice(1).toLowerCase();
+    const es=document.getElementById('kk-top-sub');if(es)es.textContent=fmt(topMktEntry[1])+' clients ('+((topMktEntry[1]/(data.total||1))*100).toFixed(1)+'%)';
+  }
   const a=getA(),months=Object.entries(byMo).sort((x,y)=>x[0].localeCompare(y[0]));
   // Re-show canvas if hidden
   ['c-kyc-mo','c-kyc-geo'].forEach(id=>{const e=document.getElementById(id);if(e){e.style.display='';e.parentElement?.querySelectorAll('.empty-state').forEach(el=>el.remove());}});
