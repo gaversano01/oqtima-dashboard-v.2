@@ -20,6 +20,22 @@
 }
 body{font-family:var(--fb);background:var(--bg);color:var(--tp);min-height:100vh;font-size:14px;-webkit-font-smoothing:antialiased}
 
+
+/* ── LOCK SCREEN ── */
+.lock{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px}
+.lock-box{background:var(--surf);border:1px solid var(--bl);border-radius:20px;padding:40px 36px;width:100%;max-width:360px;text-align:center}
+.lock-logo{font-family:var(--fd);font-size:22px;font-weight:800;margin-bottom:4px}
+.lock-logo em{color:var(--a);font-style:normal}
+.lock-tagline{font-size:12px;color:var(--ts);margin-bottom:28px}
+.lock-lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--ts);text-align:left;margin-bottom:6px}
+.lock-inp{width:100%;background:var(--card);border:1px solid var(--bl);border-radius:10px;padding:13px 16px;font-family:var(--fb);font-size:15px;color:var(--tp);outline:none;letter-spacing:.15em;margin-bottom:12px;transition:border-color .15s;-webkit-appearance:none}
+.lock-inp:focus{border-color:var(--am)}
+.lock-btn{width:100%;background:var(--a);color:#07090E;border:none;border-radius:10px;padding:13px;font-family:var(--fd);font-size:14px;font-weight:700;cursor:pointer;-webkit-appearance:none;transition:opacity .15s}
+.lock-btn:hover{opacity:.9}
+.lock-btn:active{opacity:.8}
+.lock-err{font-size:12px;color:var(--red);margin-top:8px;min-height:16px;text-align:center}
+.lock-hint{font-size:11px;color:var(--tm);margin-top:14px}
+
 /* ── LOADING ── */
 .loverlay{position:fixed;inset:0;background:var(--bg);z-index:900;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .4s}
 .loverlay.out{opacity:0;pointer-events:none}
@@ -192,6 +208,19 @@ input[type=color]{width:32px;height:32px;border-radius:6px;border:1px solid var(
 </style>
 </head>
 <body>
+
+<!-- LOCK SCREEN -->
+<div class="lock" id="lock">
+  <div class="lock-box">
+    <div class="lock-logo">OQ<em>tima</em></div>
+    <div class="lock-tagline">Marketing Intelligence · Internal tool</div>
+    <div class="lock-lbl">Access password</div>
+    <input class="lock-inp" type="password" id="lock-pw" placeholder="••••••••••••" maxlength="40" autocomplete="current-password"/>
+    <button class="lock-btn" onclick="unlock()">Access dashboard</button>
+    <div class="lock-err" id="lock-err"></div>
+    <div class="lock-hint">Contact your admin if you need access</div>
+  </div>
+</div>
 
 <!-- LOADING -->
 <div class="loverlay" id="loverlay">
@@ -600,11 +629,40 @@ function fmtP(n){return(n==null||isNaN(parseFloat(n)))?'—':parseFloat(n).toFix
 function getA(){return getComputedStyle(document.documentElement).getPropertyValue('--a').trim()||'#C1FF47'}
 
 // ─── BOOT ─────────────────────────────────────────────────────────
+
+// ─── AUTH ─────────────────────────────────────────────────────────
+const PASS = 'OQtima@2026!';
+function unlock(){
+  const pw = document.getElementById('lock-pw').value;
+  const err = document.getElementById('lock-err');
+  if(pw === PASS){
+    document.getElementById('lock').style.display = 'none';
+    sessionStorage.setItem('oq-auth','1');
+    document.getElementById('loverlay').classList.remove('out');
+    renderStaticSections();
+    loadAll();
+  } else {
+    err.textContent = 'Incorrect password. Please try again.';
+    document.getElementById('lock-pw').value = '';
+    document.getElementById('lock-pw').focus();
+    setTimeout(()=>err.textContent='', 3000);
+  }
+}
+
 document.addEventListener('DOMContentLoaded',()=>{
   loadS();
-  // Render static data immediately — no backend needed for KYC/FTD
-  renderStaticSections();
-  loadAll();
+  // Check session auth
+  document.getElementById('lock-pw').addEventListener('keydown', e=>{ if(e.key==='Enter') unlock(); });
+  if(sessionStorage.getItem('oq-auth')==='1'){
+    document.getElementById('lock').style.display='none';
+    renderStaticSections();
+    loadAll();
+  } else {
+    // Show lock, hide loading overlay immediately
+    document.getElementById('loverlay').classList.add('out');
+    setTimeout(()=>document.getElementById('lock-pw').focus(), 100);
+    // Still load settings for styling
+  }
 });
 
 function renderStaticSections(){
@@ -656,32 +714,57 @@ function filterMonths(bm,period){
   if(!bm)return{};
   let e=Object.entries(bm);
   const now=new Date();
-  if(period==='thismonth'){const m=now.toISOString().slice(0,7);e=e.filter(([k])=>k===m)}
-  else if(period==='lastmonth'){const dt=new Date(now);dt.setMonth(dt.getMonth()-1);e=e.filter(([k])=>k===dt.toISOString().slice(0,7))}
-  else if(period==='thisyear')e=e.filter(([k])=>k.startsWith('2026'));
-  else if(period==='lastyear')e=e.filter(([k])=>k.startsWith('2025'));
-  else if(period!=='all'&&!isNaN(parseInt(period)))e=e.slice(-Math.max(1,Math.ceil(parseInt(period)/25)));
+  const todayStr=now.toISOString().slice(0,10);
+  if(period==='thismonth'){
+    const m=now.toISOString().slice(0,7);
+    e=e.filter(([k])=>k===m);
+  } else if(period==='lastmonth'){
+    const dt=new Date(now);dt.setMonth(dt.getMonth()-1);
+    e=e.filter(([k])=>k===dt.toISOString().slice(0,7));
+  } else if(period==='thisyear'){
+    e=e.filter(([k])=>k.startsWith(now.getFullYear()+''));
+  } else if(period==='lastyear'){
+    e=e.filter(([k])=>k.startsWith((now.getFullYear()-1)+''));
+  } else if(period!=='all'&&!isNaN(parseInt(period))){
+    // Filter by actual date range, not count
+    const days=parseInt(period);
+    const cutoff=new Date(now);
+    cutoff.setDate(cutoff.getDate()-days);
+    const cutoffMonth=cutoff.toISOString().slice(0,7);
+    e=e.filter(([k])=>k>=cutoffMonth);
+  }
   return Object.fromEntries(e.sort((a,b)=>a[0].localeCompare(b[0])));
 }
 
 function filterDaily(daily,period,year){
   if(!daily)return[];
   let d=[...daily];
-  if(year)d=d.filter(r=>(r.day||'').startsWith(year));
   const now=new Date();
+  if(year)d=d.filter(r=>(r.day||'').startsWith(year));
   if(period==='thismonth')return d.filter(r=>(r.day||'').startsWith(now.toISOString().slice(0,7)));
   if(period==='lastmonth'){const dt=new Date(now);dt.setMonth(dt.getMonth()-1);return d.filter(r=>(r.day||'').startsWith(dt.toISOString().slice(0,7)))}
-  if(period==='thisyear')return d.filter(r=>(r.day||'').startsWith('2026'));
-  if(period==='lastyear')return d.filter(r=>(r.day||'').startsWith('2025'));
-  if(!isNaN(parseInt(period)))return d.slice(-parseInt(period));
+  if(period==='thisyear')return d.filter(r=>(r.day||'').startsWith(now.getFullYear()+''));
+  if(period==='lastyear')return d.filter(r=>(r.day||'').startsWith((now.getFullYear()-1)+''));
+  if(period!=='all'&&!isNaN(parseInt(period))){
+    const days=parseInt(period);
+    const cutoff=new Date(now);
+    cutoff.setDate(cutoff.getDate()-days);
+    const cutoffStr=cutoff.toISOString().slice(0,10);
+    const filtered=d.filter(r=>(r.day||'')>=cutoffStr);
+    return filtered.length>0?filtered:d.slice(-days); // fallback
+  }
   return d;
 }
 
 function getMktRatio(mkt){
   if(mkt==='all')return 1;
-  const n={JAPAN:'Japan',AUSTRALIA:'Australia','UNITED KINGDOM':'United Kingdom',BRAZIL:'Brazil',CANADA:'Canada'}[mkt]||mkt;
-  const tot=Object.values(D.ga4?.byCountry||{}).reduce((s,v)=>s+v,0)||1;
-  return(D.ga4?.byCountry?.[n]||0)/tot;
+  if(!D.ga4?.byCountry)return 1;
+  const nameMap={JAPAN:'Japan',AUSTRALIA:'Australia','UNITED KINGDOM':'United Kingdom',BRAZIL:'Brazil',CANADA:'Canada'};
+  const ga4Name=nameMap[mkt]||mkt;
+  const tot=Object.values(D.ga4.byCountry).reduce((s,v)=>s+v,0)||1;
+  const mktSessions=D.ga4.byCountry[ga4Name]||0;
+  if(mktSessions===0)return 0;
+  return mktSessions/tot;
 }
 
 function getFtdForFilter(mkt,ch){
@@ -712,9 +795,11 @@ function renderOverviewStatic(){
   const {total,byC,byCamp}=getFtdForFilter(mkt,chFilter);
 
   // KPIs (static parts)
-  document.getElementById('ok-kyc').textContent=fmt(mkt==='all'?KYC.total:Math.round(KYC.total*(KYC.byCountry[mkt]||0)/KYC.total));
-  document.getElementById('ok-ftd').textContent=fmt(total);
-  document.getElementById('ok-ftd-s').textContent=chFilter==='all'?'all channels':chFilter+' only';
+  const kycForMkt=mkt==='all'?KYC.total:(KYC.byCountry[mkt]||0);
+  document.getElementById('ok-kyc').textContent=fmt(kycForMkt);
+  const ftdForDisplay=mkt==='all'?total:(FTD.byCountry[mkt]||0);
+  document.getElementById('ok-ftd').textContent=fmt(chFilter==='all'?ftdForDisplay:total);
+  document.getElementById('ok-ftd-s').textContent=(mkt!=='all'?mkt.charAt(0)+mkt.slice(1).toLowerCase()+' · ':'')+(chFilter==='all'?'all channels':chFilter+' only');
 
   const a=getA();
   // KYC vs FTD by market
@@ -760,9 +845,10 @@ function renderOverviewStatic(){
   const impr=Math.round((gads?.summary?.totalImpressions||0)*ratio);
   const clicks=Math.round((gads?.summary?.totalClicks||0)*ratio);
   const reg=Math.round((gads?.summary?.totalConversions||0)*ratio);
-  const kyc=mkt==='all'?KYC.total:Math.round(KYC.total*(KYC.byCountry[mkt]||0)/KYC.total);
+  const kyc=mkt==='all'?KYC.total:(KYC.byCountry[mkt]||0);
   const ftd=mkt==='all'?FTD.total:(FTD.byCountry[mkt]||0);
-  const spend=(gads?.summary?.totalCost||0)*ratio;
+  const totalSpend=gads?.summary?.totalCost||5099.85;
+  const spend=totalSpend*ratio;
 
   const pLabel={all:'All time',thismonth:'This month',lastmonth:'Last month',thisyear:'2026',lastyear:'2025'}[period]||period+' days';
   document.getElementById('fn-badge').textContent=pLabel;
@@ -807,8 +893,11 @@ function renderOverview(){
   if(gads){
     const ratio=mkt==='all'?1:getMktRatio(mkt);
     document.getElementById('ok-reg').textContent=fmt(Math.round((gads.summary?.totalConversions||0)*ratio));
-    document.getElementById('ok-spend').textContent=fmtD((gads.summary?.totalCost||0)*ratio);
-    document.getElementById('ok-cpa-s').textContent=`$${gads.summary?.costPerConversion||'12.81'} per registration`;
+    const spendFiltered=(gads.summary?.totalCost||0)*(mkt==='all'?1:getMktRatio(mkt));
+    document.getElementById('ok-spend').textContent=fmtD(spendFiltered);
+    const convFiltered=Math.round((gads.summary?.totalConversions||0)*(mkt==='all'?1:getMktRatio(mkt)));
+    const cpaFiltered=convFiltered>0?(spendFiltered/convFiltered).toFixed(2):'12.81';
+    document.getElementById('ok-cpa-s').textContent=`$${cpaFiltered} cost per registration`;
   }else{
     document.getElementById('ok-reg').textContent='398';
     document.getElementById('ok-spend').textContent='$5,100';
@@ -816,8 +905,14 @@ function renderOverview(){
   }
 
   if(ga4){
-    const ratio=mkt==='all'?1:getMktRatio(mkt);
-    document.getElementById('ok-sess').textContent=fmt(Math.round((ga4.summary?.totalSessions||0)*ratio));
+    let sessVal;
+    if(mkt==='all'){
+      sessVal=ga4.summary?.totalSessions||0;
+    }else{
+      const nameMap={JAPAN:'Japan',AUSTRALIA:'Australia','UNITED KINGDOM':'United Kingdom',BRAZIL:'Brazil',CANADA:'Canada'};
+      sessVal=ga4.byCountry?.[nameMap[mkt]]||0;
+    }
+    document.getElementById('ok-sess').textContent=fmt(sessVal);
   }else{
     document.getElementById('ok-sess').textContent='121,626';
   }
@@ -963,7 +1058,8 @@ function renderGads(){
   }
 
   let ratio=1;
-  if(curMkt!=='all'&&D.ga4)ratio=getMktRatio({jp:'JAPAN',au:'AUSTRALIA',uk:'UNITED KINGDOM'}[curMkt]);
+  const mktKeyMap={jp:'JAPAN',au:'AUSTRALIA',uk:'UNITED KINGDOM'};
+  if(curMkt!=='all')ratio=getMktRatio(mktKeyMap[curMkt]||'all');
 
   const daily=filterDaily(data.daily,period,year);
   const byMonth=filterMonths(data.byMonth,period);
