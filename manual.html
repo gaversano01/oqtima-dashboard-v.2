@@ -738,6 +738,61 @@ function emptyChart(id){
   el.style.opacity='0.3';
 }
 
+
+// ─── LIVE DATA ACCESSORS (read from MAN.hs when available) ─────────
+function getLiveKyc(){
+  const hs=MAN.hs;
+  if(!hs)return null;
+  return {
+    total: hs.kycApproved||0,
+    byCountry: buildCountryMap(hs,'kyc'),
+    byCampaign: filterCampaign(hs.byCampaign||{},'kyc'),
+    byMonth: extractMonthly(hs.byMonth,'kyc'),
+    withDeposit: hs.withDeposit||0
+  };
+}
+
+function getLiveFtd(){
+  const hs=MAN.hs;
+  if(!hs)return null;
+  const byCamp=hs.byCampaign||{};
+  const ibKeys=Object.entries(byCamp).filter(([k])=>k.startsWith('IB'));
+  const mktKeys=Object.entries(byCamp).filter(([k])=>k.startsWith('MKT'));
+  return {
+    total: hs.withDeposit||0,
+    ibTotal: 0, // recalculate below
+    mktTotal: 0,
+    byCampaign: byCamp,
+    byCountry: hs.byCountry||{},
+    byMonth: extractMonthly(hs.byMonth,'ftd')
+  };
+}
+
+function buildCountryMap(hs, type){
+  // For now country breakdown comes from hs.byCountry (all contacts)
+  // Future: if we have per-KYC country, use that
+  return hs.byCountry||{};
+}
+
+function filterCampaign(byCamp, type){
+  return byCamp;
+}
+
+function extractMonthly(byMonth, field){
+  if(!byMonth)return{};
+  const result={};
+  Object.entries(byMonth).forEach(([k,v])=>{
+    if(typeof v==='object'&&v!==null) result[k]=v[field]||0;
+    else if(field==='contacts') result[k]=v||0;
+  });
+  return result;
+}
+
+// Master data getter - always prefer MAN.hs over static KYC/FTD
+function getHsData(){
+  return MAN.hs||null;
+}
+
 // ─── AUTH ─────────────────────────────────────────────────────────
 const PASS = 'OQtima@2026!';
 function unlock(){
@@ -1044,12 +1099,27 @@ function getMktRatio(mkt){
 }
 
 function getFtdForFilter(mkt,ch){
-  let total=FTD.total,byC=FTD.byCountry,byCamp=FTD.byCampaign;
-  if(ch==='IB'){byCamp=Object.fromEntries(Object.entries(byCamp).filter(([k])=>k.startsWith('IB')));total=FTD.ibTotal}
-  else if(ch==='MKT'){byCamp=Object.fromEntries(Object.entries(byCamp).filter(([k])=>k.startsWith('MKT')));total=FTD.mktTotal}
+  // Always read from MAN.hs when available
+  const hs=MAN.hs;
+  const baseCamp=hs?{...hs.byCampaign||{}}:{...FTD.byCampaign};
+  const baseCountry=hs?{...hs.byCountry||{}}:{...FTD.byCountry};
+  const baseTotal=hs?(hs.withDeposit||0):FTD.total;
+  
+  let total=baseTotal, byC={...baseCountry}, byCamp={...baseCamp};
+  
+  if(ch==='IB'){
+    byCamp=Object.fromEntries(Object.entries(byCamp).filter(([k])=>k.startsWith('IB')));
+    total=Object.values(byCamp).reduce((a,v)=>a+v,0);
+  } else if(ch==='MKT'){
+    byCamp=Object.fromEntries(Object.entries(byCamp).filter(([k])=>k.startsWith('MKT')));
+    total=Object.values(byCamp).reduce((a,v)=>a+v,0);
+  }
+  
   if(mkt!=='all'){
-    const cv=FTD.byCountry[mkt]||0,r=cv/FTD.total;
-    total=Math.round(total*r);byC={[mkt]:cv};
+    const cv=baseCountry[mkt]||0;
+    const r=baseTotal>0?cv/baseTotal:0;
+    total=Math.round(total*r);
+    byC={[mkt]:cv};
     byCamp=Object.fromEntries(Object.entries(byCamp).map(([k,v])=>[k,Math.round(v*r)]));
   }
   return{total,byC,byCamp};
@@ -1090,13 +1160,22 @@ function renderOverviewStatic(){
     else{buildCB('cb-ov-mkt',mktC.map(([k,v])=>({label:k.replace('MKT-',''),val:fmt(v),pct:fmtP(v/(FTD.total||1)*100),w:(v/mktMax*100)+'%',color:'#3B82F6'})));}
   }
 
-  // KYC vs FTD by market
+  // KYC vs FTD by market — read from MAN.hs when available
+  const hsD=MAN.hs;
+  const hsCountry=hsD?.byCountry||{};
+  const hsCampD=hsD?.byCampaign||{};
+  // Approximate KYC by country = proportion of total contacts by country * kycApproved
+  const totalContacts=hsD?.total||1;
+  const kycApproved=hsD?.kycApproved||0;
+  const ftdApproved=hsD?.withDeposit||0;
+  function getCtryKyc(c){return Math.round((hsCountry[c]||0)/totalContacts*kycApproved);}
+  function getCtryFtd(c){return Math.round((hsCountry[c]||0)/totalContacts*ftdApproved);}
   const mktData=[
-    {l:'Japan',ky:KYC.byCountry.JAPAN||0,ft:FTD.byCountry.JAPAN||0,c:'#EF4444'},
-    {l:'Australia',ky:KYC.byCountry.AUSTRALIA||0,ft:FTD.byCountry.AUSTRALIA||0,c:'#3B82F6'},
-    {l:'UK',ky:KYC.byCountry['UNITED KINGDOM']||0,ft:FTD.byCountry['UNITED KINGDOM']||0,c:'#8B5CF6'},
-    {l:'Brazil',ky:KYC.byCountry.BRAZIL||0,ft:FTD.byCountry.BRAZIL||0,c:'#10B981'},
-    {l:'Canada',ky:KYC.byCountry.CANADA||0,ft:FTD.byCountry.CANADA||0,c:'#F59E0B'},
+    {l:'Japan',ky:getCtryKyc('JAPAN'),ft:getCtryFtd('JAPAN'),c:'#EF4444'},
+    {l:'Australia',ky:getCtryKyc('AUSTRALIA'),ft:getCtryFtd('AUSTRALIA'),c:'#3B82F6'},
+    {l:'UK',ky:getCtryKyc('UNITED KINGDOM'),ft:getCtryFtd('UNITED KINGDOM'),c:'#8B5CF6'},
+    {l:'Brazil',ky:getCtryKyc('BRAZIL'),ft:getCtryFtd('BRAZIL'),c:'#10B981'},
+    {l:'Canada',ky:getCtryKyc('CANADA'),ft:getCtryFtd('CANADA'),c:'#F59E0B'},
   ];
   const hasMarket=mktData.some(m=>m.ky>0||m.ft>0);
   if(hasMarket){
@@ -1145,15 +1224,23 @@ function renderOverview(){
   const gadsClicks=sum(gadsM,'clicks')*ratio;
   const ga4Sess=sum(ga4M,'sessions');
 
-  // ── HubSpot monthly ──
-  const hsM=filterMonths(MAN.hs?.byMonth,period);
+  // ── HubSpot data — always from MAN.hs ──
+  const hs=MAN.hs;
+  const hsM=filterMonths(hs?.byMonth,period);
   const hsMon=Object.values(hsM);
   const hasHsMon=hsMon.length>0&&typeof hsMon[0]==='object'&&hsMon[0]!==null&&'kyc' in hsMon[0];
   const kycP=hasHsMon?hsMon.reduce((a,v)=>a+(v.kyc||0),0):null;
   const ftdP=hasHsMon?hsMon.reduce((a,v)=>a+(v.ftd||0),0):null;
-  const kyc=mkt==='all'?(kycP!==null&&period!=='all'?kycP:(MAN.hs?.kycApproved||KYC.total)):(KYC.byCountry[mkt]||0);
-  const ftd=mkt==='all'?(ftdP!==null&&period!=='all'?ftdP:(MAN.hs?.withDeposit||FTD.total)):(FTD.byCountry[mkt]||0);
-  const trackedFtd=(FTD.ibTotal||0)+(FTD.mktTotal||0)||1;
+  // KYC: use period-filtered monthly if available, else total from hs
+  const kycTotal=hs?.kycApproved||0;
+  const ftdTotal=hs?.withDeposit||0;
+  const kyc=mkt==='all'?(kycP!==null&&period!=='all'?kycP:kycTotal):(hs?.byCountry?.[mkt]||0);
+  const ftd=mkt==='all'?(ftdP!==null&&period!=='all'?ftdP:ftdTotal):(hs?.byCountry?.[mkt]||0);
+  // tracked FTD = IB + MKT campaigns from hs.byCampaign
+  const hsCamp=hs?.byCampaign||{};
+  const trackedFtd=Math.max(1,
+    Object.entries(hsCamp).filter(([k])=>k.startsWith('IB')||k.startsWith('MKT')).reduce((a,[,v])=>a+v,0)
+  );
 
   // ── KPI cards ──
   const sessKpi=mkt==='all'?ga4Sess:Math.round((ga4Sess||0)*((ga4?.byCountry?.[ga4MktName]||0)/(ga4?.summary?.totalSessions||1)));
@@ -1180,12 +1267,12 @@ function renderOverview(){
   const roiTracked=document.getElementById('roi-ftd-tracked');
   if(roiTracked)roiTracked.textContent=trackedFtd>1?fmt(trackedFtd)+' tracked FTDs':'upload data';
   // Unattributed %
-  const hs=MAN.hs;
+  const hsRoi=MAN.hs;
   const roiUnattr=document.getElementById('roi-unattr');
   const roiUnattrS=document.getElementById('roi-unattr');
-  if(hs&&hs.total>0){
-    const directCount=(hs.byCampaign||{})['Direct/Unknown']||0;
-    const pct=((directCount/hs.total)*100).toFixed(0);
+  if(hsRoi&&hsRoi.total>0){
+    const directCount=(hsRoi.byCampaign||{})['Direct/Unknown']||0;
+    const pct=((directCount/hsRoi.total)*100).toFixed(0);
     if(roiUnattr)roiUnattr.textContent=pct+'%';
     if(roiUnattrS)roiUnattrS.textContent=fmt(directCount)+' Direct/Unknown — fix UTMs';
   } else {
