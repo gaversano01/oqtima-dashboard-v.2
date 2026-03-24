@@ -8,6 +8,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
@@ -16,6 +18,7 @@
   --a:#C1FF47;--ad:rgba(193,255,71,0.09);--am:rgba(193,255,71,0.35);
   --tp:#EEF1F8;--ts:#5E7191;--tm:#2D3A52;
   --red:#F05252;--amber:#F59E0B;--green:#10B981;--blue:#3B82F6;--purple:#8B5CF6;
+  --kpi-size:28px;--kpi-pad:18px 18px;--section-pad:18px 20px;
   --fd:'Plus Jakarta Sans',sans-serif;--fb:'Plus Jakarta Sans',sans-serif;
 }
 body{font-family:var(--fb);background:var(--bg);color:var(--tp);min-height:100vh;font-size:14px;-webkit-font-smoothing:antialiased}
@@ -63,7 +66,7 @@ body{font-family:var(--fb);background:var(--bg);color:var(--tp);min-height:100vh
 .view{display:none}.view.on{display:block}
 
 /* ── GLOBAL FILTER BAR ── */
-.gfbar{background:var(--surf);border:1px solid var(--b);border-radius:8px;padding:9px 14px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.gfbar{background:var(--surf);border:1px solid var(--b);border-radius:10px;padding:11px 14px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .gfl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--tm);white-space:nowrap}
 .sel{background:var(--card);border:1px solid var(--bl);border-radius:6px;padding:5px 22px 5px 9px;font-family:var(--fb);font-size:12px;font-weight:500;color:var(--tp);cursor:pointer;outline:none;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='5'%3E%3Cpath d='M0 0l4.5 5L9 0z' fill='%2364748B'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 7px center;transition:all .15s}
 .sel:focus{border-color:var(--a);outline:none}
@@ -78,12 +81,12 @@ body{font-family:var(--fb);background:var(--bg);color:var(--tp);min-height:100vh
 .krow{display:grid;gap:10px;margin-bottom:12px}
 .krow-5{grid-template-columns:repeat(5,minmax(0,1fr))}
 .krow-4{grid-template-columns:repeat(4,minmax(0,1fr))}
-.kcard{background:var(--card);border:1px solid var(--b);border-radius:10px;padding:16px 18px;position:relative;overflow:hidden;transition:all .18s}
+.kcard{background:var(--card);border:1px solid var(--b);border-radius:12px;padding:var(--kpi-pad);position:relative;overflow:hidden;transition:all .18s}
 .kcard:hover{border-color:var(--bl);background:var(--card2)}
 .kcard::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--kc,transparent);border-radius:0 0 2px 2px}
-.kl{font-size:10px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--ts);margin-bottom:10px}
-.kv{font-family:var(--fd);font-size:26px;font-weight:800;letter-spacing:-.6px;line-height:1;margin-bottom:4px}
-.ksub{font-size:11px;color:var(--tm);line-height:1.4}
+.kl{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#8EA3C3;margin-bottom:10px}
+.kv{font-family:var(--fd);font-size:var(--kpi-size);font-weight:800;letter-spacing:-.6px;line-height:1;margin-bottom:5px}
+.ksub{font-size:12px;color:var(--ts);line-height:1.45}
 .kdelta{font-size:10px;font-weight:600;padding:1px 6px;border-radius:4px}
 .kd-up{background:rgba(16,185,129,.12);color:#34D399}
 .kd-dn{background:rgba(240,82,82,.12);color:#F87171}
@@ -99,11 +102,11 @@ body{font-family:var(--fb);background:var(--bg);color:var(--tp);min-height:100vh
 .cg2{display:grid;grid-template-columns:3fr 2fr;gap:10px;margin-bottom:10px}
 .cg22{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
 .cg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px}
-.cc{background:var(--card);border:1px solid var(--b);border-radius:10px;padding:18px 20px;transition:all .18s}
+.cc{background:var(--card);border:1px solid var(--b);border-radius:12px;padding:var(--section-pad);transition:all .18s}
 .cc:hover{border-color:var(--bl)}
 .cc-h{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;gap:8px}
-.cc-t{font-family:var(--fd);font-size:13px;font-weight:700;letter-spacing:-.1px;color:var(--tp)}
-.cc-s{font-size:11px;color:var(--ts);margin-top:2px;line-height:1.4}
+.cc-t{font-family:var(--fd);font-size:14px;font-weight:700;letter-spacing:-.1px;color:var(--tp)}
+.cc-s{font-size:12px;color:#8EA3C3;margin-top:2px;line-height:1.45}
 .cc-bdg{font-size:10px;padding:3px 9px;border-radius:20px;background:var(--ad);color:var(--a);border:1px solid var(--am);white-space:nowrap;flex-shrink:0;font-weight:600}
 
 /* ── FUNNEL VISUAL ── */
@@ -203,7 +206,7 @@ input[type=color]{width:32px;height:32px;border-radius:6px;border:1px solid var(
   .sg{grid-template-columns:1fr 1fr}
   .gfbar{gap:8px}
 }
-@media(max-width:480px){.krow-5,.krow-4{grid-template-columns:1fr 1fr}.sg{grid-template-columns:1fr}.kv{font-size:19px}}
+@media(max-width:480px){.krow-5,.krow-4{grid-template-columns:1fr 1fr}.sg{grid-template-columns:1fr}.page{padding:10px 10px 82px}.cc{padding:14px}.kv{font-size:22px}.fring-arrow{display:none}}
 ::-webkit-scrollbar{width:3px;height:3px}::-webkit-scrollbar-thumb{background:var(--bl);border-radius:2px}
 
 /* ── FUNNEL RINGS (reference style) ── */
@@ -222,8 +225,8 @@ input[type=color]{width:32px;height:32px;border-radius:6px;border:1px solid var(
 
 /* ── WORLD MAP ── */
 .map-tooltip{position:absolute;background:var(--card);border:1px solid var(--bl);border-radius:6px;padding:5px 10px;font-size:11px;color:var(--tp);pointer-events:none;white-space:nowrap;display:none;z-index:20}
-.map-country{fill:#1A2236;stroke:var(--bg);stroke-width:0.5;cursor:default;transition:fill .2s}
-.map-country:hover{opacity:.85}
+.map-country{fill:#1A2236;stroke:#0E1526;stroke-width:.45;cursor:default;transition:fill .2s,stroke .2s,opacity .2s}
+.map-country:hover{opacity:.95;stroke:#D2F58A;stroke-width:.8}
 .attr-grid{grid-template-columns:1.8fr 1fr 1fr}
 @media(max-width:900px){.attr-grid{grid-template-columns:1fr!important}}
 
@@ -656,6 +659,7 @@ input[type=color]{width:32px;height:32px;border-radius:6px;border:1px solid var(
       <div class="si"><label>Background</label><div class="cr"><input type="color" id="s-bg" value="#07090E" oninput="syncBg()"/><input class="si-inp" type="text" id="s-bgh" value="#07090E" oninput="syncBgT()" style="flex:1"/></div></div>
       <div class="si"><label>Font</label><select class="si-sel" id="s-font" onchange="applyS()"><option value="'Plus Jakarta Sans',sans-serif">Syne</option><option value="'Space Grotesk',sans-serif">Space Grotesk</option><option value="'Plus Jakarta Sans',sans-serif">DM Sans</option><option value="'Inter',sans-serif">Inter</option></select></div>
       <div class="si"><label>Theme</label><select class="si-sel" id="s-theme" onchange="applyS()"><option value="dark">Dark</option><option value="light">Light</option></select></div>
+      <div class="si"><label>Visual preset</label><select class="si-sel" id="s-density" onchange="applyS()"><option value="executive">Executive (large KPI)</option><option value="balanced">Balanced</option><option value="compact">Compact</option></select></div>
       <div class="si"><label>Backend URL</label><input class="si-inp" type="text" id="s-be" value="https://oqtima-backend.onrender.com" oninput="saveS()"/></div>
     </div>
     <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
@@ -847,117 +851,98 @@ async function refreshAll(){sv('upload');} // In manual mode, refresh = go to up
 
 
 // ── WORLD MAP ────────────────────────────────────────────────────────────
-function renderWorldMap(){
+let worldMapPromise=null;
+function loadWorldMapData(){
+  if(worldMapPromise) return worldMapPromise;
+  worldMapPromise=Promise.all([
+    d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json'),
+    d3.tsv('https://cdn.jsdelivr.net/npm/world-atlas@2/country-names.tsv')
+  ]);
+  return worldMapPromise;
+}
+
+async function renderWorldMap(){
   const svg=document.getElementById('world-svg');
   const legend=document.getElementById('map-legend');
-  if(!svg)return;
-  
-  // Country FTD data
-  // Use uploaded data if available, else show empty map
+  const tt=document.getElementById('map-tooltip');
+  if(!svg) return;
+
   const hsData=MAN.hs;
   const rawByC=hsData?.byCountryFtd||hsData?.byCountry||{};
-  // Map HubSpot country names to display names
-  const cMap={'JAPAN':'Japan','BRAZIL':'Brazil','AUSTRALIA':'Australia','UNITED KINGDOM':'United Kingdom','CANADA':'Canada','INDONESIA':'Indonesia','INDIA':'India','THAILAND':'Thailand','UNITED ARAB EMIRATES':'UAE'};
-  const ftdByCountry={};
-  if(hsData&&hsData.withDeposit>0){Object.entries(rawByC).forEach(([k,v])=>{const nk=normalizeCountryKey(k);const n=cMap[nk]||nk;ftdByCountry[n]=(ftdByCountry[n]||0)+(Number(v)||0);});}
-  // If no hs data, show empty map with placeholder
+  const byCountry={};
+  Object.entries(rawByC).forEach(([k,v])=>{
+    const n=normalizeCountryKey(k);
+    byCountry[n]=(byCountry[n]||0)+(Number(v)||0);
+  });
+
   if(!hsData){
-    svg.innerHTML='<rect width="1000" height="500" fill="#0D1220" rx="6"/><text x="500" y="230" text-anchor="middle" fill="#2A3A52" font-size="14" font-family="Plus Jakarta Sans,sans-serif" font-weight="700">No data loaded</text><text x="500" y="255" text-anchor="middle" fill="#2A3A52" font-size="11" font-family="Plus Jakarta Sans,sans-serif">Upload a HubSpot CSV to see geographic distribution</text>';
-    if(legend)legend.innerHTML='';
+    svg.innerHTML='<rect width="1000" height="500" fill="#0D1220" rx="8"/><text x="500" y="230" text-anchor="middle" fill="#2A3A52" font-size="14" font-family="Plus Jakarta Sans,sans-serif" font-weight="700">No data loaded</text><text x="500" y="255" text-anchor="middle" fill="#2A3A52" font-size="11" font-family="Plus Jakarta Sans,sans-serif">Upload a HubSpot CSV to see geographic distribution</text>';
+    if(legend) legend.innerHTML='';
     return;
   }
-  const maxFtd=Math.max(...Object.values(ftdByCountry));
-  const accent=getComputedStyle(document.documentElement).getPropertyValue('--a').trim()||'#C1FF47';
-  
-  // Simple world map paths (key countries)
-  // Using simplified SVG paths for major countries
-  const countries=[
-    {id:'jp',name:'Japan',d:'M830,165 L840,160 L848,168 L845,178 L835,182 L825,175 Z M820,175 L828,172 L832,180 L825,188 L815,185 Z',ftd:187},
-    {id:'au',name:'Australia',d:'M760,320 L810,310 L840,320 L850,350 L840,380 L810,390 L770,380 L750,355 L755,330 Z',ftd:142},
-    {id:'gb',name:'United Kingdom',d:'M450,130 L458,125 L462,132 L460,142 L452,148 L445,142 L443,132 Z M455,148 L462,145 L465,152 L460,158 L453,155 Z',ftd:50},
-    {id:'br',name:'Brazil',d:'M280,280 L320,265 L350,270 L365,295 L360,330 L340,355 L310,360 L285,345 L270,315 L272,290 Z',ftd:157},
-    {id:'ca',name:'Canada',d:'M120,100 L220,90 L250,100 L260,125 L240,140 L200,145 L160,140 L120,130 L110,115 Z',ftd:43},
-    {id:'id',name:'Indonesia',d:'M760,275 L790,270 L810,278 L808,288 L790,292 L762,285 Z M815,272 L840,268 L850,276 L848,284 L825,286 L812,280 Z',ftd:19},
-    {id:'in',name:'India',d:'M640,185 L670,175 L690,185 L698,210 L690,240 L670,255 L648,248 L635,225 L632,200 Z',ftd:18},
-    {id:'th',name:'Thailand',d:'M715,220 L728,215 L735,225 L732,240 L720,248 L710,240 L708,225 Z',ftd:16},
-    {id:'ae',name:'UAE',d:'M590,205 L605,200 L612,208 L610,218 L598,222 L588,216 Z',ftd:16},
-  ];
-
-  // Color scale
-  function getColor(ftd){
-    if(!ftd) return '#1A2236';
-    const pct=ftd/maxFtd;
-    if(pct>0.7) return accent;
-    if(pct>0.4) return accent+'AA';
-    if(pct>0.2) return accent+'66';
-    return accent+'33';
+  if(!window.d3||!window.topojson){
+    svg.innerHTML='<rect width="1000" height="500" fill="#0D1220" rx="8"/><text x="500" y="245" text-anchor="middle" fill="#F59E0B" font-size="13" font-family="Plus Jakarta Sans,sans-serif">Map library unavailable</text>';
+    return;
   }
 
-  // Build SVG
-  let svgContent=`
-    <!-- Background countries (simplified world) -->
-    <rect width="1000" height="500" fill="#0F1420" rx="8"/>
-    <!-- Ocean grid lines -->
-    <line x1="0" y1="250" x2="1000" y2="250" stroke="#1A2236" stroke-width="1"/>
-    <line x1="500" y1="0" x2="500" y2="500" stroke="#1A2236" stroke-width="1"/>
-    <!-- Country shapes -->
-  `;
-
-  // Draw simplified continent outlines first (background)
-  const continents=[
-    // North America
-    {d:'M80,80 L280,70 L300,120 L280,160 L260,200 L220,230 L180,225 L150,200 L100,180 L70,140 L75,100 Z',fill:'#1A2236'},
-    // South America  
-    {d:'M220,240 L300,220 L370,250 L390,310 L370,380 L330,420 L280,415 L240,380 L215,320 L210,275 Z',fill:'#1A2236'},
-    // Europe
-    {d:'M420,90 L520,80 L540,100 L530,140 L500,160 L460,165 L430,155 L415,130 L418,105 Z',fill:'#1A2236'},
-    // Africa
-    {d:'M440,170 L540,160 L570,190 L575,270 L550,340 L510,370 L470,360 L440,320 L425,250 L428,200 Z',fill:'#1A2236'},
-    // Russia/Central Asia
-    {d:'M530,60 L800,50 L840,90 L820,130 L750,145 L650,140 L570,130 L530,100 Z',fill:'#1A2236'},
-    // Middle East
-    {d:'M560,165 L640,155 L680,175 L675,220 L640,235 L570,230 L545,205 L548,175 Z',fill:'#1A2236'},
-    // South/SE Asia
-    {d:'M620,165 L750,155 L800,175 L815,220 L790,260 L740,270 L680,255 L640,230 L618,195 Z',fill:'#1A2236'},
-    // East Asia
-    {d:'M750,100 L870,90 L890,130 L870,165 L830,175 L770,168 L742,140 L745,115 Z',fill:'#1A2236'},
-    // Australia
-    {d:'M730,305 L860,295 L880,340 L870,390 L830,415 L770,410 L730,375 L715,340 L720,315 Z',fill:'#1A2236'},
-  ];
-  
-  continents.forEach(c=>{svgContent+=`<path d="${c.d}" fill="${c.fill}" stroke="#0D1018" stroke-width="1"/>
-`;});
-
-  countries.forEach(c=>{
-    const col=getColor(c.ftd);
-    svgContent+=`<path class="map-country" id="mc-${c.id}" d="${c.d}" fill="${col}" stroke="#0D1018" stroke-width="1.5" data-name="${c.name}" data-ftd="${c.ftd}"/>
-`;
+  const aliases={
+    'UNITED KINGDOM':'United Kingdom','UK':'United Kingdom','GREAT BRITAIN':'United Kingdom',
+    'UNITED ARAB EMIRATES':'United Arab Emirates','UAE':'United Arab Emirates',
+    'UNITED STATES':'United States of America','USA':'United States of America',
+    'SOUTH KOREA':'South Korea','RUSSIAN FEDERATION':'Russia'
+  };
+  const nameToVal={};
+  Object.entries(byCountry).forEach(([k,v])=>{
+    const pretty=aliases[k]||k.split(' ').map(s=>s.charAt(0)+s.slice(1).toLowerCase()).join(' ');
+    nameToVal[pretty]=v;
   });
 
-  svg.innerHTML=svgContent;
+  try{
+    const [world,names]=await loadWorldMapData();
+    const nameById={};
+    names.forEach(r=>{nameById[r.id]=r.name;});
+    const countries=topojson.feature(world,world.objects.countries).features.map(f=>({
+      ...f,properties:{...f.properties,name:nameById[String(f.id)]||'Unknown'}
+    }));
 
-  // Tooltip
-  const tt=document.getElementById('map-tooltip');
-  svg.querySelectorAll('.map-country').forEach(el=>{
-    el.addEventListener('mousemove',e=>{
-      if(!tt)return;
-      const rect=svg.parentElement.getBoundingClientRect();
-      tt.style.display='block';
-      tt.style.left=(e.clientX-rect.left+10)+'px';
-      tt.style.top=(e.clientY-rect.top-30)+'px';
-      tt.textContent=el.dataset.name+': '+el.dataset.ftd+' FTDs';
+    const width=1000,height=500;
+    svg.setAttribute('viewBox',`0 0 ${width} ${height}`);
+    svg.setAttribute('preserveAspectRatio','xMidYMid meet');
+    const projection=d3.geoNaturalEarth1().fitExtent([[8,8],[width-8,height-8]],{type:'Sphere'});
+    const path=d3.geoPath(projection);
+    const accent=getComputedStyle(document.documentElement).getPropertyValue('--a').trim()||'#C1FF47';
+    const max=Math.max(1,...Object.values(nameToVal));
+    const color=d3.scaleLinear().domain([0,max]).range(['#1A2236',accent]);
+
+    let html=`<rect width="${width}" height="${height}" fill="#0F1420" rx="8"></rect>`;
+    const graticule=d3.geoGraticule10();
+    html+=`<path d="${path(graticule)}" fill="none" stroke="#16213A" stroke-width="0.45" opacity="0.6"></path>`;
+    countries.forEach(c=>{
+      const nm=c.properties.name;
+      const v=nameToVal[nm]||0;
+      html+=`<path class="map-country" d="${path(c)}" data-name="${nm}" data-ftd="${v}" fill="${v>0?color(v):'#172033'}"></path>`;
     });
-    el.addEventListener('mouseleave',()=>{if(tt)tt.style.display='none';});
-  });
+    svg.innerHTML=html;
 
-  // Legend
-  if(legend){
-    const topCountries=Object.entries(ftdByCountry).filter(([k])=>k!=='Unknown').sort((a,b)=>b[1]-a[1]).slice(0,5);
-    legend.innerHTML=topCountries.map(([name,ftd])=>`
-      <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--ts)">
-        <div style="width:10px;height:10px;border-radius:2px;background:${getColor(ftd)};flex-shrink:0"></div>
-        <span>${name}: <strong style="color:var(--tp)">${ftd}</strong></span>
-      </div>`).join('');
+    svg.querySelectorAll('.map-country').forEach(el=>{
+      el.addEventListener('mousemove',e=>{
+        if(!tt) return;
+        const rect=svg.parentElement.getBoundingClientRect();
+        tt.style.display='block';
+        tt.style.left=(e.clientX-rect.left+10)+'px';
+        tt.style.top=(e.clientY-rect.top-30)+'px';
+        tt.textContent=`${el.dataset.name}: ${fmt(Number(el.dataset.ftd)||0)} FTDs`;
+      });
+      el.addEventListener('mouseleave',()=>{if(tt)tt.style.display='none';});
+    });
+
+    if(legend){
+      const top=Object.entries(nameToVal).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).slice(0,7);
+      legend.innerHTML=top.map(([name,val])=>`<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ts)"><div style="width:10px;height:10px;border-radius:2px;background:${color(val)};flex-shrink:0"></div><span>${name}: <strong style="color:var(--tp)">${fmt(val)}</strong></span></div>`).join('');
+    }
+  }catch(err){
+    svg.innerHTML='<rect width="1000" height="500" fill="#0D1220" rx="8"/><text x="500" y="245" text-anchor="middle" fill="#F59E0B" font-size="13" font-family="Plus Jakarta Sans,sans-serif">Could not load world map data</text>';
+    if(legend) legend.innerHTML='';
   }
 }
 
@@ -1047,7 +1032,7 @@ function mkChart(id, config){
 function filterMonths(bm,period){
   if(!bm||!Object.keys(bm).length)return{};
   if(!period||period==='all') return Object.fromEntries(Object.entries(bm).sort((a,b)=>a[0].localeCompare(b[0])));
-  if(period.startsWith('custom:')){const[,s2,e2]=period.split(':');const sm=s2.slice(0,7),em=e2.slice(0,7);let e=Object.entries(bm).filter(([k])=>k>=sm&&k<=em);if(!e.length)e=Object.entries(bm);return Object.fromEntries(e.sort((a,b)=>a[0].localeCompare(b[0])));}
+  if(period.startsWith('custom:')){const[,s2,e2]=period.split(':');const sm=s2.slice(0,7),em=e2.slice(0,7);const e=Object.entries(bm).filter(([k])=>k>=sm&&k<=em);return Object.fromEntries(e.sort((a,b)=>a[0].localeCompare(b[0])));}
   const now=new Date(), yr=now.getFullYear(), mo=now.getMonth()+1;
   const thisM=yr+'-'+String(mo).padStart(2,'0');
   const lastM=(mo===1?(yr-1):yr)+'-'+String(mo===1?12:mo-1).padStart(2,'0');
@@ -1074,16 +1059,15 @@ function filterDaily(daily,period,year){
   const lastM=(mo===1?(yr-1):yr)+'-'+String(mo===1?12:mo-1).padStart(2,'0');
   if(year) d=d.filter(r=>(r.day||'').startsWith(String(year)));
   if(!period||period==='all') return d;
-  if(period==='thismonth') { const r=d.filter(x=>(x.day||'').startsWith(thisM)); return r.length?r:d; }
-  if(period==='lastmonth') { const r=d.filter(x=>(x.day||'').startsWith(lastM)); return r.length?r:d; }
-  if(period==='thisyear') { const r=d.filter(x=>(x.day||'').startsWith(String(yr))); return r.length?r:d; }
-  if(period==='lastyear') { const r=d.filter(x=>(x.day||'').startsWith(String(yr-1))); return r.length?r:d; }
+  if(period==='thismonth') { return d.filter(x=>(x.day||'').startsWith(thisM)); }
+  if(period==='lastmonth') { return d.filter(x=>(x.day||'').startsWith(lastM)); }
+  if(period==='thisyear') { return d.filter(x=>(x.day||'').startsWith(String(yr))); }
+  if(period==='lastyear') { return d.filter(x=>(x.day||'').startsWith(String(yr-1))); }
   if(!isNaN(parseInt(period))){
     const days=parseInt(period);
     const cut=new Date(now); cut.setDate(cut.getDate()-days);
     const cutS=cut.getFullYear()+'-'+String(cut.getMonth()+1).padStart(2,'0')+'-'+String(cut.getDate()).padStart(2,'0');
-    const r=d.filter(x=>(x.day||'')>=cutS);
-    return r.length?r:d; // fallback: never return empty
+    return d.filter(x=>(x.day||'')>=cutS);
   }
   return d;
 }
@@ -1245,16 +1229,16 @@ function renderOverview(){
   const hs=MAN.hs;
   const hsM=filterMonths(hs?.byMonth,period);
   const hsMon=Object.values(hsM);
-  const hasHsMon=hsMon.length>0&&typeof hsMon[0]==='object'&&hsMon[0]!==null&&'kyc' in hsMon[0];
-  const kycP=hasHsMon?hsMon.reduce((a,v)=>a+(v.kyc||0),0):null;
-  const ftdP=hasHsMon?hsMon.reduce((a,v)=>a+(v.ftd||0),0):null;
+  const hasHsMon=hsMon.length>0&&typeof hsMon[0]==='object'&&hsMon[0]!==null&&('kyc' in hsMon[0]||'ftd' in hsMon[0]);
+  const kycP=hasHsMon?hsMon.reduce((a,v)=>a+(Number(v.kyc)||0),0):0;
+  const ftdP=hasHsMon?hsMon.reduce((a,v)=>a+(Number(v.ftd)||0),0):0;
   // KYC: use period-filtered monthly if available, else total from hs
   const kycTotal=hs?.kycApproved||0;
   const ftdTotal=hs?.withDeposit||0;
   const hsByCountryKyc=hs?.byCountryKyc||hs?.byCountry||{};
   const hsByCountryFtd=hs?.byCountryFtd||{};
-  const kyc=mkt==='all'?(kycP!==null&&period!=='all'?kycP:kycTotal):(hsByCountryKyc[mkt]||0);
-  const ftd=mkt==='all'?(ftdP!==null&&period!=='all'?ftdP:ftdTotal):(hsByCountryFtd[mkt]||0);
+  const kyc=mkt==='all'?(period==='all'?kycTotal:(hasHsMon?kycP:0)):(hsByCountryKyc[mkt]||0);
+  const ftd=mkt==='all'?(period==='all'?ftdTotal:(hasHsMon?ftdP:0)):(hsByCountryFtd[mkt]||0);
   // tracked FTD = IB + MKT campaigns from deposit-confirmed campaign mapping
   const hsCamp=hs?.byCampaignFtd||hs?.byCampaign||{};
   const trackedFtd=Math.max(1,
@@ -1348,7 +1332,8 @@ function renderOverview(){
   }
 
   // ── Monthly FTD ──
-  const ftdMo=filterMonths(FTD.byMonth,period);
+  const hsFtdByMonth=Object.fromEntries(Object.entries(hs?.byMonth||{}).map(([k,v])=>[k,normalizeMonthValue(v,'ftd')]));
+  const ftdMo=filterMonths(hsFtdByMonth,period);
   const ftdME=Object.entries(ftdMo).sort((a,b)=>a[0].localeCompare(b[0]));
   if(ftdME.length>0){
     C.ovFtdMo=mkChart('c-ov-ftdmo',{type:'line',data:{labels:ftdME.map(([k])=>mlb(k)),datasets:[{label:'FTDs',data:ftdME.map(([,v])=>v),borderColor:'#10B981',borderWidth:2,pointRadius:2,fill:true,backgroundColor:'rgba(16,185,129,0.06)',tension:.4}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{...TO}},scales:{x:{grid:{display:false},ticks:{color:'#5E7191',font:{size:9},maxTicksLimit:10}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}}}}});
@@ -1844,14 +1829,31 @@ function sv(name){
 }
 
 // ─── SETTINGS ────────────────────────────────────────────────────
-function applyS(){const a=document.getElementById('s-a').value,bg=document.getElementById('s-bg').value,font=document.getElementById('s-font').value,name=document.getElementById('s-name').value,theme=document.getElementById('s-theme').value;const r=document.documentElement;r.style.setProperty('--a',a);r.style.setProperty('--ad',a+'17');r.style.setProperty('--am',a+'50');r.style.setProperty('--fd',font);r.style.setProperty('--bg',bg);r.style.setProperty('--surf',shC(bg,7));r.style.setProperty('--card',shC(bg,14));r.style.setProperty('--card2',shC(bg,20));if(theme==='light'){r.style.setProperty('--bg','#F4F6F9');r.style.setProperty('--surf','#FFFFFF');r.style.setProperty('--card','#F0F2F5');r.style.setProperty('--card2','#E8EBF0');r.style.setProperty('--tp','#0F172A');r.style.setProperty('--ts','#64748B');r.style.setProperty('--tm','#94A3B8');r.style.setProperty('--b','rgba(0,0,0,0.07)');r.style.setProperty('--bl','rgba(0,0,0,0.12)')}else{r.style.setProperty('--tp','#EDF0F5');r.style.setProperty('--ts','#64748B');r.style.setProperty('--tm','#2E3A4E');r.style.setProperty('--b','rgba(255,255,255,0.06)');r.style.setProperty('--bl','rgba(255,255,255,0.11)')}document.getElementById('logo').innerHTML=name+'<em>™</em>'}
+function applyVisualPreset(preset,r){
+  if(preset==='compact'){
+    r.style.setProperty('--kpi-size','24px');
+    r.style.setProperty('--kpi-pad','14px 14px');
+    r.style.setProperty('--section-pad','14px 16px');
+    return;
+  }
+  if(preset==='balanced'){
+    r.style.setProperty('--kpi-size','26px');
+    r.style.setProperty('--kpi-pad','16px 16px');
+    r.style.setProperty('--section-pad','16px 18px');
+    return;
+  }
+  r.style.setProperty('--kpi-size','30px');
+  r.style.setProperty('--kpi-pad','20px 20px');
+  r.style.setProperty('--section-pad','18px 20px');
+}
+function applyS(){const a=document.getElementById('s-a').value,bg=document.getElementById('s-bg').value,font=document.getElementById('s-font').value,name=document.getElementById('s-name').value,theme=document.getElementById('s-theme').value,preset=document.getElementById('s-density')?.value||'executive';const r=document.documentElement;r.style.setProperty('--a',a);r.style.setProperty('--ad',a+'17');r.style.setProperty('--am',a+'50');r.style.setProperty('--fd',font);r.style.setProperty('--bg',bg);r.style.setProperty('--surf',shC(bg,7));r.style.setProperty('--card',shC(bg,14));r.style.setProperty('--card2',shC(bg,20));if(theme==='light'){r.style.setProperty('--bg','#F4F6F9');r.style.setProperty('--surf','#FFFFFF');r.style.setProperty('--card','#F0F2F5');r.style.setProperty('--card2','#E8EBF0');r.style.setProperty('--tp','#0F172A');r.style.setProperty('--ts','#64748B');r.style.setProperty('--tm','#94A3B8');r.style.setProperty('--b','rgba(0,0,0,0.07)');r.style.setProperty('--bl','rgba(0,0,0,0.12)')}else{r.style.setProperty('--tp','#EDF0F5');r.style.setProperty('--ts','#64748B');r.style.setProperty('--tm','#2E3A4E');r.style.setProperty('--b','rgba(255,255,255,0.06)');r.style.setProperty('--bl','rgba(255,255,255,0.11)')}applyVisualPreset(preset,r);document.getElementById('logo').innerHTML=name+'<em>™</em>'}
 function shC(h,a){const r=Math.max(0,Math.min(255,parseInt(h.slice(1,3),16)+a)),g=Math.max(0,Math.min(255,parseInt(h.slice(3,5),16)+a)),b=Math.max(0,Math.min(255,parseInt(h.slice(5,7),16)+a));return'#'+[r,g,b].map(x=>x.toString(16).padStart(2,'0')).join('')}
 function syncA(){document.getElementById('s-ah').value=document.getElementById('s-a').value;applyS()}
 function syncAT(){const v=document.getElementById('s-ah').value;if(/^#[0-9a-fA-F]{6}$/.test(v)){document.getElementById('s-a').value=v;applyS()}}
 function syncBg(){document.getElementById('s-bgh').value=document.getElementById('s-bg').value;applyS()}
 function syncBgT(){const v=document.getElementById('s-bgh').value;if(/^#[0-9a-fA-F]{6}$/.test(v)){document.getElementById('s-bg').value=v;applyS()}}
-function saveS(){const s={a:document.getElementById('s-a').value,bg:document.getElementById('s-bg').value,f:document.getElementById('s-font').value,n:document.getElementById('s-name').value,th:document.getElementById('s-theme').value,be:document.getElementById('s-be').value};localStorage.setItem('oq-v8',JSON.stringify(s));BE=s.be;localStorage.setItem('oq-be',s.be);const b=document.getElementById('save-btn');b.textContent='✓ Saved';setTimeout(()=>b.textContent='Save',2000)}
-function loadS(){try{const s=JSON.parse(localStorage.getItem('oq-v8')||'{}');if(s.a){document.getElementById('s-a').value=s.a;document.getElementById('s-ah').value=s.a}if(s.bg){document.getElementById('s-bg').value=s.bg;document.getElementById('s-bgh').value=s.bg}if(s.f)document.getElementById('s-font').value=s.f;if(s.n)document.getElementById('s-name').value=s.n;if(s.th)document.getElementById('s-theme').value=s.th;if(s.be){document.getElementById('s-be').value=s.be;BE=s.be}if(Object.keys(s).length>0)applyS()}catch(e){}}
+function saveS(){const s={a:document.getElementById('s-a').value,bg:document.getElementById('s-bg').value,f:document.getElementById('s-font').value,n:document.getElementById('s-name').value,th:document.getElementById('s-theme').value,dn:document.getElementById('s-density')?.value||'executive',be:document.getElementById('s-be').value};localStorage.setItem('oq-v8',JSON.stringify(s));BE=s.be;localStorage.setItem('oq-be',s.be);const b=document.getElementById('save-btn');b.textContent='✓ Saved';setTimeout(()=>b.textContent='Save',2000)}
+function loadS(){try{const s=JSON.parse(localStorage.getItem('oq-v8')||'{}');if(s.a){document.getElementById('s-a').value=s.a;document.getElementById('s-ah').value=s.a}if(s.bg){document.getElementById('s-bg').value=s.bg;document.getElementById('s-bgh').value=s.bg}if(s.f)document.getElementById('s-font').value=s.f;if(s.n)document.getElementById('s-name').value=s.n;if(s.th)document.getElementById('s-theme').value=s.th;if(s.dn&&document.getElementById('s-density'))document.getElementById('s-density').value=s.dn;if(s.be){document.getElementById('s-be').value=s.be;BE=s.be}applyS()}catch(e){}}
 function resetS(){localStorage.removeItem('oq-v8');location.reload()}
 </script>
 </body>
