@@ -855,11 +855,11 @@ function renderWorldMap(){
   // Country FTD data
   // Use uploaded data if available, else show empty map
   const hsData=MAN.hs;
-  const rawByC=hsData?.byCountry||{};
+  const rawByC=hsData?.byCountryFtd||hsData?.byCountry||{};
   // Map HubSpot country names to display names
   const cMap={'JAPAN':'Japan','BRAZIL':'Brazil','AUSTRALIA':'Australia','UNITED KINGDOM':'United Kingdom','CANADA':'Canada','INDONESIA':'Indonesia','INDIA':'India','THAILAND':'Thailand','UNITED ARAB EMIRATES':'UAE'};
   const ftdByCountry={};
-  if(hsData&&hsData.withDeposit>0){Object.entries(rawByC).forEach(([k,v])=>{const n=cMap[k]||k;ftdByCountry[n]=(ftdByCountry[n]||0)+v;});}
+  if(hsData&&hsData.withDeposit>0){Object.entries(rawByC).forEach(([k,v])=>{const nk=normalizeCountryKey(k);const n=cMap[nk]||nk;ftdByCountry[n]=(ftdByCountry[n]||0)+(Number(v)||0);});}
   // If no hs data, show empty map with placeholder
   if(!hsData){
     svg.innerHTML='<rect width="1000" height="500" fill="#0D1220" rx="6"/><text x="500" y="230" text-anchor="middle" fill="#2A3A52" font-size="14" font-family="Plus Jakarta Sans,sans-serif" font-weight="700">No data loaded</text><text x="500" y="255" text-anchor="middle" fill="#2A3A52" font-size="11" font-family="Plus Jakarta Sans,sans-serif">Upload a HubSpot CSV to see geographic distribution</text>';
@@ -1087,6 +1087,22 @@ function filterDaily(daily,period,year){
   }
   return d;
 }
+
+function normalizeCountryKey(country){
+  const raw=(country||'').toString().trim();
+  if(!raw) return 'UNKNOWN';
+  const up=raw.toUpperCase();
+  if(up==='UK'||up==='UNITED KINGDOM (UK)'||up==='GREAT BRITAIN') return 'UNITED KINGDOM';
+  if(up==='UAE'||up==='UNITED ARAB EMIRATES') return 'UNITED ARAB EMIRATES';
+  return up;
+}
+
+function normalizeMonthValue(v,key){
+  if(v==null) return 0;
+  if(typeof v==='number') return v;
+  if(typeof v==='object') return Number(v[key])||0;
+  return 0;
+}
 function getMktRatio(mkt){
   if(mkt==='all')return 1;
   if(!D.ga4?.byCountry)return 1;
@@ -1101,8 +1117,13 @@ function getMktRatio(mkt){
 function getFtdForFilter(mkt,ch){
   // Always read from MAN.hs when available
   const hs=MAN.hs;
-  const baseCamp=hs?{...hs.byCampaign||{}}:{...FTD.byCampaign};
-  const baseCountry=hs?{...hs.byCountry||{}}:{...FTD.byCountry};
+  const baseCamp=hs?{...(hs.byCampaignFtd||hs.byCampaign||{})}:{...FTD.byCampaign};
+  const rawCountry=hs?{...(hs.byCountryFtd||hs.byCountry||{})}:{...FTD.byCountry};
+  const baseCountry={};
+  Object.entries(rawCountry).forEach(([k,v])=>{
+    const nk=normalizeCountryKey(k);
+    baseCountry[nk]=(baseCountry[nk]||0)+(Number(v)||0);
+  });
   const baseTotal=hs?(hs.withDeposit||0):FTD.total;
   
   let total=baseTotal, byC={...baseCountry}, byCamp={...baseCamp};
@@ -1162,14 +1183,10 @@ function renderOverviewStatic(){
 
   // KYC vs FTD by market — read from MAN.hs when available
   const hsD=MAN.hs;
-  const hsCountry=hsD?.byCountry||{};
-  const hsCampD=hsD?.byCampaign||{};
-  // Approximate KYC by country = proportion of total contacts by country * kycApproved
-  const totalContacts=hsD?.total||1;
-  const kycApproved=hsD?.kycApproved||0;
-  const ftdApproved=hsD?.withDeposit||0;
-  function getCtryKyc(c){return Math.round((hsCountry[c]||0)/totalContacts*kycApproved);}
-  function getCtryFtd(c){return Math.round((hsCountry[c]||0)/totalContacts*ftdApproved);}
+  const hsCountryKyc=hsD?.byCountryKyc||hsD?.byCountry||{};
+  const hsCountryFtd=hsD?.byCountryFtd||{};
+  function getCtryKyc(c){return hsCountryKyc[normalizeCountryKey(c)]||0;}
+  function getCtryFtd(c){return hsCountryFtd[normalizeCountryKey(c)]||0;}
   const mktData=[
     {l:'Japan',ky:getCtryKyc('JAPAN'),ft:getCtryFtd('JAPAN'),c:'#EF4444'},
     {l:'Australia',ky:getCtryKyc('AUSTRALIA'),ft:getCtryFtd('AUSTRALIA'),c:'#3B82F6'},
@@ -1234,10 +1251,12 @@ function renderOverview(){
   // KYC: use period-filtered monthly if available, else total from hs
   const kycTotal=hs?.kycApproved||0;
   const ftdTotal=hs?.withDeposit||0;
-  const kyc=mkt==='all'?(kycP!==null&&period!=='all'?kycP:kycTotal):(hs?.byCountry?.[mkt]||0);
-  const ftd=mkt==='all'?(ftdP!==null&&period!=='all'?ftdP:ftdTotal):(hs?.byCountry?.[mkt]||0);
-  // tracked FTD = IB + MKT campaigns from hs.byCampaign
-  const hsCamp=hs?.byCampaign||{};
+  const hsByCountryKyc=hs?.byCountryKyc||hs?.byCountry||{};
+  const hsByCountryFtd=hs?.byCountryFtd||{};
+  const kyc=mkt==='all'?(kycP!==null&&period!=='all'?kycP:kycTotal):(hsByCountryKyc[mkt]||0);
+  const ftd=mkt==='all'?(ftdP!==null&&period!=='all'?ftdP:ftdTotal):(hsByCountryFtd[mkt]||0);
+  // tracked FTD = IB + MKT campaigns from deposit-confirmed campaign mapping
+  const hsCamp=hs?.byCampaignFtd||hs?.byCampaign||{};
   const trackedFtd=Math.max(1,
     Object.entries(hsCamp).filter(([k])=>k.startsWith('IB')||k.startsWith('MKT')).reduce((a,[,v])=>a+v,0)
   );
@@ -1384,13 +1403,16 @@ function renderKyc(){
   }
   const data=MAN.hs;
   const ctry=document.getElementById('kyc-ctry').value,src=document.getElementById('kyc-src').value;
-  let kyc=data.kycApproved||0,byC={...data.byCountry||{}},byCamp={...data.byCampaign||{}};
+  const rawByC=data.byCountryKyc||data.byCountry||{};
+  const byC={};
+  Object.entries(rawByC).forEach(([k,v])=>{const nk=normalizeCountryKey(k);byC[nk]=(byC[nk]||0)+(Number(v)||0);});
+  let kyc=data.kycApproved||0,byCamp={...(data.byCampaignKyc||data.byCampaign||{})};
   let byMo={};
-  if(data.byMonth){Object.entries(data.byMonth).forEach(([k,v])=>{byMo[k]=typeof v==='object'?v.contacts||0:v;});}
-  if(ctry){const cv=byC[ctry]||0,r=cv/(kyc||1);kyc=cv;byC={[ctry]:cv};Object.keys(byMo).forEach(k=>byMo[k]=Math.round(byMo[k]*r));Object.keys(byCamp).forEach(k=>byCamp[k]=Math.round(byCamp[k]*r));}
+  if(data.byMonth){Object.entries(data.byMonth).forEach(([k,v])=>{byMo[k]=normalizeMonthValue(v,'kyc');});}
+  if(ctry){const cv=byC[ctry]||0,r=cv/(kyc||1);kyc=cv;Object.keys(byC).forEach(k=>delete byC[k]);byC[ctry]=cv;Object.keys(byMo).forEach(k=>byMo[k]=Math.round(byMo[k]*r));Object.keys(byCamp).forEach(k=>byCamp[k]=Math.round(byCamp[k]*r));}
   if(src){if(src==='Direct'){kyc=byCamp['Direct/Unknown']||0;byCamp={'Direct/Unknown':kyc}}else{const f=Object.fromEntries(Object.entries(byCamp).filter(([k])=>k.startsWith(src)));kyc=Object.values(f).reduce((a,v)=>a+v,0);byCamp=f;}}
-  const ibKyc=Object.entries(data.byCampaign||{}).filter(([k])=>k.startsWith('IB')).reduce((a,[,v])=>a+v,0);
-  const mktKyc=Object.entries(data.byCampaign||{}).filter(([k])=>k.startsWith('MKT')).reduce((a,[,v])=>a+v,0);
+  const ibKyc=Object.entries(data.byCampaignKyc||data.byCampaign||{}).filter(([k])=>k.startsWith('IB')).reduce((a,[,v])=>a+v,0);
+  const mktKyc=Object.entries(data.byCampaignKyc||data.byCampaign||{}).filter(([k])=>k.startsWith('MKT')).reduce((a,[,v])=>a+v,0);
   set('kk-total',fmt(kyc));set('kk-sub',ctry?ctry.charAt(0)+ctry.slice(1).toLowerCase():'all countries');set('kk-ib',fmt(ibKyc));set('kk-mkt',fmt(mktKyc));
   // Top market - dynamic
   const topMktEntry=Object.entries(byC).sort((a,b)=>b[1]-a[1])[0];
@@ -1436,8 +1458,10 @@ function renderFtd(){
   const data=MAN.hs;
   const ctry=document.getElementById('ftd-ctry').value;
   const withDep=data.withDeposit||0;
-  const byC={...data.byCountry||{}};
-  const byCamp={...data.byCampaign||{}};
+  const rawByC={...(data.byCountryFtd||data.byCountry||{})};
+  const byC={};
+  Object.entries(rawByC).forEach(([k,v])=>{const nk=normalizeCountryKey(k);byC[nk]=(byC[nk]||0)+(Number(v)||0);});
+  const byCamp={...(data.byCampaignFtd||data.byCampaign||{})};
 
   let total=withDep,displayByC={...byC},displayByCamp={...byCamp};
   if(ctry){const cv=byC[ctry]||0,r=cv/(total||1);total=cv;displayByC={[ctry]:cv};Object.keys(displayByCamp).forEach(k=>displayByCamp[k]=Math.round(displayByCamp[k]*r));}
@@ -1447,8 +1471,8 @@ function renderFtd(){
   set('fk-total',fmt(total));
   set('fk-sub',(ftdSrc==='all'?'all channels':ftdSrc)+(ctry?' · '+ctry.charAt(0)+ctry.slice(1).toLowerCase():''));
   const spend=(MAN.gads?.summary?.totalCost||MAN.uk?.summary?.totalCost||0);
-  const ibFtd=Object.entries(data.byCampaign||{}).filter(([k])=>k.startsWith('IB')).reduce((a,[,v])=>a+v,0);
-  const mktFtd=Object.entries(data.byCampaign||{}).filter(([k])=>k.startsWith('MKT')).reduce((a,[,v])=>a+v,0);
+  const ibFtd=Object.entries(data.byCampaignFtd||data.byCampaign||{}).filter(([k])=>k.startsWith('IB')).reduce((a,[,v])=>a+v,0);
+  const mktFtd=Object.entries(data.byCampaignFtd||data.byCampaign||{}).filter(([k])=>k.startsWith('MKT')).reduce((a,[,v])=>a+v,0);
   const trackedF=(ibFtd+mktFtd)||1;
   set('fk-cpftd',spend>0?fmtD(spend/trackedF,0):'—');
   set('fk-ib-v',fmt(ibFtd));set('fk-ib-s',ibFtd>0?((ibFtd/withDep*100).toFixed(1)+'% of FTDs'):'—');
@@ -1456,15 +1480,15 @@ function renderFtd(){
 
   // Monthly FTD from hs byMonth
   const byMoFtd={};
-  if(data.byMonth){Object.entries(data.byMonth).forEach(([k,v])=>{byMoFtd[k]=typeof v==='object'?v.ftd||0:0;});}
+  if(data.byMonth){Object.entries(data.byMonth).forEach(([k,v])=>{byMoFtd[k]=normalizeMonthValue(v,'ftd');});}
   const ftdM=Object.entries(byMoFtd).sort((a,b)=>a[0].localeCompare(b[0]));
   ['c-ftd-mo','c-ftd-geo'].forEach(id=>{const e=document.getElementById(id);if(e){e.style.display='';e.parentElement?.querySelectorAll('.empty-state').forEach(el=>el.remove());}});
   C.ftdmo=mkChart('c-ftd-mo',{type:'line',data:{labels:ftdM.map(([k])=>mlb(k)),datasets:[{label:'FTDs',data:ftdM.map(([,v])=>v),borderColor:'#10B981',borderWidth:2,pointRadius:2,fill:true,backgroundColor:'rgba(16,185,129,0.07)',tension:.4}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{...TO}},scales:{x:{grid:{display:false},ticks:{color:'#5E7191',font:{size:9},maxTicksLimit:10}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}}}}});
   const topC=Object.entries(displayByC).slice(0,5),cols=['#10B981','#3B82F6','#F59E0B','#8B5CF6','#EF4444'];
   C.ftdgeo=mkChart('c-ftd-geo',{type:'doughnut',data:{labels:topC.map(([k])=>k.charAt(0)+k.slice(1).toLowerCase()),datasets:[{data:topC.map(([,v])=>v),backgroundColor:cols.slice(0,topC.length),borderWidth:0,hoverOffset:5}]},options:{responsive:true,cutout:'70%',plugins:{legend:{position:'bottom',labels:{color:'#5E7191',font:{size:10},padding:8,boxWidth:10}},tooltip:{...TO}}}});
-  const ibC=Object.entries(data.byCampaign||{}).filter(([k])=>k.startsWith('IB')).sort((a,b)=>b[1]-a[1]),ibMax=ibC[0]?.[1]||1;
+  const ibC=Object.entries(byCamp).filter(([k])=>k.startsWith('IB')).sort((a,b)=>b[1]-a[1]),ibMax=ibC[0]?.[1]||1;
   buildCB('cb-ftd-ib',ibC.map(([k,v])=>({label:k,val:fmt(v)+' FTDs',pct:fmtP(v/(total||1)*100),w:(v/ibMax*100)+'%',color:getA()})));
-  const mktC=Object.entries(data.byCampaign||{}).filter(([k])=>k.startsWith('MKT')).sort((a,b)=>b[1]-a[1]),mktMax=mktC[0]?.[1]||1;
+  const mktC=Object.entries(byCamp).filter(([k])=>k.startsWith('MKT')).sort((a,b)=>b[1]-a[1]),mktMax=mktC[0]?.[1]||1;
   buildCB('cb-ftd-mkt',mktC.map(([k,v])=>({label:k.replace('MKT-',''),val:fmt(v)+' FTDs',pct:fmtP(v/(total||1)*100),w:(v/mktMax*100)+'%',color:'#3B82F6'})));
   setAiText('ftd',`<strong>${fmt(withDep)} FTD clients</strong> loaded. IB: ${fmt(ibFtd)}. MKT: ${fmt(mktFtd)}. Cost/tracked FTD: ${spend>0?fmtD(spend/trackedF,0):'upload Google Ads for ROI'}.`);
 }
@@ -1747,12 +1771,12 @@ function procGa4(rows){
   };
 }
 function procHs(rows){
-  const byC={},byCamp={},byMo={};
+  const byC={},byCKyc={},byCFtd={},byCamp={},byCampKyc={},byCampFtd={},byMo={};
   let total=0,kyc=0,withDeposit=0;
   rows.forEach(r=>{
     total++;
     // Country — try multiple column name formats
-    const c=r['portal - country']||r['portal___country']||r['Country']||r['country']||'Unknown';
+    const c=normalizeCountryKey(r['portal - country']||r['portal___country']||r['Country']||r['country']||'Unknown');
     byC[c]=(byC[c]||0)+1;
     // Campaign
     const camp=r['portal - source_marketing_campaign']||r['portal___source_marketing_campaign']||r['Campaign']||'Direct/Unknown';
@@ -1774,16 +1798,30 @@ function procHs(rows){
     const doc=r['portal - documentation']||r['portal___documentation']||r['Documentation']||'';
     const docStatus=r['portal - documentation_status']||r['portal___documentation_status']||'';
     const isKyc=doc==='Approved'||docStatus==='Approved';
-    if(isKyc){kyc++;if(d){const s=String(d).trim();let mo='';if(/^\d{4}-\d{2}/.test(s))mo=s.slice(0,7);else if(/^\d{1,2}\//.test(s)){const p=s.split('/');mo=p[2]+'-'+String(p[0]).padStart(2,'0');}if(mo&&byMo[mo])byMo[mo].kyc++;}}
+    if(isKyc){
+      kyc++;
+      byCKyc[c]=(byCKyc[c]||0)+1;
+      byCampKyc[camp]=(byCampKyc[camp]||0)+1;
+      if(d){const s=String(d).trim();let mo='';if(/^\d{4}-\d{2}/.test(s))mo=s.slice(0,7);else if(/^\d{1,2}\//.test(s)){const p=s.split('/');mo=p[2]+'-'+String(p[0]).padStart(2,'0');}if(mo&&byMo[mo])byMo[mo].kyc++;}
+    }
     // FTD / made deposit
     const dep=r['portal - made_a_deposit_']||r['portal___made_a_deposit_']||r['Made a deposit']||r['Lifetime Gross Deposit (USD)']||r['portal___lifetime_gross_deposit_usd']||'';
     const isFtd=dep==='true'||dep==='Yes'||parseFloat(dep)>0;
-    if(isFtd){withDeposit++;if(d){const s=String(d).trim();let mo='';if(/^\d{4}-\d{2}/.test(s))mo=s.slice(0,7);else if(/^\d{1,2}\//.test(s)){const p=s.split('/');mo=p[2]+'-'+String(p[0]).padStart(2,'0');}if(mo&&byMo[mo])byMo[mo].ftd++;}}
+    if(isFtd){
+      withDeposit++;
+      byCFtd[c]=(byCFtd[c]||0)+1;
+      byCampFtd[camp]=(byCampFtd[camp]||0)+1;
+      if(d){const s=String(d).trim();let mo='';if(/^\d{4}-\d{2}/.test(s))mo=s.slice(0,7);else if(/^\d{1,2}\//.test(s)){const p=s.split('/');mo=p[2]+'-'+String(p[0]).padStart(2,'0');}if(mo&&byMo[mo])byMo[mo].ftd++;}
+    }
   });
   return{
     total,kycApproved:kyc,withDeposit,
     byCountry:Object.fromEntries(Object.entries(byC).sort((a,b)=>b[1]-a[1])),
     byCampaign:Object.fromEntries(Object.entries(byCamp).sort((a,b)=>b[1]-a[1])),
+    byCountryKyc:Object.fromEntries(Object.entries(byCKyc).sort((a,b)=>b[1]-a[1])),
+    byCountryFtd:Object.fromEntries(Object.entries(byCFtd).sort((a,b)=>b[1]-a[1])),
+    byCampaignKyc:Object.fromEntries(Object.entries(byCampKyc).sort((a,b)=>b[1]-a[1])),
+    byCampaignFtd:Object.fromEntries(Object.entries(byCampFtd).sort((a,b)=>b[1]-a[1])),
     byMonth:byMo
   };
 }
