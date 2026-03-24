@@ -947,6 +947,86 @@ function filterDaily(daily,period,year){
   }
   return d;
 }
+
+function normalizeCountryKey(country){
+  const raw=(country||'').toString().trim();
+  if(!raw) return 'UNKNOWN';
+  const up=raw.toUpperCase();
+  if(up==='UK'||up==='UNITED KINGDOM (UK)'||up==='GREAT BRITAIN') return 'UNITED KINGDOM';
+  if(up==='UAE'||up==='UNITED ARAB EMIRATES') return 'UAE';
+  return up;
+}
+
+function normalizeMonthValue(val,field){
+  if(val==null) return 0;
+  if(typeof val==='number') return val;
+  if(typeof val==='object'){
+    if(field in val) return Number(val[field])||0;
+    if(field==='kyc'&&'contacts' in val) return Number(val.contacts)||0;
+  }
+  return 0;
+}
+
+function getKycDataset(){
+  const hs=MAN.hs||D.hs;
+  const out={total:KYC.total,byCountry:{...KYC.byCountry},byCampaign:{...KYC.byCampaign},byMonth:{...KYC.byMonth}};
+  if(!hs) return out;
+
+  const byCountryRaw=hs.byCountry||{};
+  const byCountry={};
+  Object.entries(byCountryRaw).forEach(([k,v])=>{
+    const key=normalizeCountryKey(k);
+    byCountry[key]=(byCountry[key]||0)+(Number(v)||0);
+  });
+
+  const byMonthRaw=hs.byMonth||{};
+  const byMonth={};
+  Object.entries(byMonthRaw).forEach(([k,v])=>{
+    byMonth[k]=normalizeMonthValue(v,'kyc');
+  });
+
+  out.total=Number(hs.kycApproved)||out.total;
+  if(Object.keys(byCountry).length) out.byCountry=byCountry;
+  if(hs.byCampaign&&Object.keys(hs.byCampaign).length) out.byCampaign={...hs.byCampaign};
+  if(Object.keys(byMonth).length) out.byMonth=byMonth;
+  return out;
+}
+
+function getFtdDataset(){
+  const hs=MAN.hs||D.hs;
+  const out={total:FTD.total,ibTotal:FTD.ibTotal,mktTotal:FTD.mktTotal,directTotal:FTD.directTotal,byCountry:{...FTD.byCountry},byCampaign:{...FTD.byCampaign},byMonth:{...FTD.byMonth}};
+  if(!hs) return out;
+
+  const byCountryRaw=hs.ftdByCountry||hs.byCountry||{};
+  const byCountry={};
+  Object.entries(byCountryRaw).forEach(([k,v])=>{
+    const key=normalizeCountryKey(k);
+    byCountry[key]=(byCountry[key]||0)+(Number(v)||0);
+  });
+
+  const byCampaignRaw=hs.ftdByCampaign||hs.byCampaign||{};
+  const byMonthRaw=hs.byMonth||{};
+  const byMonth={};
+  Object.entries(byMonthRaw).forEach(([k,v])=>{
+    byMonth[k]=normalizeMonthValue(v,'ftd');
+  });
+
+  const total=Number(hs.withDeposit ?? hs.ftdTotal);
+  const ibTotal=Object.entries(byCampaignRaw).filter(([k])=>k.startsWith('IB')).reduce((s,[,v])=>s+(Number(v)||0),0);
+  const mktTotal=Object.entries(byCampaignRaw).filter(([k])=>k.startsWith('MKT')).reduce((s,[,v])=>s+(Number(v)||0),0);
+
+  if(Number.isFinite(total) && total>=0) out.total=total;
+  if(Object.keys(byCountry).length) out.byCountry=byCountry;
+  if(Object.keys(byCampaignRaw).length) out.byCampaign={...byCampaignRaw};
+  if(Object.keys(byMonth).length && Object.values(byMonth).some(v=>v>0)) out.byMonth=byMonth;
+  if(ibTotal>0||mktTotal>0){
+    out.ibTotal=ibTotal;
+    out.mktTotal=mktTotal;
+    out.directTotal=Math.max(0,out.total-ibTotal-mktTotal);
+  }
+  return out;
+}
+
 function getMktRatio(mkt){
   if(mkt==='all')return 1;
   if(!D.ga4?.byCountry)return 1;
@@ -959,11 +1039,12 @@ function getMktRatio(mkt){
 }
 
 function getFtdForFilter(mkt,ch){
-  let total=FTD.total,byC=FTD.byCountry,byCamp=FTD.byCampaign;
-  if(ch==='IB'){byCamp=Object.fromEntries(Object.entries(byCamp).filter(([k])=>k.startsWith('IB')));total=FTD.ibTotal}
-  else if(ch==='MKT'){byCamp=Object.fromEntries(Object.entries(byCamp).filter(([k])=>k.startsWith('MKT')));total=FTD.mktTotal}
+  const ftdData=getFtdDataset();
+  let total=ftdData.total,byC=ftdData.byCountry,byCamp=ftdData.byCampaign;
+  if(ch==='IB'){byCamp=Object.fromEntries(Object.entries(byCamp).filter(([k])=>k.startsWith('IB')));total=ftdData.ibTotal}
+  else if(ch==='MKT'){byCamp=Object.fromEntries(Object.entries(byCamp).filter(([k])=>k.startsWith('MKT')));total=ftdData.mktTotal}
   if(mkt!=='all'){
-    const cv=FTD.byCountry[mkt]||0,r=cv/FTD.total;
+    const cv=ftdData.byCountry[mkt]||0,r=cv/(ftdData.total||1);
     total=Math.round(total*r);byC={[mkt]:cv};
     byCamp=Object.fromEntries(Object.entries(byCamp).map(([k,v])=>[k,Math.round(v*r)]));
   }
@@ -982,14 +1063,16 @@ function setChFilter(ch){
 
 // ─── OVERVIEW ─────────────────────────────────────────────────────
 function renderOverviewStatic(){
+  const kycData=getKycDataset();
+  const ftdData=getFtdDataset();
   // KYC and FTD = all-time totals (HubSpot has no per-period date breakdown)
   const period=getOvPeriod(), mkt=getOvMkt();
   const {total,byC,byCamp}=getFtdForFilter(mkt,chFilter);
   const a=getA();
 
   // KPIs — KYC and FTD are always all-time
-  const kycForMkt=mkt==='all'?KYC.total:(KYC.byCountry[mkt]||0);
-  const ftdForMkt=mkt==='all'?FTD.total:(FTD.byCountry[mkt]||0);
+  const kycForMkt=mkt==='all'?kycData.total:(kycData.byCountry[mkt]||0);
+  const ftdForMkt=mkt==='all'?ftdData.total:(ftdData.byCountry[mkt]||0);
   document.getElementById('ok-kyc').textContent=fmt(kycForMkt);
   document.getElementById('ok-ftd').textContent=fmt(chFilter==='all'?ftdForMkt:total);
   document.getElementById('ok-ftd-s').textContent=(mkt!=='all'?mkt.charAt(0)+mkt.slice(1).toLowerCase()+' · ':'')+(chFilter==='all'?'all channels':chFilter+' only');
@@ -997,22 +1080,22 @@ function renderOverviewStatic(){
   // IB bars
   const ibC=Object.entries(byCamp).filter(([k])=>k.startsWith('IB')).sort((a,b)=>b[1]-a[1]);
   const ibMax=ibC[0]?.[1]||1;
-  buildCB('cb-ov-ib',ibC.map(([k,v])=>({label:k.replace('IB-',''),val:fmt(v),pct:fmtP(v/FTD.total*100),w:(v/ibMax*100)+'%',color:a})));
+  buildCB('cb-ov-ib',ibC.map(([k,v])=>({label:k.replace('IB-',''),val:fmt(v),pct:fmtP(v/(ftdData.total||1)*100),w:(v/ibMax*100)+'%',color:a})));
   const ibSub=document.getElementById('ib-sub-ov');
   if(ibSub)ibSub.textContent=ibC.length+' IB partners · '+ibC.reduce((s,[,v])=>s+v,0)+' FTDs';
 
   // MKT bars
   const mktC=Object.entries(byCamp).filter(([k])=>k.startsWith('MKT')).sort((a,b)=>b[1]-a[1]);
   const mktMax=mktC[0]?.[1]||1;
-  buildCB('cb-ov-mkt',mktC.map(([k,v])=>({label:k.replace('MKT-',''),val:fmt(v),pct:fmtP(v/FTD.total*100),w:(v/mktMax*100)+'%',color:'#3B82F6'})));
+  buildCB('cb-ov-mkt',mktC.map(([k,v])=>({label:k.replace('MKT-',''),val:fmt(v),pct:fmtP(v/(ftdData.total||1)*100),w:(v/mktMax*100)+'%',color:'#3B82F6'})));
 
   // KYC vs FTD by market (horizontal bar chart — all-time)
   const mktData=[
-    {l:'Japan',ky:KYC.byCountry.JAPAN,ft:FTD.byCountry.JAPAN,c:'#EF4444'},
-    {l:'Australia',ky:KYC.byCountry.AUSTRALIA,ft:FTD.byCountry.AUSTRALIA,c:'#3B82F6'},
-    {l:'UK',ky:KYC.byCountry['UNITED KINGDOM'],ft:FTD.byCountry['UNITED KINGDOM'],c:'#8B5CF6'},
-    {l:'Brazil',ky:KYC.byCountry.BRAZIL,ft:FTD.byCountry.BRAZIL,c:'#10B981'},
-    {l:'Canada',ky:KYC.byCountry.CANADA,ft:FTD.byCountry.CANADA,c:'#F59E0B'},
+    {l:'Japan',ky:kycData.byCountry.JAPAN,ft:ftdData.byCountry.JAPAN,c:'#EF4444'},
+    {l:'Australia',ky:kycData.byCountry.AUSTRALIA,ft:ftdData.byCountry.AUSTRALIA,c:'#3B82F6'},
+    {l:'UK',ky:kycData.byCountry['UNITED KINGDOM'],ft:ftdData.byCountry['UNITED KINGDOM'],c:'#8B5CF6'},
+    {l:'Brazil',ky:kycData.byCountry.BRAZIL,ft:ftdData.byCountry.BRAZIL,c:'#10B981'},
+    {l:'Canada',ky:kycData.byCountry.CANADA,ft:ftdData.byCountry.CANADA,c:'#F59E0B'},
   ];
   C.ovMkt=mkChart('c-ov-mkt',{
     type:'bar',
@@ -1068,12 +1151,14 @@ function renderOverview(){
   const ftdFromPeriod=Object.values(hsM).reduce((a,v)=>a+(typeof v==='object'?v.ftd||0:0),0);
   const hasHsMonthly=kycFromPeriod>0||ftdFromPeriod>0;
   // Use period-filtered if backend has monthly breakdown, else use all-time
+  const kycData=getKycDataset();
+  const ftdData=getFtdDataset();
   const kyc=mkt==='all'
-    ? (hasHsMonthly&&period!=='all'?kycFromPeriod:KYC.total)
-    : (KYC.byCountry[mkt]||0);
+    ? (hasHsMonthly&&period!=='all'?kycFromPeriod:kycData.total)
+    : (kycData.byCountry[mkt]||0);
   const ftd=mkt==='all'
-    ? (hasHsMonthly&&period!=='all'?ftdFromPeriod:FTD.total)
-    : (FTD.byCountry[mkt]||0);
+    ? (hasHsMonthly&&period!=='all'?ftdFromPeriod:ftdData.total)
+    : (ftdData.byCountry[mkt]||0);
 
   // ── KPI cards ──
   const sessKpi=mkt==='all'?ga4Sess:Math.round((ga4Sess||0)*((ga4?.byCountry?.[ga4MktName]||0)/(ga4?.summary?.totalSessions||1)));
@@ -1089,7 +1174,7 @@ function renderOverview(){
     {label:'Clicks',val:clicks,sub:clicks>0?fmtD(spend/clicks,2)+' CPC':'—',sublabel:'avg CPC',color:'#F59E0B',pct:impr>0?(clicks/impr*100):0},
     {label:'Registrations',val:reg,sub:reg>0?fmtD(spend/reg,2)+'/reg':'—',sublabel:'cost/reg',color:'#8B5CF6',pct:impr>0?(reg/impr*100):0},
     {label:'KYC',val:kyc,sub:kyc>0?((ftd/kyc)*100).toFixed(1)+'% → FTD':'15.4%',sublabel:'all-time',color:'#C1FF47',pct:100},
-    {label:'FTD Clients',val:ftd,sub:spend>0?fmtD(spend/(FTD.ibTotal+FTD.mktTotal),0)+'/tracked FTD':'$29',sublabel:'cost/FTD',color:'#10B981',pct:100},
+    {label:'FTD Clients',val:ftd,sub:spend>0?fmtD(spend/((ftdData.ibTotal+ftdData.mktTotal)||1),0)+'/tracked FTD':'$29',sublabel:'cost/FTD',color:'#10B981',pct:100},
   ];
 
   const container=document.getElementById('fn-rings-row');
@@ -1196,18 +1281,10 @@ function renderOverview(){
 
 // ─── KYC ──────────────────────────────────────────────────────────
 function renderKyc(){
-  const data=MAN.hs||D.hs;
+  const data=getKycDataset();
   const ctry=document.getElementById('kyc-ctry').value,src=document.getElementById('kyc-src').value;
 
-  let kyc=KYC.total,byC={...KYC.byCountry},byCamp={...KYC.byCampaign},byMo={...KYC.byMonth};
-
-  // If live data available, use it
-  if(data){
-    kyc=data.kycApproved||KYC.total;
-    if(data.byCountry)Object.assign(byC,data.byCountry);
-    if(data.byCampaign)Object.assign(byCamp,data.byCampaign);
-    if(data.byMonth)Object.assign(byMo,data.byMonth);
-  }
+  let kyc=data.total,byC={...data.byCountry},byCamp={...data.byCampaign},byMo={...data.byMonth};
 
   if(ctry){
     const cv=byC[ctry]||0,r=cv/(kyc||1);
@@ -1220,8 +1297,8 @@ function renderKyc(){
     else{const f=Object.fromEntries(Object.entries(byCamp).filter(([k])=>k.startsWith(src)));kyc=Object.values(f).reduce((s,v)=>s+v,0);byCamp=f}
   }
 
-  const ibKyc=Object.entries(KYC.byCampaign).filter(([k])=>k.startsWith('IB')).reduce((s,[,v])=>s+v,0);
-  const mktKyc=Object.entries(KYC.byCampaign).filter(([k])=>k.startsWith('MKT')).reduce((s,[,v])=>s+v,0);
+  const ibKyc=Object.entries(byCamp).filter(([k])=>k.startsWith('IB')).reduce((s,[,v])=>s+v,0);
+  const mktKyc=Object.entries(byCamp).filter(([k])=>k.startsWith('MKT')).reduce((s,[,v])=>s+v,0);
   const top=Object.entries(byC)[0];
 
   document.getElementById('kk-total').textContent=fmt(kyc);
@@ -1252,28 +1329,29 @@ function setFtdSrc(src){
 }
 
 function renderFtd(){
+  const ftdData=getFtdDataset();
   const ctry=document.getElementById('ftd-ctry').value;
   let{total,byC,byCamp}=getFtdForFilter(ctry||'all',ftdSrc);
-  if(ctry&&ftdSrc==='all'){byC={[ctry]:FTD.byCountry[ctry]||0};total=FTD.byCountry[ctry]||0}
-  else if(ctry){const r=(FTD.byCountry[ctry]||0)/FTD.total;total=Math.round(total*r)}
+  if(ctry&&ftdSrc==='all'){byC={[ctry]:ftdData.byCountry[ctry]||0};total=ftdData.byCountry[ctry]||0}
+  else if(ctry){const r=(ftdData.byCountry[ctry]||0)/(ftdData.total||1);total=Math.round(total*r)}
 
   document.getElementById('fk-total').textContent=fmt(total);
   document.getElementById('fk-sub').textContent=(ftdSrc==='all'?'all channels':ftdSrc)+(ctry?' · '+ctry.charAt(0)+ctry.slice(1).toLowerCase():'');
-  document.getElementById('fk-cpftd').textContent=fmtD((D.gads?.summary?.totalCost||MAN.gads?.summary?.totalCost||5099.85)/(FTD.ibTotal+FTD.mktTotal),0);
+  document.getElementById('fk-cpftd').textContent=fmtD((D.gads?.summary?.totalCost||MAN.gads?.summary?.totalCost||5099.85)/((ftdData.ibTotal+ftdData.mktTotal)||1),0);
 
   const a=getA();
-  const ftdM=Object.entries(FTD.byMonth).sort((a,b)=>a[0].localeCompare(b[0]));
+  const ftdM=Object.entries(ftdData.byMonth).sort((a,b)=>a[0].localeCompare(b[0]));
   C.ftdMo=mkChart('c-ftd-mo',{type:'line',data:{labels:ftdM.map(([k])=>mlb(k)),datasets:[{label:'FTDs',data:ftdM.map(([,v])=>v),borderColor:'#10B981',borderWidth:2,pointRadius:2,pointBackgroundColor:'#10B981',fill:true,backgroundColor:'rgba(16,185,129,0.07)',tension:.4}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{...TO}},scales:{x:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#5E7191',font:{size:9},maxTicksLimit:10}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}}}}});
 
-  const ftdByC=ctry?{[ctry]:FTD.byCountry[ctry]||0}:FTD.byCountry;
+  const ftdByC=ctry?{[ctry]:ftdData.byCountry[ctry]||0}:ftdData.byCountry;
   const top5=Object.entries(ftdByC).slice(0,5),cols=['#10B981','#3B82F6','#F59E0B','#8B5CF6','#EF4444'];
   C.ftdGeo=mkChart('c-ftd-geo',{type:'doughnut',data:{labels:top5.map(([k])=>k.charAt(0)+k.slice(1).toLowerCase()),datasets:[{data:top5.map(([,v])=>v),backgroundColor:cols.slice(0,top5.length),borderWidth:0,hoverOffset:5}]},options:{responsive:true,cutout:'70%',plugins:{legend:{position:'bottom',labels:{color:'#5E7191',font:{size:10},padding:8,boxWidth:10}},tooltip:{...TO}}}});
 
-  const ibC=Object.entries(FTD.byCampaign).filter(([k])=>k.startsWith('IB')).sort((a,b)=>b[1]-a[1]);
-  const mktC=Object.entries(FTD.byCampaign).filter(([k])=>k.startsWith('MKT')).sort((a,b)=>b[1]-a[1]);
+  const ibC=Object.entries(byCamp).filter(([k])=>k.startsWith('IB')).sort((a,b)=>b[1]-a[1]);
+  const mktC=Object.entries(byCamp).filter(([k])=>k.startsWith('MKT')).sort((a,b)=>b[1]-a[1]);
   const ibMax=ibC[0]?.[1]||1,mktMax=mktC[0]?.[1]||1;
-  buildCB('cb-ftd-ib',ibC.map(([k,v])=>({label:k,val:fmt(v)+' FTDs',pct:fmtP(v/FTD.total*100),w:(v/ibMax*100)+'%',color:a})));
-  buildCB('cb-ftd-mkt',mktC.map(([k,v])=>({label:k.replace('MKT-',''),val:fmt(v)+' FTDs',pct:fmtP(v/FTD.total*100),w:(v/mktMax*100)+'%',color:'#3B82F6'})));
+  buildCB('cb-ftd-ib',ibC.map(([k,v])=>({label:k,val:fmt(v)+' FTDs',pct:fmtP(v/(ftdData.total||1)*100),w:(v/ibMax*100)+'%',color:a})));
+  buildCB('cb-ftd-mkt',mktC.map(([k,v])=>({label:k.replace('MKT-',''),val:fmt(v)+' FTDs',pct:fmtP(v/(ftdData.total||1)*100),w:(v/mktMax*100)+'%',color:'#3B82F6'})));
 
   setAiText('ftd',`<strong>808 FTD clients</strong> total. Japan leads with 187 (23.1%), followed by Brazil (157) and Australia (142). IB partners generated 141 FTDs — <strong>IB-18050031-One is the top performer (50 FTDs)</strong>. MKT campaigns generated 34 FTDs. 497 FTDs (61%) are unattributed. Cost per tracked FTD: <strong>$29</strong> ($5,100 ÷ 175 tracked). KYC→FTD rate: 15.4%.`);
 }
@@ -1425,7 +1503,47 @@ function parseCSV(text){const lines=text.trim().split('\n');let hi=-1;for(let i=
 function cN(v){return parseFloat((v||'').toString().replace(/[$,%]/g,''))||0}
 function procGads(rows){let tI=0,tCl=0,tCo=0,tConv=0;const byM={},daily=[];rows.forEach(r=>{const day=r['Day']||r['day']||r['Date']||'',impr=cN(r['Impr.']||r['Impressions']),clicks=cN(r['Clicks']||r['clicks']),cost=cN(r['Cost']||r['cost']),conv=cN(r['Conversions']||r['conversions']),ctr=cN(r['CTR']||r['ctr']),cpc=cN(r['Avg. CPC']||r['avg. cpc']);tI+=impr;tCl+=clicks;tCo+=cost;tConv+=conv;if(day){daily.push({day,impr,clicks,cost,conv,ctr,cpc});const mo=day.slice(0,7);if(!byM[mo])byM[mo]={impr:0,clicks:0,cost:0,conv:0};byM[mo].impr+=impr;byM[mo].clicks+=clicks;byM[mo].cost+=cost;byM[mo].conv+=conv}});return{summary:{totalImpressions:Math.round(tI),totalClicks:Math.round(tCl),totalCost:parseFloat(tCo.toFixed(2)),totalConversions:parseFloat(tConv.toFixed(1)),avgCTR:tI>0?((tCl/tI)*100).toFixed(2):0,avgCPC:tCl>0?(tCo/tCl).toFixed(2):0,costPerConversion:tConv>0?(tCo/tConv).toFixed(2):0},byMonth:byM,daily:daily.slice(-90)}}
 function procGa4(rows){let tS=0,tU=0,tN=0,tE=0;const byC={},byM={},byMo={};rows.forEach(r=>{const s=cN(r['Sessions']||r['sessions']),u=cN(r['Total users']||r['Users']||r['total users']),n=cN(r['New users']||r['new users']),e=cN(r['Event count']||r['event count']),c=r['Country']||r['country']||'Unknown',m=r['Session medium']||r['session medium']||'Unknown',d=r['Day']||r['day']||'';tS+=s;tU+=u;tN+=n;tE+=e;byC[c]=(byC[c]||0)+s;byM[m]=(byM[m]||0)+s;if(d){const mo=d.slice(0,7);if(!byMo[mo])byMo[mo]={sessions:0,users:0};byMo[mo].sessions+=s;byMo[mo].users+=u}});return{summary:{totalSessions:Math.round(tS),totalUsers:Math.round(tU),totalNewUsers:Math.round(tN),totalEvents:Math.round(tE)},byCountry:Object.fromEntries(Object.entries(byC).sort((a,b)=>b[1]-a[1])),byMedium:Object.fromEntries(Object.entries(byM).sort((a,b)=>b[1]-a[1])),byMonth:byMo}}
-function procHs(rows){const byC={},byCamp={},byMo={};let total=0,kyc=0;rows.forEach(r=>{total++;const c=r['portal - country']||r['Country']||'Unknown';byC[c]=(byC[c]||0)+1;const camp=r['portal - source_marketing_campaign']||'Direct/Unknown';byCamp[camp]=(byCamp[camp]||0)+1;const d=r['Create Date']||r['createdate']||'';if(d){const mo=String(d).slice(0,7);if(mo.match(/^\d{4}-\d{2}$/))byMo[mo]=(byMo[mo]||0)+1}if((r['portal - documentation']||'')=='Approved')kyc++});return{total,kycApproved:kyc,byCountry:Object.fromEntries(Object.entries(byC).sort((a,b)=>b[1]-a[1])),byCampaign:Object.fromEntries(Object.entries(byCamp).sort((a,b)=>b[1]-a[1])),byMonth:byMo}}
+function procHs(rows){
+  const byC={},byCamp={},byMo={};
+  let total=0,kyc=0,withDeposit=0;
+  rows.forEach(r=>{
+    total++;
+    const c=normalizeCountryKey(r['portal - country']||r['portal___country']||r['Country']||r['country']||'Unknown');
+    byC[c]=(byC[c]||0)+1;
+    const camp=r['portal - source_marketing_campaign']||r['portal___source_marketing_campaign']||r['Campaign']||'Direct/Unknown';
+    byCamp[camp]=(byCamp[camp]||0)+1;
+    const d=r['Create Date']||r['createdate']||r['Created Date']||r['Date']||'';
+    let mo='';
+    if(d){
+      const s=String(d).trim();
+      if(/^\d{4}-\d{2}/.test(s)) mo=s.slice(0,7);
+      else if(/^\d{1,2}\/\d{1,2}\/\d{4}/.test(s)){const p=s.split('/');mo=p[2]+'-'+String(p[0]).padStart(2,'0');}
+      if(mo&&/^\d{4}-\d{2}$/.test(mo)){
+        if(!byMo[mo])byMo[mo]={contacts:0,kyc:0,ftd:0};
+        byMo[mo].contacts++;
+      }
+    }
+    const doc=r['portal - documentation']||r['portal___documentation']||r['Documentation']||'';
+    const docStatus=r['portal - documentation_status']||r['portal___documentation_status']||'';
+    const isKyc=doc==='Approved'||docStatus==='Approved';
+    if(isKyc){
+      kyc++;
+      if(mo&&byMo[mo]) byMo[mo].kyc++;
+    }
+    const dep=r['portal - made_a_deposit_']||r['portal___made_a_deposit_']||r['Made a deposit']||r['Lifetime Gross Deposit (USD)']||r['portal___lifetime_gross_deposit_usd']||'';
+    const isFtd=dep==='true'||dep==='True'||dep==='Yes'||dep===true||parseFloat(dep)>0;
+    if(isFtd){
+      withDeposit++;
+      if(mo&&byMo[mo]) byMo[mo].ftd++;
+    }
+  });
+  return{
+    total,kycApproved:kyc,withDeposit,
+    byCountry:Object.fromEntries(Object.entries(byC).sort((a,b)=>b[1]-a[1])),
+    byCampaign:Object.fromEntries(Object.entries(byCamp).sort((a,b)=>b[1]-a[1])),
+    byMonth:byMo
+  }
+}
 
 // ─── VIEWS ────────────────────────────────────────────────────────
 function sv(name){
