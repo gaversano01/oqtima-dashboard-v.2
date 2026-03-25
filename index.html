@@ -5,21 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
 <meta name="theme-color" content="#07090E">
 <title>OQtima Live — Marketing Intelligence</title>
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@700,500,400&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
-<script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-:root{
-  --bg:#080B12;--surf:#0E121C;--card:#111520;--card2:#161C28;
-  --b:rgba(255,255,255,0.07);--bl:rgba(255,255,255,0.13);
-  --a:#C1FF47;--ad:rgba(193,255,71,0.09);--am:rgba(193,255,71,0.35);
-  --tp:#EEF1F8;--ts:#5E7191;--tm:#2D3A52;
-  --red:#F05252;--amber:#F59E0B;--green:#10B981;--blue:#3B82F6;--purple:#8B5CF6;
-  --kpi-size:28px;--kpi-pad:18px 18px;--section-pad:18px 20px;
-  --fd:'Plus Jakarta Sans',sans-serif;--fb:'Plus Jakarta Sans',sans-serif;
+:root{  --bg:#060A12;--surf:#0B1018;--card:#101520;--card2:#141C2A;
+  --b:rgba(255,255,255,0.06);--bl:rgba(255,255,255,0.11);--bll:rgba(255,255,255,0.18);
+  --a:#00FFB2;--ad:rgba(0,255,178,0.07);--am:rgba(0,255,178,0.25);
+  --tp:#ECF0FA;--ts:#4E6180;--tm:#253245;
+  --red:#FF4D6A;--amber:#FFB547;--green:#00D68F;--blue:#4D9EFF;--purple:#9B6DFF;
+  --ff:'Satoshi','Plus Jakarta Sans',sans-serif;
+  --r:10px;--r2:14px;
 }
 body{font-family:var(--fb);background:var(--bg);color:var(--tp);min-height:100vh;font-size:14px;-webkit-font-smoothing:antialiased}
 
@@ -31,9 +29,9 @@ body{font-family:var(--fb);background:var(--bg);color:var(--tp);min-height:100vh
 .lock-logo em{color:var(--a);font-style:normal}
 .lock-tagline{font-size:12px;color:var(--ts);margin-bottom:28px}
 .lock-lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--ts);text-align:left;margin-bottom:6px}
-.lock-inp{width:100%;background:var(--card);border:1px solid var(--bl);border-radius:10px;padding:13px 16px;font-family:var(--fb);font-size:15px;color:var(--tp);outline:none;letter-spacing:.15em;margin-bottom:12px;transition:border-color .15s;-webkit-appearance:none}
+.lock-inp{width:100%;background:var(--card);border:1px solid var(--bl);border-radius:var(--r2);padding:13px 16px;font-family:var(--fb);font-size:15px;color:var(--tp);outline:none;letter-spacing:.15em;margin-bottom:12px;transition:border-color .15s;-webkit-appearance:none}
 .lock-inp:focus{border-color:var(--am)}
-.lock-btn{width:100%;background:var(--a);color:#07090E;border:none;border-radius:10px;padding:13px;font-family:var(--fd);font-size:14px;font-weight:700;cursor:pointer;-webkit-appearance:none;transition:opacity .15s}
+.lock-btn{width:100%;background:var(--a);color:#07090E;border:none;border-radius:var(--r2);padding:13px;font-family:var(--fd);font-size:14px;font-weight:700;cursor:pointer;-webkit-appearance:none;transition:opacity .15s}
 .lock-btn:hover{opacity:.9}
 .lock-btn:active{opacity:.8}
 .lock-err{font-size:12px;color:var(--red);margin-top:8px;min-height:16px;text-align:center}
@@ -66,7 +64,7 @@ body{font-family:var(--fb);background:var(--bg);color:var(--tp);min-height:100vh
 .view{display:none}.view.on{display:block}
 
 /* ── GLOBAL FILTER BAR ── */
-.gfbar{background:var(--surf);border:1px solid var(--b);border-radius:10px;padding:11px 14px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.gfbar{background:var(--surf);border:1px solid var(--b);border-radius:8px;padding:9px 14px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .gfl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--tm);white-space:nowrap}
 .sel{background:var(--card);border:1px solid var(--bl);border-radius:6px;padding:5px 22px 5px 9px;font-family:var(--fb);font-size:12px;font-weight:500;color:var(--tp);cursor:pointer;outline:none;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='5'%3E%3Cpath d='M0 0l4.5 5L9 0z' fill='%2364748B'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 7px center;transition:all .15s}
 .sel:focus{border-color:var(--a);outline:none}
@@ -81,12 +79,12 @@ body{font-family:var(--fb);background:var(--bg);color:var(--tp);min-height:100vh
 .krow{display:grid;gap:10px;margin-bottom:12px}
 .krow-5{grid-template-columns:repeat(5,minmax(0,1fr))}
 .krow-4{grid-template-columns:repeat(4,minmax(0,1fr))}
-.kcard{background:var(--card);border:1px solid var(--b);border-radius:12px;padding:var(--kpi-pad);position:relative;overflow:hidden;transition:all .18s}
+.kcard{background:var(--card);border:1px solid var(--b);border-radius:var(--r2);padding:16px 18px;position:relative;overflow:hidden;transition:all .18s}
 .kcard:hover{border-color:var(--bl);background:var(--card2)}
 .kcard::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--kc,transparent);border-radius:0 0 2px 2px}
-.kl{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#8EA3C3;margin-bottom:10px}
-.kv{font-family:var(--fd);font-size:var(--kpi-size);font-weight:800;letter-spacing:-.6px;line-height:1;margin-bottom:5px}
-.ksub{font-size:12px;color:var(--ts);line-height:1.45}
+.kl{font-size:10px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--ts);margin-bottom:10px}
+.kv{font-family:var(--fd);font-size:26px;font-weight:800;letter-spacing:-.6px;line-height:1;margin-bottom:4px}
+.ksub{font-size:11px;color:var(--tm);line-height:1.4}
 .kdelta{font-size:10px;font-weight:600;padding:1px 6px;border-radius:4px}
 .kd-up{background:rgba(16,185,129,.12);color:#34D399}
 .kd-dn{background:rgba(240,82,82,.12);color:#F87171}
@@ -102,11 +100,11 @@ body{font-family:var(--fb);background:var(--bg);color:var(--tp);min-height:100vh
 .cg2{display:grid;grid-template-columns:3fr 2fr;gap:10px;margin-bottom:10px}
 .cg22{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
 .cg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px}
-.cc{background:var(--card);border:1px solid var(--b);border-radius:12px;padding:var(--section-pad);transition:all .18s}
+.cc{background:var(--card);border:1px solid var(--b);border-radius:var(--r2);padding:18px 20px;transition:all .18s}
 .cc:hover{border-color:var(--bl)}
 .cc-h{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;gap:8px}
-.cc-t{font-family:var(--fd);font-size:14px;font-weight:700;letter-spacing:-.1px;color:var(--tp)}
-.cc-s{font-size:12px;color:#8EA3C3;margin-top:2px;line-height:1.45}
+.cc-t{font-family:var(--fd);font-size:13px;font-weight:700;letter-spacing:-.1px;color:var(--tp)}
+.cc-s{font-size:11px;color:var(--ts);margin-top:2px;line-height:1.4}
 .cc-bdg{font-size:10px;padding:3px 9px;border-radius:20px;background:var(--ad);color:var(--a);border:1px solid var(--am);white-space:nowrap;flex-shrink:0;font-weight:600}
 
 /* ── FUNNEL VISUAL ── */
@@ -162,7 +160,7 @@ body{font-family:var(--fb);background:var(--bg);color:var(--tp);min-height:100vh
 .ai-resp strong{color:var(--tp);font-weight:500}
 
 /* ── UPLOAD ── */
-.uz{border:1px dashed var(--bl);border-radius:12px;padding:22px;text-align:center;cursor:pointer;transition:all .2s;background:var(--card);margin-bottom:8px}
+.uz{border:1px dashed var(--bl);border-radius:var(--r2);padding:22px;text-align:center;cursor:pointer;transition:all .2s;background:var(--card);margin-bottom:8px}
 .uz:hover,.uz.drag{border-color:var(--am);background:rgba(193,255,71,.03)}
 .uz input{display:none}
 .uz-ico{font-size:18px;margin-bottom:5px;opacity:.4}
@@ -206,7 +204,7 @@ input[type=color]{width:32px;height:32px;border-radius:6px;border:1px solid var(
   .sg{grid-template-columns:1fr 1fr}
   .gfbar{gap:8px}
 }
-@media(max-width:480px){.krow-5,.krow-4{grid-template-columns:1fr 1fr}.sg{grid-template-columns:1fr}.page{padding:10px 10px 82px}.cc{padding:14px}.kv{font-size:22px}.fring-arrow{display:none}}
+@media(max-width:480px){.krow-5,.krow-4{grid-template-columns:1fr 1fr}.sg{grid-template-columns:1fr}.kv{font-size:19px}}
 ::-webkit-scrollbar{width:3px;height:3px}::-webkit-scrollbar-thumb{background:var(--bl);border-radius:2px}
 
 /* ── FUNNEL RINGS (reference style) ── */
@@ -225,8 +223,8 @@ input[type=color]{width:32px;height:32px;border-radius:6px;border:1px solid var(
 
 /* ── WORLD MAP ── */
 .map-tooltip{position:absolute;background:var(--card);border:1px solid var(--bl);border-radius:6px;padding:5px 10px;font-size:11px;color:var(--tp);pointer-events:none;white-space:nowrap;display:none;z-index:20}
-.map-country{fill:#1A2236;stroke:#0E1526;stroke-width:.45;cursor:default;transition:fill .2s,stroke .2s,opacity .2s}
-.map-country:hover{opacity:.95;stroke:#D2F58A;stroke-width:.8}
+.map-country{fill:#1A2236;stroke:var(--bg);stroke-width:0.5;cursor:default;transition:fill .2s}
+.map-country:hover{opacity:.85}
 .attr-grid{grid-template-columns:1.8fr 1fr 1fr}
 @media(max-width:900px){.attr-grid{grid-template-columns:1fr!important}}
 
@@ -409,7 +407,7 @@ input[type=color]{width:32px;height:32px;border-radius:6px;border:1px solid var(
     <div class="cc">
       <div class="cc-h"><div><div class="cc-t">FTD clients by country</div><div class="cc-s">Geographic distribution</div></div></div>
       <div id="world-map-wrap" style="position:relative;border-radius:8px;overflow:hidden;background:var(--card2)">
-        <svg id="world-svg" viewBox="0 0 1000 500" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block"></svg>
+        <svg id="world-svg" viewBox="0 0 900 440" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block"></svg>
         <div id="map-tooltip" class="map-tooltip"></div>
       </div>
       <div id="map-legend" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
@@ -634,7 +632,6 @@ input[type=color]{width:32px;height:32px;border-radius:6px;border:1px solid var(
       <div class="si"><label>Background</label><div class="cr"><input type="color" id="s-bg" value="#07090E" oninput="syncBg()"/><input class="si-inp" type="text" id="s-bgh" value="#07090E" oninput="syncBgT()" style="flex:1"/></div></div>
       <div class="si"><label>Font</label><select class="si-sel" id="s-font" onchange="applyS()"><option value="'Plus Jakarta Sans',sans-serif">Syne</option><option value="'Space Grotesk',sans-serif">Space Grotesk</option><option value="'Plus Jakarta Sans',sans-serif">DM Sans</option><option value="'Inter',sans-serif">Inter</option></select></div>
       <div class="si"><label>Theme</label><select class="si-sel" id="s-theme" onchange="applyS()"><option value="dark">Dark</option><option value="light">Light</option></select></div>
-      <div class="si"><label>Visual preset</label><select class="si-sel" id="s-density" onchange="applyS()"><option value="executive">Executive (large KPI)</option><option value="balanced">Balanced</option><option value="compact">Compact</option></select></div>
       <div class="si"><label>Backend URL</label><input class="si-inp" type="text" id="s-be" value="https://oqtima-backend.onrender.com" oninput="saveS()"/></div>
     </div>
     <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
@@ -760,95 +757,117 @@ async function refreshAll(){await fetch(`${BE}/api/refresh`,{method:'POST'}).cat
 
 
 // ── WORLD MAP ────────────────────────────────────────────────────────────
-let worldMapPromise=null;
-function loadWorldMapData(){
-  if(worldMapPromise) return worldMapPromise;
-  worldMapPromise=Promise.all([
-    d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json'),
-    d3.tsv('https://cdn.jsdelivr.net/npm/world-atlas@2/country-names.tsv')
-  ]);
-  return worldMapPromise;
-}
-
-async function renderWorldMap(){
+function renderWorldMap(){
   const svg=document.getElementById('world-svg');
-  const legend=document.getElementById('map-legend');
-  const tt=document.getElementById('map-tooltip');
-  if(!svg) return;
-
-  const ftdData=typeof getFtdDataset==='function'?getFtdDataset():FTD;
-  const rawByC=ftdData?.byCountry||{};
-  const byCountry={};
-  Object.entries(rawByC).forEach(([k,v])=>{
-    const n=normalizeCountryKey(k);
-    byCountry[n]=(byCountry[n]||0)+(Number(v)||0);
-  });
-
-  if(!window.d3||!window.topojson){
-    svg.innerHTML='<rect width="1000" height="500" fill="#0D1220" rx="8"/><text x="500" y="245" text-anchor="middle" fill="#F59E0B" font-size="13" font-family="Plus Jakarta Sans,sans-serif">Map library unavailable</text>';
-    return;
+  const lgd=document.getElementById('map-lgd')||document.getElementById('map-legend');
+  if(!svg)return;
+  const hsD=(typeof MAN!=='undefined'?MAN.hs:null)||D.hs;
+  const a=getA();
+  const norm={'JAPAN':'Japan','BRAZIL':'Brazil','AUSTRALIA':'Australia','UNITED KINGDOM':'United Kingdom','CANADA':'Canada','INDONESIA':'Indonesia','INDIA':'India','THAILAND':'Thailand','UNITED ARAB EMIRATES':'UAE','MALAYSIA':'Malaysia','SOUTH AFRICA':'South Africa','NIGERIA':'Nigeria'};
+  const ftdC={};
+  if(hsD&&hsD.total>0){
+    Object.entries(hsD.byCountry||{}).forEach(function(e){
+      var n=norm[e[0]]||(e[0].charAt(0)+e[0].slice(1).toLowerCase());
+      ftdC[n]=(ftdC[n]||0)+e[1];
+    });
+  } else {
+    Object.assign(ftdC,{'Japan':187,'Brazil':157,'Australia':142,'United Kingdom':50,'Canada':43,'Indonesia':19,'India':18,'Thailand':16,'UAE':16,'Malaysia':12});
   }
-
-  const aliases={
-    'UNITED KINGDOM':'United Kingdom','UK':'United Kingdom','GREAT BRITAIN':'United Kingdom',
-    'UNITED ARAB EMIRATES':'United Arab Emirates','UAE':'United Arab Emirates',
-    'UNITED STATES':'United States of America','USA':'United States of America',
-    'SOUTH KOREA':'South Korea','RUSSIAN FEDERATION':'Russia'
-  };
-  const nameToVal={};
-  Object.entries(byCountry).forEach(([k,v])=>{
-    const pretty=aliases[k]||k.split(' ').map(s=>s.charAt(0)+s.slice(1).toLowerCase()).join(' ');
-    nameToVal[pretty]=v;
-  });
-
-  try{
-    const [world,names]=await loadWorldMapData();
-    const nameById={};
-    names.forEach(r=>{nameById[r.id]=r.name;});
-    const countries=topojson.feature(world,world.objects.countries).features.map(f=>({
-      ...f,properties:{...f.properties,name:nameById[String(f.id)]||'Unknown'}
-    }));
-
-    const width=1000,height=500;
-    svg.setAttribute('viewBox',`0 0 ${width} ${height}`);
-    svg.setAttribute('preserveAspectRatio','xMidYMid meet');
-    const projection=d3.geoNaturalEarth1().fitExtent([[8,8],[width-8,height-8]],{type:'Sphere'});
-    const path=d3.geoPath(projection);
-    const accent=getComputedStyle(document.documentElement).getPropertyValue('--a').trim()||'#C1FF47';
-    const max=Math.max(1,...Object.values(nameToVal));
-    const color=d3.scaleLinear().domain([0,max]).range(['#1A2236',accent]);
-
-    let html=`<rect width="${width}" height="${height}" fill="#0F1420" rx="8"></rect>`;
-    const graticule=d3.geoGraticule10();
-    html+=`<path d="${path(graticule)}" fill="none" stroke="#16213A" stroke-width="0.45" opacity="0.6"></path>`;
-    countries.forEach(c=>{
-      const nm=c.properties.name;
-      const v=nameToVal[nm]||0;
-      html+=`<path class="map-country" d="${path(c)}" data-name="${nm}" data-ftd="${v}" fill="${v>0?color(v):'#172033'}"></path>`;
-    });
-    svg.innerHTML=html;
-
-    svg.querySelectorAll('.map-country').forEach(el=>{
-      el.addEventListener('mousemove',e=>{
-        if(!tt) return;
-        const rect=svg.parentElement.getBoundingClientRect();
-        tt.style.display='block';
-        tt.style.left=(e.clientX-rect.left+10)+'px';
-        tt.style.top=(e.clientY-rect.top-30)+'px';
-        tt.textContent=`${el.dataset.name}: ${fmt(Number(el.dataset.ftd)||0)} FTDs`;
-      });
-      el.addEventListener('mouseleave',()=>{if(tt)tt.style.display='none';});
-    });
-
-    if(legend){
-      const top=Object.entries(nameToVal).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).slice(0,7);
-      legend.innerHTML=top.map(([name,val])=>`<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ts)"><div style="width:10px;height:10px;border-radius:2px;background:${color(val)};flex-shrink:0"></div><span>${name}: <strong style="color:var(--tp)">${fmt(val)}</strong></span></div>`).join('');
+  var maxV=Math.max.apply(null,Object.values(ftdC).concat([1]));
+  function col(v){
+    if(!v)return'#131D2E';
+    var p=v/maxV;
+    if(p>0.7)return a;
+    if(p>0.4)return a+'CC';
+    if(p>0.2)return a+'88';
+    return a+'44';
+  }
+  // SVG viewBox 0 0 900 440
+  // Simplified but geographically accurate country outlines
+  var bg=[
+    // North America landmass
+    'M50,55 L95,45 L145,42 L195,45 L240,52 L265,70 L278,90 L272,120 L255,140 L230,158 L200,168 L165,170 L130,162 L100,148 L72,128 L52,102 L48,75 Z',
+    // South America
+    'M185,182 L220,172 L252,178 L272,195 L282,220 L285,258 L278,300 L260,338 L235,368 L208,378 L185,370 L165,348 L152,315 L148,278 L152,242 L162,210 Z',
+    // Europe  
+    'M388,62 L420,55 L452,52 L478,58 L495,72 L498,92 L488,108 L468,120 L445,126 L420,124 L400,115 L388,100 L385,82 Z',
+    // Africa
+    'M395,138 L430,128 L462,125 L490,130 L510,145 L522,168 L528,198 L525,232 L515,265 L498,295 L475,318 L450,330 L422,332 L398,320 L378,298 L368,268 L365,235 L368,202 L378,172 L390,152 Z',
+    // Russia/N Asia (simplified)
+    'M490,38 L580,28 L680,25 L770,30 L820,42 L840,62 L835,88 L808,108 L768,120 L718,128 L658,130 L600,125 L548,118 L510,105 L490,88 L485,62 Z',
+    // Middle East
+    'M502,128 L538,118 L568,120 L590,132 L598,150 L592,170 L575,182 L552,186 L528,180 L510,165 L502,148 Z',
+    // South/SE Asia block
+    'M568,128 L628,118 L672,122 L705,135 L720,152 L722,175 L712,195 L692,208 L665,215 L635,212 L605,200 L580,182 L568,162 Z',
+    // East Asia  
+    'M672,72 L722,65 L762,68 L792,80 L808,98 L805,118 L785,132 L758,138 L725,135 L696,122 L675,105 L668,88 Z',
+    // Australia landmass
+    'M680,268 L732,258 L778,255 L815,260 L840,275 L852,298 L848,325 L832,348 L805,365 L772,372 L738,368 L708,352 L688,330 L678,305 Z',
+  ];
+  var hl=[
+    {n:'Canada',d:'M52,48 L188,38 L235,48 L255,62 L265,82 L258,108 L238,128 L205,142 L165,148 L118,142 L78,125 L52,100 L44,72 Z'},
+    {n:'United Kingdom',d:'M390,70 L400,65 L410,68 L412,80 L405,90 L395,92 L388,84 Z M402,90 L412,86 L416,96 L410,106 L400,105 L396,96 Z'},
+    {n:'Brazil',d:'M158,188 L202,178 L238,182 L260,198 L268,225 L265,260 L252,295 L230,325 L205,342 L180,345 L160,330 L148,305 L142,272 L145,238 L150,210 Z'},
+    {n:'India',d:'M585,132 L615,122 L640,125 L658,138 L665,160 L660,188 L645,210 L622,222 L598,220 L578,205 L568,182 L568,158 Z'},
+    {n:'Japan',d:'M782,88 L792,82 L802,88 L800,102 L788,108 L778,102 Z M770,108 L780,104 L785,115 L778,124 L768,120 Z M758,85 L768,80 L776,86 L773,98 L762,102 L755,95 Z'},
+    {n:'Australia',d:'M688,265 L738,256 L780,254 L815,260 L838,276 L848,300 L842,326 L825,348 L798,364 L765,370 L732,365 L704,348 L688,325 L678,300 L680,278 Z'},
+    {n:'Indonesia',d:'M700,215 L728,208 L748,212 L758,222 L752,232 L728,235 L705,228 Z M762,210 L785,205 L800,210 L798,222 L780,225 L762,218 Z'},
+    {n:'Thailand',d:'M648,168 L660,162 L670,166 L672,178 L665,188 L652,190 L644,182 Z'},
+    {n:'UAE',d:'M555,158 L568,152 L578,156 L578,168 L568,174 L556,170 Z'},
+    {n:'Malaysia',d:'M672,212 L695,208 L708,212 L706,222 L692,225 L674,220 Z'},
+  ];
+  var h='<defs><filter id="glow"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>';
+  h+='<rect width="900" height="440" fill="#060A12" rx="10"/>';
+  // Grid
+  for(var x=0;x<=900;x+=150)h+='<line x1="'+x+'" y1="0" x2="'+x+'" y2="440" stroke="#0D1828" stroke-width="0.5"/>';
+  for(var y=0;y<=440;y+=110)h+='<line x1="0" y1="'+y+'" x2="900" y2="'+y+'" stroke="#0D1828" stroke-width="0.5"/>';
+  // Background continents
+  bg.forEach(function(d){h+='<path d="'+d+'" fill="#131D2E" stroke="#060A12" stroke-width="0.8"/>';});
+  // Highlighted countries
+  hl.forEach(function(c){
+    var v=ftdC[c.n]||0;
+    var fc=col(v);
+    var sw=v>0?1.5:0.5;
+    h+='<path d="'+c.d+'" fill="'+fc+'" stroke="'+( v>0?a+'44':'#060A12')+'" stroke-width="'+sw+'" class="map-cc" data-n="'+c.n+'" data-f="'+v+'"'+(v>0?' filter="url(#glow)"':'')+'/>';
+    // Label
+    if(v>0){
+      var nums=c.d.match(/(\d+\.?\d*),(\d+\.?\d*)/g)||[];
+      var xs=nums.map(function(p){return parseFloat(p.split(',')[0]);});
+      var ys=nums.map(function(p){return parseFloat(p.split(',')[1]);});
+      var cx=xs.reduce(function(a,b){return a+b;},0)/xs.length;
+      var cy=ys.reduce(function(a,b){return a+b;},0)/ys.length;
+      h+='<text x="'+cx+'" y="'+(cy+3)+'" text-anchor="middle" fill="#060A12" font-size="8" font-family="Satoshi,Plus Jakarta Sans,sans-serif" font-weight="700" pointer-events="none">'+v+'</text>';
     }
-  }catch(err){
-    svg.innerHTML='<rect width="1000" height="500" fill="#0D1220" rx="8"/><text x="500" y="245" text-anchor="middle" fill="#F59E0B" font-size="13" font-family="Plus Jakarta Sans,sans-serif">Could not load world map data</text>';
-    if(legend) legend.innerHTML='';
+  });
+  svg.innerHTML=h;
+  var tt=document.getElementById('map-tt')||document.getElementById('map-tooltip');
+  svg.querySelectorAll('.map-cc').forEach(function(p){
+    p.addEventListener('mousemove',function(ev){
+      if(!tt)return;
+      var r=svg.getBoundingClientRect();
+      tt.style.display='block';
+      tt.style.left=(ev.clientX-r.left+14)+'px';
+      tt.style.top=(ev.clientY-r.top-36)+'px';
+      var f=parseInt(p.dataset.f)||0;
+      tt.textContent=p.dataset.n+(f>0?': '+f+' clients':'');
+    });
+    p.addEventListener('mouseleave',function(){if(tt)tt.style.display='none';});
+  });
+  if(lgd){
+    var top=Object.entries(ftdC).sort(function(a,b){return b[1]-a[1];}).slice(0,6);
+    lgd.innerHTML=top.map(function(e){
+      return '<div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--ts)">'+
+        '<div style="width:8px;height:8px;border-radius:2px;background:'+col(e[1])+';flex-shrink:0"></div>'+
+        '<span>'+e[0]+'</span><strong style="color:var(--tp);margin-left:auto">'+e[1]+'</strong></div>';
+    }).join('');
   }
 }
+
+
+
+
+
+
 
 function renderAll(){
   const active=document.querySelector('.view.on')?.id?.replace('view-','');
@@ -894,24 +913,45 @@ function mkChart(id, config){
 
 function filterMonths(bm,period){
   if(!bm||!Object.keys(bm).length)return{};
-  if(!period||period==='all') return Object.fromEntries(Object.entries(bm).sort((a,b)=>a[0].localeCompare(b[0])));
-  if(period.startsWith('custom:')){const[,s2,e2]=period.split(':');const sm=s2.slice(0,7),em=e2.slice(0,7);const e=Object.entries(bm).filter(([k])=>k>=sm&&k<=em);return Object.fromEntries(e.sort((a,b)=>a[0].localeCompare(b[0])));}
-  const now=new Date(), yr=now.getFullYear(), mo=now.getMonth()+1;
+  const entries=Object.entries(bm);
+  if(!period||period==='all') return Object.fromEntries(entries.sort((a,b)=>a[0].localeCompare(b[0])));
+  const now=new Date(),yr=now.getFullYear(),mo=now.getMonth()+1;
   const thisM=yr+'-'+String(mo).padStart(2,'0');
   const lastM=(mo===1?(yr-1):yr)+'-'+String(mo===1?12:mo-1).padStart(2,'0');
-  let e=Object.entries(bm);
-  if(period==='thismonth') e=e.filter(([k])=>k===thisM);
-  else if(period==='lastmonth') e=e.filter(([k])=>k===lastM);
-  else if(period==='thisyear') e=e.filter(([k])=>k.startsWith(String(yr)));
-  else if(period==='lastyear') e=e.filter(([k])=>k.startsWith(String(yr-1)));
-  else if(!isNaN(parseInt(period))){
-    const days=parseInt(period);
-    const cut=new Date(now); cut.setDate(cut.getDate()-days);
-    const cutM=cut.getFullYear()+'-'+String(cut.getMonth()+1).padStart(2,'0');
-    e=e.filter(([k])=>k>=cutM);
+  if(period.startsWith('custom:')){
+    const[,s2,e2]=period.split(':');
+    const sm=s2.slice(0,7),em=e2.slice(0,7);
+    let e=entries.filter(([k])=>k>=sm&&k<=em);
+    if(!e.length)e=entries;
+    return Object.fromEntries(e.sort((a,b)=>a[0].localeCompare(b[0])));
   }
-  if(!e.length) e=Object.entries(bm); // fallback: never return empty
-  return Object.fromEntries(e.sort((a,b)=>a[0].localeCompare(b[0])));
+  if(period==='thismonth'){const e=entries.filter(([k])=>k===thisM);return Object.fromEntries((e.length?e:entries).sort((a,b)=>a[0].localeCompare(b[0])));}
+  if(period==='lastmonth'){const e=entries.filter(([k])=>k===lastM);return Object.fromEntries((e.length?e:entries).sort((a,b)=>a[0].localeCompare(b[0])));}
+  if(period==='thisyear'){const e=entries.filter(([k])=>k.startsWith(String(yr)));return Object.fromEntries((e.length?e:entries).sort((a,b)=>a[0].localeCompare(b[0])));}
+  if(period==='lastyear'){const e=entries.filter(([k])=>k.startsWith(String(yr-1)));return Object.fromEntries((e.length?e:entries).sort((a,b)=>a[0].localeCompare(b[0])));}
+  if(!isNaN(parseInt(period))){
+    const days=parseInt(period);
+    const cutDate=new Date(now);cutDate.setDate(cutDate.getDate()-days);
+    const cutM=cutDate.getFullYear()+'-'+String(cutDate.getMonth()+1).padStart(2,'0');
+    // For day-based periods: scale the boundary month proportionally
+    const e=entries.filter(([k])=>k>=cutM);
+    if(!e.length)return Object.fromEntries(entries.sort((a,b)=>a[0].localeCompare(b[0])));
+    // Scale the earliest month if it's the cut month (partial month)
+    const result=Object.fromEntries(e.sort((a,b)=>a[0].localeCompare(b[0])));
+    if(cutM in result){
+      const daysInCutMonth=new Date(parseInt(cutM.slice(0,4)),parseInt(cutM.slice(5,7)),0).getDate();
+      const dayOfCut=cutDate.getDate();
+      const fraction=(daysInCutMonth-dayOfCut+1)/daysInCutMonth; // remaining days in that month
+      const v=result[cutM];
+      if(typeof v==='object'){
+        const scaled={};
+        Object.keys(v).forEach(k=>scaled[k]=Math.round((v[k]||0)*fraction));
+        result[cutM]=scaled;
+      } else result[cutM]=Math.round((v||0)*fraction);
+    }
+    return result;
+  }
+  return Object.fromEntries(entries.sort((a,b)=>a[0].localeCompare(b[0])));
 }
 
 function filterDaily(daily,period,year){
@@ -922,98 +962,19 @@ function filterDaily(daily,period,year){
   const lastM=(mo===1?(yr-1):yr)+'-'+String(mo===1?12:mo-1).padStart(2,'0');
   if(year) d=d.filter(r=>(r.day||'').startsWith(String(year)));
   if(!period||period==='all') return d;
-  if(period==='thismonth') { return d.filter(x=>(x.day||'').startsWith(thisM)); }
-  if(period==='lastmonth') { return d.filter(x=>(x.day||'').startsWith(lastM)); }
-  if(period==='thisyear') { return d.filter(x=>(x.day||'').startsWith(String(yr))); }
-  if(period==='lastyear') { return d.filter(x=>(x.day||'').startsWith(String(yr-1))); }
+  if(period==='thismonth') { const r=d.filter(x=>(x.day||'').startsWith(thisM)); return r.length?r:d; }
+  if(period==='lastmonth') { const r=d.filter(x=>(x.day||'').startsWith(lastM)); return r.length?r:d; }
+  if(period==='thisyear') { const r=d.filter(x=>(x.day||'').startsWith(String(yr))); return r.length?r:d; }
+  if(period==='lastyear') { const r=d.filter(x=>(x.day||'').startsWith(String(yr-1))); return r.length?r:d; }
   if(!isNaN(parseInt(period))){
     const days=parseInt(period);
     const cut=new Date(now); cut.setDate(cut.getDate()-days);
     const cutS=cut.getFullYear()+'-'+String(cut.getMonth()+1).padStart(2,'0')+'-'+String(cut.getDate()).padStart(2,'0');
-    return d.filter(x=>(x.day||'')>=cutS);
+    const r=d.filter(x=>(x.day||'')>=cutS);
+    return r.length?r:d; // fallback: never return empty
   }
   return d;
 }
-
-function normalizeCountryKey(country){
-  const raw=(country||'').toString().trim();
-  if(!raw) return 'UNKNOWN';
-  const up=raw.toUpperCase();
-  if(up==='UK'||up==='UNITED KINGDOM (UK)'||up==='GREAT BRITAIN') return 'UNITED KINGDOM';
-  if(up==='UAE'||up==='UNITED ARAB EMIRATES') return 'UAE';
-  return up;
-}
-
-function normalizeMonthValue(val,field){
-  if(val==null) return 0;
-  if(typeof val==='number') return val;
-  if(typeof val==='object'){
-    if(field in val) return Number(val[field])||0;
-    if(field==='kyc'&&'contacts' in val) return Number(val.contacts)||0;
-  }
-  return 0;
-}
-
-function getKycDataset(){
-  const hs=MAN.hs||D.hs;
-  const out={total:KYC.total,byCountry:{...KYC.byCountry},byCampaign:{...KYC.byCampaign},byMonth:{...KYC.byMonth}};
-  if(!hs) return out;
-
-  const byCountryRaw=hs.byCountry||{};
-  const byCountry={};
-  Object.entries(byCountryRaw).forEach(([k,v])=>{
-    const key=normalizeCountryKey(k);
-    byCountry[key]=(byCountry[key]||0)+(Number(v)||0);
-  });
-
-  const byMonthRaw=hs.byMonth||{};
-  const byMonth={};
-  Object.entries(byMonthRaw).forEach(([k,v])=>{
-    byMonth[k]=normalizeMonthValue(v,'kyc');
-  });
-
-  out.total=Number(hs.kycApproved)||out.total;
-  if(Object.keys(byCountry).length) out.byCountry=byCountry;
-  if(hs.byCampaign&&Object.keys(hs.byCampaign).length) out.byCampaign={...hs.byCampaign};
-  if(Object.keys(byMonth).length) out.byMonth=byMonth;
-  return out;
-}
-
-function getFtdDataset(){
-  const hs=MAN.hs||D.hs;
-  const out={total:FTD.total,ibTotal:FTD.ibTotal,mktTotal:FTD.mktTotal,directTotal:FTD.directTotal,byCountry:{...FTD.byCountry},byCampaign:{...FTD.byCampaign},byMonth:{...FTD.byMonth}};
-  if(!hs) return out;
-
-  const byCountryRaw=hs.ftdByCountry||hs.byCountry||{};
-  const byCountry={};
-  Object.entries(byCountryRaw).forEach(([k,v])=>{
-    const key=normalizeCountryKey(k);
-    byCountry[key]=(byCountry[key]||0)+(Number(v)||0);
-  });
-
-  const byCampaignRaw=hs.ftdByCampaign||hs.byCampaign||{};
-  const byMonthRaw=hs.byMonth||{};
-  const byMonth={};
-  Object.entries(byMonthRaw).forEach(([k,v])=>{
-    byMonth[k]=normalizeMonthValue(v,'ftd');
-  });
-
-  const total=Number(hs.withDeposit ?? hs.ftdTotal);
-  const ibTotal=Object.entries(byCampaignRaw).filter(([k])=>k.startsWith('IB')).reduce((s,[,v])=>s+(Number(v)||0),0);
-  const mktTotal=Object.entries(byCampaignRaw).filter(([k])=>k.startsWith('MKT')).reduce((s,[,v])=>s+(Number(v)||0),0);
-
-  if(Number.isFinite(total) && total>=0) out.total=total;
-  if(Object.keys(byCountry).length) out.byCountry=byCountry;
-  if(Object.keys(byCampaignRaw).length) out.byCampaign={...byCampaignRaw};
-  if(Object.keys(byMonth).length && Object.values(byMonth).some(v=>v>0)) out.byMonth=byMonth;
-  if(ibTotal>0||mktTotal>0){
-    out.ibTotal=ibTotal;
-    out.mktTotal=mktTotal;
-    out.directTotal=Math.max(0,out.total-ibTotal-mktTotal);
-  }
-  return out;
-}
-
 function getMktRatio(mkt){
   if(mkt==='all')return 1;
   if(!D.ga4?.byCountry)return 1;
@@ -1026,12 +987,11 @@ function getMktRatio(mkt){
 }
 
 function getFtdForFilter(mkt,ch){
-  const ftdData=getFtdDataset();
-  let total=ftdData.total,byC=ftdData.byCountry,byCamp=ftdData.byCampaign;
-  if(ch==='IB'){byCamp=Object.fromEntries(Object.entries(byCamp).filter(([k])=>k.startsWith('IB')));total=ftdData.ibTotal}
-  else if(ch==='MKT'){byCamp=Object.fromEntries(Object.entries(byCamp).filter(([k])=>k.startsWith('MKT')));total=ftdData.mktTotal}
+  let total=FTD.total,byC=FTD.byCountry,byCamp=FTD.byCampaign;
+  if(ch==='IB'){byCamp=Object.fromEntries(Object.entries(byCamp).filter(([k])=>k.startsWith('IB')));total=FTD.ibTotal}
+  else if(ch==='MKT'){byCamp=Object.fromEntries(Object.entries(byCamp).filter(([k])=>k.startsWith('MKT')));total=FTD.mktTotal}
   if(mkt!=='all'){
-    const cv=ftdData.byCountry[mkt]||0,r=cv/(ftdData.total||1);
+    const cv=FTD.byCountry[mkt]||0,r=cv/FTD.total;
     total=Math.round(total*r);byC={[mkt]:cv};
     byCamp=Object.fromEntries(Object.entries(byCamp).map(([k,v])=>[k,Math.round(v*r)]));
   }
@@ -1050,16 +1010,14 @@ function setChFilter(ch){
 
 // ─── OVERVIEW ─────────────────────────────────────────────────────
 function renderOverviewStatic(){
-  const kycData=getKycDataset();
-  const ftdData=getFtdDataset();
   // KYC and FTD = all-time totals (HubSpot has no per-period date breakdown)
   const period=getOvPeriod(), mkt=getOvMkt();
   const {total,byC,byCamp}=getFtdForFilter(mkt,chFilter);
   const a=getA();
 
   // KPIs — KYC and FTD are always all-time
-  const kycForMkt=mkt==='all'?kycData.total:(kycData.byCountry[mkt]||0);
-  const ftdForMkt=mkt==='all'?ftdData.total:(ftdData.byCountry[mkt]||0);
+  const kycForMkt=mkt==='all'?KYC.total:(KYC.byCountry[mkt]||0);
+  const ftdForMkt=mkt==='all'?FTD.total:(FTD.byCountry[mkt]||0);
   document.getElementById('ok-kyc').textContent=fmt(kycForMkt);
   document.getElementById('ok-ftd').textContent=fmt(chFilter==='all'?ftdForMkt:total);
   document.getElementById('ok-ftd-s').textContent=(mkt!=='all'?mkt.charAt(0)+mkt.slice(1).toLowerCase()+' · ':'')+(chFilter==='all'?'all channels':chFilter+' only');
@@ -1067,22 +1025,22 @@ function renderOverviewStatic(){
   // IB bars
   const ibC=Object.entries(byCamp).filter(([k])=>k.startsWith('IB')).sort((a,b)=>b[1]-a[1]);
   const ibMax=ibC[0]?.[1]||1;
-  buildCB('cb-ov-ib',ibC.map(([k,v])=>({label:k.replace('IB-',''),val:fmt(v),pct:fmtP(v/(ftdData.total||1)*100),w:(v/ibMax*100)+'%',color:a})));
+  buildCB('cb-ov-ib',ibC.map(([k,v])=>({label:k.replace('IB-',''),val:fmt(v),pct:fmtP(v/FTD.total*100),w:(v/ibMax*100)+'%',color:a})));
   const ibSub=document.getElementById('ib-sub-ov');
   if(ibSub)ibSub.textContent=ibC.length+' IB partners · '+ibC.reduce((s,[,v])=>s+v,0)+' FTDs';
 
   // MKT bars
   const mktC=Object.entries(byCamp).filter(([k])=>k.startsWith('MKT')).sort((a,b)=>b[1]-a[1]);
   const mktMax=mktC[0]?.[1]||1;
-  buildCB('cb-ov-mkt',mktC.map(([k,v])=>({label:k.replace('MKT-',''),val:fmt(v),pct:fmtP(v/(ftdData.total||1)*100),w:(v/mktMax*100)+'%',color:'#3B82F6'})));
+  buildCB('cb-ov-mkt',mktC.map(([k,v])=>({label:k.replace('MKT-',''),val:fmt(v),pct:fmtP(v/FTD.total*100),w:(v/mktMax*100)+'%',color:'#3B82F6'})));
 
   // KYC vs FTD by market (horizontal bar chart — all-time)
   const mktData=[
-    {l:'Japan',ky:kycData.byCountry.JAPAN,ft:ftdData.byCountry.JAPAN,c:'#EF4444'},
-    {l:'Australia',ky:kycData.byCountry.AUSTRALIA,ft:ftdData.byCountry.AUSTRALIA,c:'#3B82F6'},
-    {l:'UK',ky:kycData.byCountry['UNITED KINGDOM'],ft:ftdData.byCountry['UNITED KINGDOM'],c:'#8B5CF6'},
-    {l:'Brazil',ky:kycData.byCountry.BRAZIL,ft:ftdData.byCountry.BRAZIL,c:'#10B981'},
-    {l:'Canada',ky:kycData.byCountry.CANADA,ft:ftdData.byCountry.CANADA,c:'#F59E0B'},
+    {l:'Japan',ky:KYC.byCountry.JAPAN,ft:FTD.byCountry.JAPAN,c:'#EF4444'},
+    {l:'Australia',ky:KYC.byCountry.AUSTRALIA,ft:FTD.byCountry.AUSTRALIA,c:'#3B82F6'},
+    {l:'UK',ky:KYC.byCountry['UNITED KINGDOM'],ft:FTD.byCountry['UNITED KINGDOM'],c:'#8B5CF6'},
+    {l:'Brazil',ky:KYC.byCountry.BRAZIL,ft:FTD.byCountry.BRAZIL,c:'#10B981'},
+    {l:'Canada',ky:KYC.byCountry.CANADA,ft:FTD.byCountry.CANADA,c:'#F59E0B'},
   ];
   C.ovMkt=mkChart('c-ov-mkt',{
     type:'bar',
@@ -1114,164 +1072,134 @@ function renderOverview(){
   // Period label
   const pMap={all:'All time',thismonth:'This month',lastmonth:'Last month',thisyear:'This year',lastyear:'Last year',7:'Last 7 days',14:'Last 14 days',30:'Last 30 days',90:'Last 90 days'};
   const pLabel=period.startsWith('custom:')?period.split(':')[1]+' → '+period.split(':')[2]:(pMap[period]||period+' days');
-  ['fn-badge','ov-badge','gads-bdg'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=pLabel;});
+  ['fn-badge','ov-badge','gads-bdg'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=pLabel;});
 
-  // ── Period-filtered sums from byMonth ──
-  const gadsM=filterMonths(gads?.byMonth,period);
-  const ga4M=filterMonths(ga4?.byMonth,period);
-  const sum=(obj,k)=>Object.values(obj).reduce((a,v)=>a+(v[k]||0),0);
+  // ── Period-filtered Google Ads sums from byMonth ──
+  const gadsM=filterMonths(gads?.byMonth, period);
+  const gadsCost=Object.values(gadsM).reduce((a,v)=>a+(v.cost||0),0)*ratio;
+  const gadsConv=Object.values(gadsM).reduce((a,v)=>a+(v.conv||0),0)*ratio;
+  const gadsImpr=Object.values(gadsM).reduce((a,v)=>a+(v.impr||0),0)*ratio;
+  const gadsClicks=Object.values(gadsM).reduce((a,v)=>a+(v.clicks||0),0)*ratio;
 
-  const gadsCost=sum(gadsM,'cost');
-  const gadsConv=sum(gadsM,'conv');
-  const gadsImpr=sum(gadsM,'impr');
-  const gadsClicks=sum(gadsM,'clicks');
-  const ga4Sess=sum(ga4M,'sessions');
+  // ── Period-filtered GA4 sums ──
+  const ga4M=filterMonths(ga4?.byMonth, period);
+  const ga4Sess=Object.values(ga4M).reduce((a,v)=>a+(v.sessions||0),0);
 
-  // ── Compute actual period values (fall back to all-time summary only when byMonth is truly empty) ──
-  const impr=Math.round((gadsImpr||gads?.summary?.totalImpressions||0)*ratio);
-  const clicks=Math.round((gadsClicks||gads?.summary?.totalClicks||0)*ratio);
-  const reg=Math.round((gadsConv||gads?.summary?.totalConversions||0)*ratio);
-  const spend=(gadsCost||gads?.summary?.totalCost||5099.85)*ratio;
-  // KYC/FTD: use backend monthly data if available and period != 'all'
-  const hsM=filterMonths(D.hs?.byMonth, period);
-  const kycFromPeriod=Object.values(hsM).reduce((a,v)=>a+(typeof v==='object'?(Number(v.kyc)||0):0),0);
-  const ftdFromPeriod=Object.values(hsM).reduce((a,v)=>a+(typeof v==='object'?(Number(v.ftd)||0):0),0);
-  const hasHsMonthly=Object.keys(hsM).length>0;
-  // Use period-filtered if backend has monthly breakdown, else use all-time
-  const kycData=getKycDataset();
-  const ftdData=getFtdDataset();
+  // ── KYC + FTD: read from D.hs.byMonth (has {kyc,ftd} per month) ──
+  // Falls back to all-time totals if no monthly breakdown available
+  const hsMonths=filterMonths(D.hs?.byMonth, period);
+  const hsMonthVals=Object.values(hsMonths);
+  const hasHsMo=hsMonthVals.length>0&&typeof hsMonthVals[0]==='object'&&'kyc' in hsMonthVals[0];
+  const kycFromPeriod=hasHsMo?hsMonthVals.reduce((a,v)=>a+(v.kyc||0),0):null;
+  const ftdFromPeriod=hasHsMo?hsMonthVals.reduce((a,v)=>a+(v.ftd||0),0):null;
+
+  // KYC: use period monthly if available AND period !== 'all'
+  const kycAllTime=D.hs?.kycApproved||KYC.total;
+  const ftdAllTime=D.hs?.withDeposit||FTD.total;
   const kyc=mkt==='all'
-    ? (period==='all'?kycData.total:(hasHsMonthly?kycFromPeriod:0))
-    : (kycData.byCountry[mkt]||0);
+    ?(kycFromPeriod!==null&&period!=='all'?kycFromPeriod:kycAllTime)
+    :(kycFromPeriod!==null&&period!=='all'
+        ?Math.round(kycFromPeriod*(D.hs?.byCountry?.[mkt]||KYC.byCountry[mkt]||0)/(kycAllTime||1))
+        :(D.hs?.byCountry?.[mkt]||KYC.byCountry[mkt]||0));
   const ftd=mkt==='all'
-    ? (period==='all'?ftdData.total:(hasHsMonthly?ftdFromPeriod:0))
-    : (ftdData.byCountry[mkt]||0);
+    ?(ftdFromPeriod!==null&&period!=='all'?ftdFromPeriod:ftdAllTime)
+    :(ftdFromPeriod!==null&&period!=='all'
+        ?Math.round(ftdFromPeriod*(D.hs?.byCountry?.[mkt]||FTD.byCountry[mkt]||0)/(ftdAllTime||1))
+        :(D.hs?.byCountry?.[mkt]||FTD.byCountry[mkt]||0));
+
+  // ── Spend (period-filtered, fallback to summary) ──
+  const spend=gadsCost>0?gadsCost:((gads?.summary?.totalCost||0)*ratio);
+  const reg=Math.round(gadsConv>0?gadsConv:(gads?.summary?.totalConversions||0)*ratio);
 
   // ── KPI cards ──
-  const sessKpi=mkt==='all'?ga4Sess:Math.round((ga4Sess||0)*((ga4?.byCountry?.[ga4MktName]||0)/(ga4?.summary?.totalSessions||1)));
+  const sessKpi=mkt==='all'?ga4Sess:Math.round(ga4Sess*((ga4?.byCountry?.[ga4MktName]||0)/(ga4?.summary?.totalSessions||1)));
   document.getElementById('ok-sess').textContent=fmt(sessKpi||Math.round((ga4?.summary?.totalSessions||121626)*ratio));
   document.getElementById('ok-reg').textContent=fmt(reg);
+  document.getElementById('ok-kyc').textContent=fmt(kyc);
+  document.getElementById('ok-ftd').textContent=fmt(ftd);
+  document.getElementById('ok-ftd-s').textContent=(mkt!=='all'?mkt.charAt(0)+mkt.slice(1).toLowerCase()+' · ':'')+(period!=='all'?pLabel:'all channels');
   document.getElementById('ok-spend').textContent=fmtD(spend);
-  const cpa=reg>0?(spend/reg).toFixed(2):'—';
-  document.getElementById('ok-cpa-s').textContent=cpa!=='—'?'$'+cpa+' per registration':'per registration';
+  const cpa=reg>0&&spend>0?(spend/reg).toFixed(2):'—';
+  document.getElementById('ok-cpa-s').textContent=cpa!=='—'?'$'+cpa+' per registration':'—';
 
-  // ── FUNNEL RINGS (circular donut style like reference) ──
-  const funnelData=[
-    {label:'Impressions',val:impr,sub:impr>0?((clicks/impr)*100).toFixed(2)+'% CTR':'—',sublabel:'CTR',color:'#3B82F6',pct:100},
-    {label:'Clicks',val:clicks,sub:clicks>0?fmtD(spend/clicks,2)+' CPC':'—',sublabel:'avg CPC',color:'#F59E0B',pct:impr>0?(clicks/impr*100):0},
-    {label:'Registrations',val:reg,sub:reg>0?fmtD(spend/reg,2)+'/reg':'—',sublabel:'cost/reg',color:'#8B5CF6',pct:impr>0?(reg/impr*100):0},
-    {label:'KYC',val:kyc,sub:kyc>0?((ftd/kyc)*100).toFixed(1)+'% → FTD':'15.4%',sublabel:'all-time',color:'#C1FF47',pct:100},
-    {label:'FTD Clients',val:ftd,sub:spend>0?fmtD(spend/((ftdData.ibTotal+ftdData.mktTotal)||1),0)+'/tracked FTD':'$29',sublabel:'cost/FTD',color:'#10B981',pct:100},
-  ];
-
-  const container=document.getElementById('fn-rings-row');
-  if(container){
-    container.innerHTML='';
-    funnelData.forEach((fd,i)=>{
-      const isLast=i===funnelData.length-1;
-      // Create ring item
-      const item=document.createElement('div');
-      item.style.cssText='display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;min-width:90px;max-width:150px';
-
-      // Canvas for donut ring
-      const canvasId='fn-ring-'+i;
-      item.innerHTML=`
-        <div style="position:relative;width:95px;height:95px;flex-shrink:0">
-          <canvas id="${canvasId}" width="95" height="95"></canvas>
-          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:1px">
-            <span style="font-size:14px;font-weight:800;letter-spacing:-.3px;color:${fd.color};line-height:1">${fd.val>999?fd.val.toLocaleString():fmt(fd.val)}</span>
-            <span style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ts);margin-top:1px">${fd.label}</span>
-          </div>
-        </div>
-        <div style="font-size:10px;color:var(--ts);text-align:center;line-height:1.3"><strong style="color:${fd.color}">${fd.sub}</strong><br><span style="font-size:9px;color:var(--tm)">${fd.sublabel}</span></div>
-      `;
-      container.appendChild(item);
-
-      // Add arrow between rings
-      if(!isLast){
-        const arrow=document.createElement('div');
-        arrow.innerHTML='<span style="color:var(--tm);font-size:20px;margin-bottom:30px">→</span>';
-        arrow.style.cssText='display:flex;align-items:center;flex-shrink:0';
-        container.appendChild(arrow);
-      }
-
-      // Draw donut ring after DOM insertion
-      requestAnimationFrame(()=>{
-        const cvs=document.getElementById(canvasId);
-        if(!cvs)return;
-        const existingChart=Chart.getChart(cvs);
-        if(existingChart)existingChart.destroy();
-        const fillPct=Math.max(2,Math.min(100,fd.pct||10));
-        new Chart(cvs.getContext('2d'),{
-          type:'doughnut',
-          data:{datasets:[{
-            data:[fillPct,100-fillPct],
-            backgroundColor:[fd.color,fd.color+'18'],
-            borderWidth:0,
-            borderRadius:4
-          }]},
-          options:{responsive:false,cutout:'70%',plugins:{legend:{display:false},tooltip:{enabled:false}},animation:{duration:600}}
-        });
-      });
-    });
+  // ── ROI KPIs (live, period-filtered) ──
+  const kycCount=kyc||kycAllTime||1;
+  const cpKyc=spend>0&&kycCount>0?'$'+(spend/kycCount).toFixed(2):'—';
+  const e_cpkyc=document.getElementById('roi-cpkyc'); if(e_cpkyc)e_cpkyc.textContent=cpKyc;
+  const e_cpsub=document.getElementById('roi-cpkyc-sub'); if(e_cpsub)e_cpsub.textContent=fmtD(spend)+' ÷ '+fmt(kycCount)+' KYC';
+  // Cost/FTD: use live byCampaign to get tracked FTDs
+  const hsCamp=D.hs?.byCampaign||{};
+  const trackedFtd=Math.max(1,
+    Object.entries(hsCamp).filter(([k])=>k.startsWith('IB')||k.startsWith('MKT')).reduce((a,[,v])=>a+v,0)
+  )||FTD.ibTotal+FTD.mktTotal||175;
+  const allTimeSpend=gads?.summary?.totalCost||5099.85;
+  const e_cpftd=document.getElementById('roi-cpftd'); if(e_cpftd)e_cpftd.textContent=fmtD(allTimeSpend/trackedFtd,0);
+  const e_roi=document.getElementById('roi-unattr'); if(e_roi){
+    const direct=(hsCamp['Direct/Unknown']||FTD.directTotal||497);
+    const total=ftdAllTime||808;
+    e_roi.textContent=total>0?Math.round(direct/total*100)+'%':'—';
   }
 
-  // ── Sessions vs Spend trend (period-filtered) ──
-  const allM=[...new Set([...Object.keys(ga4M),...Object.keys(gadsM)])].sort();
-  C.ovTrend=mkChart('c-ov-trend',{
-    data:{labels:allM.map(mlb),datasets:[
-      {type:'bar',label:'Sessions',data:allM.map(m=>(ga4M[m]?.sessions||0)*ratio),backgroundColor:getA()+'20',borderColor:getA(),borderWidth:1.5,borderRadius:4,yAxisID:'y'},
-      {type:'line',label:'Spend ($)',data:allM.map(m=>(gadsM[m]?.cost||0)*ratio),borderColor:'#3B82F6',borderWidth:2,pointRadius:2,fill:false,yAxisID:'y1',tension:.35}
-    ]},
-    options:{responsive:true,interaction:{intersect:false,mode:'index'},plugins:{legend:{labels:{color:'#5E7191',font:{size:10},boxWidth:10}},tooltip:{...TO}},scales:{x:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#5E7191',font:{size:9}}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}},y1:{position:'right',grid:{display:false},ticks:{color:'#3B82F6',font:{size:9}}}}}
-  });
+  // ── Funnel rings ──
+  const ringData=[
+    {label:'Impressions',val:gadsImpr||(gads?.summary?.totalImpressions||0)*ratio,sub:gadsImpr>0?((gadsClicks/gadsImpr)*100).toFixed(2)+'%':'—',sublabel:'CTR',color:'#3B82F6',fill:100},
+    {label:'Clicks',val:gadsClicks||(gads?.summary?.totalClicks||0)*ratio,sub:gadsClicks>0?fmtD(spend/gadsClicks,2):'—',sublabel:'avg CPC',color:'#F59E0B',fill:gadsImpr>0?(gadsClicks/gadsImpr*100):5},
+    {label:'Registrations',val:reg,sub:reg>0?fmtD(spend/reg,2):'—',sublabel:'cost/reg',color:'#8B5CF6',fill:gadsImpr>0?(reg/gadsImpr*100):3},
+    {label:'KYC',val:kyc,sub:kyc>0?((ftd/kyc)*100).toFixed(1)+'% → FTD':'—',sublabel:period!=='all'?pLabel:'all-time',color:getA(),fill:100},
+    {label:'FTD Clients',val:ftd,sub:allTimeSpend>0&&trackedFtd>1?fmtD(allTimeSpend/trackedFtd,0):'—',sublabel:'cost/tracked FTD',color:'#10B981',fill:100},
+  ];
+  const container=document.getElementById('fn-steps')||document.getElementById('fn-rings-row');
+  if(container)renderFunnelRings(container, ringData);
 
-  // ── Google Ads daily (period-filtered) ──
+  // ── Trend chart ──
+  const allM=[...new Set([...Object.keys(ga4M),...Object.keys(gadsM)])].sort();
+  const a=getA();
+  C.ovTrend=mkChart('c-ov-trend',{data:{labels:allM.map(mlb),datasets:[
+    {type:'bar',label:'Sessions',data:allM.map(m=>(ga4M[m]?.sessions||0)*ratio),backgroundColor:a+'20',borderColor:a,borderWidth:1.5,borderRadius:4,yAxisID:'y'},
+    {type:'line',label:'Spend ($)',data:allM.map(m=>(gadsM[m]?.cost||0)*ratio),borderColor:'#3B82F6',borderWidth:2,pointRadius:2,fill:false,yAxisID:'y1',tension:.35}
+  ]},options:{responsive:true,interaction:{intersect:false,mode:'index'},plugins:{legend:{labels:{color:'#5A6E8C',font:{size:10},boxWidth:10}},tooltip:{...TO}},scales:{x:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#5A6E8C',font:{size:9}}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5A6E8C',font:{size:9}}},y1:{position:'right',grid:{display:false},ticks:{color:'#3B82F6',font:{size:9}}}}}});
+
+  // ── Monthly FTD — from D.hs.byMonth ──
+  const ftdByMoRaw=D.hs?.byMonth||{};
+  const ftdByMoFlat={};
+  Object.entries(ftdByMoRaw).forEach(([k,v])=>{ftdByMoFlat[k]=typeof v==='object'?v.ftd||0:0;});
+  const ftdMo=filterMonths(Object.keys(ftdByMoFlat).length?ftdByMoFlat:FTD.byMonth, period);
+  const ftdME=Object.entries(ftdMo).sort((a,b)=>a[0].localeCompare(b[0]));
+  C.ovFtdMo=mkChart('c-ov-ftdmo',{type:'line',data:{labels:ftdME.map(([k])=>mlb(k)),datasets:[{label:'FTDs',data:ftdME.map(([,v])=>v),borderColor:'#10B981',borderWidth:2,pointRadius:2,fill:true,backgroundColor:'rgba(16,185,129,0.06)',tension:.4}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{...TO}},scales:{x:{grid:{display:false},ticks:{color:'#5A6E8C',font:{size:9},maxTicksLimit:10}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5A6E8C',font:{size:9}}}}}});
+
+  // ── Google Ads daily ──
   const daily=filterDaily(gads?.daily,period,'');
   const dF=daily.map(d=>({...d,clicks:(d.clicks||0)*ratio,cost:(d.cost||0)*ratio}));
-  C.ovGads=mkChart('c-ov-gads',{
-    data:{labels:dF.map(d=>(d.day||'').slice(5)),datasets:[
-      {type:'bar',label:'Clicks',data:dF.map(d=>d.clicks),backgroundColor:getA()+'25',borderColor:getA(),borderWidth:1.5,borderRadius:3,yAxisID:'y'},
-      {type:'line',label:'Cost ($)',data:dF.map(d=>d.cost),borderColor:'#F59E0B',borderWidth:1.5,pointRadius:0,fill:false,yAxisID:'y1',tension:.3}
-    ]},
-    options:{responsive:true,interaction:{intersect:false,mode:'index'},plugins:{legend:{labels:{color:'#5E7191',font:{size:10},boxWidth:10}},tooltip:{...TO}},scales:{x:{grid:{display:false},ticks:{color:'#5E7191',font:{size:9},maxTicksLimit:14}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}},y1:{position:'right',grid:{display:false},ticks:{color:'#F59E0B',font:{size:9}}}}}
-  });
+  C.ovGads=mkChart('c-ov-gads',{data:{labels:dF.map(d=>(d.day||'').slice(5)),datasets:[
+    {type:'bar',label:'Clicks',data:dF.map(d=>d.clicks),backgroundColor:a+'25',borderColor:a,borderWidth:1.5,borderRadius:3,yAxisID:'y'},
+    {type:'line',label:'Cost ($)',data:dF.map(d=>d.cost),borderColor:'#F59E0B',borderWidth:1.5,pointRadius:0,fill:false,yAxisID:'y1',tension:.3}
+  ]},options:{responsive:true,interaction:{intersect:false,mode:'index'},plugins:{legend:{labels:{color:'#5A6E8C',font:{size:10},boxWidth:10}},tooltip:{...TO}},scales:{x:{grid:{display:false},ticks:{color:'#5A6E8C',font:{size:9},maxTicksLimit:14}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5A6E8C',font:{size:9}}},y1:{position:'right',grid:{display:false},ticks:{color:'#F59E0B',font:{size:9}}}}}});
 
-  // ── ROI KPIs ──
-  const kycCount=kyc||KYC.total;
-  const cpKyc=kycCount>0?(spend/kycCount).toFixed(2):'—';
-  const el_cpkyc=document.getElementById('roi-cpkyc');
-  if(el_cpkyc)el_cpkyc.textContent=cpKyc!=='—'?'$'+cpKyc:'—';
-  const el_sub=document.getElementById('roi-cpkyc-sub');
-  if(el_sub)el_sub.textContent=fmtD(spend)+' ÷ '+fmt(kycCount)+' KYC';
-  const trackedFtd=FTD.ibTotal+FTD.mktTotal; // 175
-  const cpFtd=trackedFtd>0?(spend/trackedFtd).toFixed(0):'29';
-  const el_cpftd=document.getElementById('roi-cpftd');
-  if(el_cpftd)el_cpftd.textContent='$'+cpFtd;
-
-  // ── Medium bars (GA4 scaled to period) ──
+  // ── Medium bars ──
   const periodRatio=(ga4Sess||0)/(ga4?.summary?.totalSessions||1)||1;
   const maxM=Object.values(ga4?.byMedium||{})[0]||1;
   buildCB('cb-ov-med',Object.entries(ga4?.byMedium||{}).slice(0,7).map(([k,v])=>({
     label:k,val:fmt(Math.round(v*periodRatio*ratio)),pct:((v/(ga4?.summary?.totalSessions||1))*100).toFixed(1)+'%',w:(v/maxM*100)+'%',color:'#3B82F6'
   })));
-
-  // ── Monthly FTD (period-filtered) ──
-  const ftdMo=filterMonths(FTD.byMonth,period);
-  const ftdM2=Object.entries(ftdMo).sort((a,b)=>a[0].localeCompare(b[0]));
-  C.ovFtdMo=mkChart('c-ov-ftdmo',{
-    type:'line',data:{labels:ftdM2.map(([k])=>mlb(k)),datasets:[{label:'FTDs',data:ftdM2.map(([,v])=>v),borderColor:'#10B981',borderWidth:2,pointRadius:2,fill:true,backgroundColor:'rgba(16,185,129,0.06)',tension:.4}]},
-    options:{responsive:true,plugins:{legend:{display:false},tooltip:{...TO}},scales:{x:{grid:{display:false},ticks:{color:'#5E7191',font:{size:9},maxTicksLimit:10}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}}}}
-  });
 }
+
+
 
 
 // ─── KYC ──────────────────────────────────────────────────────────
 function renderKyc(){
-  const data=getKycDataset();
+  const data=MAN.hs||D.hs;
   const ctry=document.getElementById('kyc-ctry').value,src=document.getElementById('kyc-src').value;
 
-  let kyc=data.total,byC={...data.byCountry},byCamp={...data.byCampaign},byMo={...data.byMonth};
+  let kyc=KYC.total,byC={...KYC.byCountry},byCamp={...KYC.byCampaign},byMo={...KYC.byMonth};
+
+  // If live data available, use it
+  if(data){
+    kyc=data.kycApproved||KYC.total;
+    if(data.byCountry)Object.assign(byC,data.byCountry);
+    if(data.byCampaign)Object.assign(byCamp,data.byCampaign);
+    if(data.byMonth)Object.assign(byMo,data.byMonth);
+  }
 
   if(ctry){
     const cv=byC[ctry]||0,r=cv/(kyc||1);
@@ -1284,8 +1212,8 @@ function renderKyc(){
     else{const f=Object.fromEntries(Object.entries(byCamp).filter(([k])=>k.startsWith(src)));kyc=Object.values(f).reduce((s,v)=>s+v,0);byCamp=f}
   }
 
-  const ibKyc=Object.entries(byCamp).filter(([k])=>k.startsWith('IB')).reduce((s,[,v])=>s+v,0);
-  const mktKyc=Object.entries(byCamp).filter(([k])=>k.startsWith('MKT')).reduce((s,[,v])=>s+v,0);
+  const ibKyc=Object.entries(KYC.byCampaign).filter(([k])=>k.startsWith('IB')).reduce((s,[,v])=>s+v,0);
+  const mktKyc=Object.entries(KYC.byCampaign).filter(([k])=>k.startsWith('MKT')).reduce((s,[,v])=>s+v,0);
   const top=Object.entries(byC)[0];
 
   document.getElementById('kk-total').textContent=fmt(kyc);
@@ -1316,29 +1244,28 @@ function setFtdSrc(src){
 }
 
 function renderFtd(){
-  const ftdData=getFtdDataset();
   const ctry=document.getElementById('ftd-ctry').value;
   let{total,byC,byCamp}=getFtdForFilter(ctry||'all',ftdSrc);
-  if(ctry&&ftdSrc==='all'){byC={[ctry]:ftdData.byCountry[ctry]||0};total=ftdData.byCountry[ctry]||0}
-  else if(ctry){const r=(ftdData.byCountry[ctry]||0)/(ftdData.total||1);total=Math.round(total*r)}
+  if(ctry&&ftdSrc==='all'){byC={[ctry]:FTD.byCountry[ctry]||0};total=FTD.byCountry[ctry]||0}
+  else if(ctry){const r=(FTD.byCountry[ctry]||0)/FTD.total;total=Math.round(total*r)}
 
   document.getElementById('fk-total').textContent=fmt(total);
   document.getElementById('fk-sub').textContent=(ftdSrc==='all'?'all channels':ftdSrc)+(ctry?' · '+ctry.charAt(0)+ctry.slice(1).toLowerCase():'');
-  document.getElementById('fk-cpftd').textContent=fmtD((D.gads?.summary?.totalCost||MAN.gads?.summary?.totalCost||5099.85)/((ftdData.ibTotal+ftdData.mktTotal)||1),0);
+  document.getElementById('fk-cpftd').textContent=fmtD((D.gads?.summary?.totalCost||MAN.gads?.summary?.totalCost||5099.85)/(FTD.ibTotal+FTD.mktTotal),0);
 
   const a=getA();
-  const ftdM=Object.entries(ftdData.byMonth).sort((a,b)=>a[0].localeCompare(b[0]));
+  const ftdM=Object.entries(FTD.byMonth).sort((a,b)=>a[0].localeCompare(b[0]));
   C.ftdMo=mkChart('c-ftd-mo',{type:'line',data:{labels:ftdM.map(([k])=>mlb(k)),datasets:[{label:'FTDs',data:ftdM.map(([,v])=>v),borderColor:'#10B981',borderWidth:2,pointRadius:2,pointBackgroundColor:'#10B981',fill:true,backgroundColor:'rgba(16,185,129,0.07)',tension:.4}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{...TO}},scales:{x:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#5E7191',font:{size:9},maxTicksLimit:10}},y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#5E7191',font:{size:9}}}}}});
 
-  const ftdByC=ctry?{[ctry]:ftdData.byCountry[ctry]||0}:ftdData.byCountry;
+  const ftdByC=ctry?{[ctry]:FTD.byCountry[ctry]||0}:FTD.byCountry;
   const top5=Object.entries(ftdByC).slice(0,5),cols=['#10B981','#3B82F6','#F59E0B','#8B5CF6','#EF4444'];
   C.ftdGeo=mkChart('c-ftd-geo',{type:'doughnut',data:{labels:top5.map(([k])=>k.charAt(0)+k.slice(1).toLowerCase()),datasets:[{data:top5.map(([,v])=>v),backgroundColor:cols.slice(0,top5.length),borderWidth:0,hoverOffset:5}]},options:{responsive:true,cutout:'70%',plugins:{legend:{position:'bottom',labels:{color:'#5E7191',font:{size:10},padding:8,boxWidth:10}},tooltip:{...TO}}}});
 
-  const ibC=Object.entries(byCamp).filter(([k])=>k.startsWith('IB')).sort((a,b)=>b[1]-a[1]);
-  const mktC=Object.entries(byCamp).filter(([k])=>k.startsWith('MKT')).sort((a,b)=>b[1]-a[1]);
+  const ibC=Object.entries(FTD.byCampaign).filter(([k])=>k.startsWith('IB')).sort((a,b)=>b[1]-a[1]);
+  const mktC=Object.entries(FTD.byCampaign).filter(([k])=>k.startsWith('MKT')).sort((a,b)=>b[1]-a[1]);
   const ibMax=ibC[0]?.[1]||1,mktMax=mktC[0]?.[1]||1;
-  buildCB('cb-ftd-ib',ibC.map(([k,v])=>({label:k,val:fmt(v)+' FTDs',pct:fmtP(v/(ftdData.total||1)*100),w:(v/ibMax*100)+'%',color:a})));
-  buildCB('cb-ftd-mkt',mktC.map(([k,v])=>({label:k.replace('MKT-',''),val:fmt(v)+' FTDs',pct:fmtP(v/(ftdData.total||1)*100),w:(v/mktMax*100)+'%',color:'#3B82F6'})));
+  buildCB('cb-ftd-ib',ibC.map(([k,v])=>({label:k,val:fmt(v)+' FTDs',pct:fmtP(v/FTD.total*100),w:(v/ibMax*100)+'%',color:a})));
+  buildCB('cb-ftd-mkt',mktC.map(([k,v])=>({label:k.replace('MKT-',''),val:fmt(v)+' FTDs',pct:fmtP(v/FTD.total*100),w:(v/mktMax*100)+'%',color:'#3B82F6'})));
 
   setAiText('ftd',`<strong>808 FTD clients</strong> total. Japan leads with 187 (23.1%), followed by Brazil (157) and Australia (142). IB partners generated 141 FTDs — <strong>IB-18050031-One is the top performer (50 FTDs)</strong>. MKT campaigns generated 34 FTDs. 497 FTDs (61%) are unattributed. Cost per tracked FTD: <strong>$29</strong> ($5,100 ÷ 175 tracked). KYC→FTD rate: 15.4%.`);
 }
@@ -1490,47 +1417,7 @@ function parseCSV(text){const lines=text.trim().split('\n');let hi=-1;for(let i=
 function cN(v){return parseFloat((v||'').toString().replace(/[$,%]/g,''))||0}
 function procGads(rows){let tI=0,tCl=0,tCo=0,tConv=0;const byM={},daily=[];rows.forEach(r=>{const day=r['Day']||r['day']||r['Date']||'',impr=cN(r['Impr.']||r['Impressions']),clicks=cN(r['Clicks']||r['clicks']),cost=cN(r['Cost']||r['cost']),conv=cN(r['Conversions']||r['conversions']),ctr=cN(r['CTR']||r['ctr']),cpc=cN(r['Avg. CPC']||r['avg. cpc']);tI+=impr;tCl+=clicks;tCo+=cost;tConv+=conv;if(day){daily.push({day,impr,clicks,cost,conv,ctr,cpc});const mo=day.slice(0,7);if(!byM[mo])byM[mo]={impr:0,clicks:0,cost:0,conv:0};byM[mo].impr+=impr;byM[mo].clicks+=clicks;byM[mo].cost+=cost;byM[mo].conv+=conv}});return{summary:{totalImpressions:Math.round(tI),totalClicks:Math.round(tCl),totalCost:parseFloat(tCo.toFixed(2)),totalConversions:parseFloat(tConv.toFixed(1)),avgCTR:tI>0?((tCl/tI)*100).toFixed(2):0,avgCPC:tCl>0?(tCo/tCl).toFixed(2):0,costPerConversion:tConv>0?(tCo/tConv).toFixed(2):0},byMonth:byM,daily:daily.slice(-90)}}
 function procGa4(rows){let tS=0,tU=0,tN=0,tE=0;const byC={},byM={},byMo={};rows.forEach(r=>{const s=cN(r['Sessions']||r['sessions']),u=cN(r['Total users']||r['Users']||r['total users']),n=cN(r['New users']||r['new users']),e=cN(r['Event count']||r['event count']),c=r['Country']||r['country']||'Unknown',m=r['Session medium']||r['session medium']||'Unknown',d=r['Day']||r['day']||'';tS+=s;tU+=u;tN+=n;tE+=e;byC[c]=(byC[c]||0)+s;byM[m]=(byM[m]||0)+s;if(d){const mo=d.slice(0,7);if(!byMo[mo])byMo[mo]={sessions:0,users:0};byMo[mo].sessions+=s;byMo[mo].users+=u}});return{summary:{totalSessions:Math.round(tS),totalUsers:Math.round(tU),totalNewUsers:Math.round(tN),totalEvents:Math.round(tE)},byCountry:Object.fromEntries(Object.entries(byC).sort((a,b)=>b[1]-a[1])),byMedium:Object.fromEntries(Object.entries(byM).sort((a,b)=>b[1]-a[1])),byMonth:byMo}}
-function procHs(rows){
-  const byC={},byCamp={},byMo={};
-  let total=0,kyc=0,withDeposit=0;
-  rows.forEach(r=>{
-    total++;
-    const c=normalizeCountryKey(r['portal - country']||r['portal___country']||r['Country']||r['country']||'Unknown');
-    byC[c]=(byC[c]||0)+1;
-    const camp=r['portal - source_marketing_campaign']||r['portal___source_marketing_campaign']||r['Campaign']||'Direct/Unknown';
-    byCamp[camp]=(byCamp[camp]||0)+1;
-    const d=r['Create Date']||r['createdate']||r['Created Date']||r['Date']||'';
-    let mo='';
-    if(d){
-      const s=String(d).trim();
-      if(/^\d{4}-\d{2}/.test(s)) mo=s.slice(0,7);
-      else if(/^\d{1,2}\/\d{1,2}\/\d{4}/.test(s)){const p=s.split('/');mo=p[2]+'-'+String(p[0]).padStart(2,'0');}
-      if(mo&&/^\d{4}-\d{2}$/.test(mo)){
-        if(!byMo[mo])byMo[mo]={contacts:0,kyc:0,ftd:0};
-        byMo[mo].contacts++;
-      }
-    }
-    const doc=r['portal - documentation']||r['portal___documentation']||r['Documentation']||'';
-    const docStatus=r['portal - documentation_status']||r['portal___documentation_status']||'';
-    const isKyc=doc==='Approved'||docStatus==='Approved';
-    if(isKyc){
-      kyc++;
-      if(mo&&byMo[mo]) byMo[mo].kyc++;
-    }
-    const dep=r['portal - made_a_deposit_']||r['portal___made_a_deposit_']||r['Made a deposit']||r['Lifetime Gross Deposit (USD)']||r['portal___lifetime_gross_deposit_usd']||'';
-    const isFtd=dep==='true'||dep==='True'||dep==='Yes'||dep===true||parseFloat(dep)>0;
-    if(isFtd){
-      withDeposit++;
-      if(mo&&byMo[mo]) byMo[mo].ftd++;
-    }
-  });
-  return{
-    total,kycApproved:kyc,withDeposit,
-    byCountry:Object.fromEntries(Object.entries(byC).sort((a,b)=>b[1]-a[1])),
-    byCampaign:Object.fromEntries(Object.entries(byCamp).sort((a,b)=>b[1]-a[1])),
-    byMonth:byMo
-  }
-}
+function procHs(rows){const byC={},byCamp={},byMo={};let total=0,kyc=0;rows.forEach(r=>{total++;const c=r['portal - country']||r['Country']||'Unknown';byC[c]=(byC[c]||0)+1;const camp=r['portal - source_marketing_campaign']||'Direct/Unknown';byCamp[camp]=(byCamp[camp]||0)+1;const d=r['Create Date']||r['createdate']||'';if(d){const mo=String(d).slice(0,7);if(mo.match(/^\d{4}-\d{2}$/))byMo[mo]=(byMo[mo]||0)+1}if((r['portal - documentation']||'')=='Approved')kyc++});return{total,kycApproved:kyc,byCountry:Object.fromEntries(Object.entries(byC).sort((a,b)=>b[1]-a[1])),byCampaign:Object.fromEntries(Object.entries(byCamp).sort((a,b)=>b[1]-a[1])),byMonth:byMo}}
 
 // ─── VIEWS ────────────────────────────────────────────────────────
 function sv(name){
@@ -1550,32 +1437,39 @@ function sv(name){
 }
 
 // ─── SETTINGS ────────────────────────────────────────────────────
-function applyVisualPreset(preset,r){
-  if(preset==='compact'){
-    r.style.setProperty('--kpi-size','24px');
-    r.style.setProperty('--kpi-pad','14px 14px');
-    r.style.setProperty('--section-pad','14px 16px');
-    return;
-  }
-  if(preset==='balanced'){
-    r.style.setProperty('--kpi-size','26px');
-    r.style.setProperty('--kpi-pad','16px 16px');
-    r.style.setProperty('--section-pad','16px 18px');
-    return;
-  }
-  r.style.setProperty('--kpi-size','30px');
-  r.style.setProperty('--kpi-pad','20px 20px');
-  r.style.setProperty('--section-pad','18px 20px');
-}
-function applyS(){const a=document.getElementById('s-a').value,bg=document.getElementById('s-bg').value,font=document.getElementById('s-font').value,name=document.getElementById('s-name').value,theme=document.getElementById('s-theme').value,preset=document.getElementById('s-density')?.value||'executive';const r=document.documentElement;r.style.setProperty('--a',a);r.style.setProperty('--ad',a+'17');r.style.setProperty('--am',a+'50');r.style.setProperty('--fd',font);r.style.setProperty('--bg',bg);r.style.setProperty('--surf',shC(bg,7));r.style.setProperty('--card',shC(bg,14));r.style.setProperty('--card2',shC(bg,20));if(theme==='light'){r.style.setProperty('--bg','#F4F6F9');r.style.setProperty('--surf','#FFFFFF');r.style.setProperty('--card','#F0F2F5');r.style.setProperty('--card2','#E8EBF0');r.style.setProperty('--tp','#0F172A');r.style.setProperty('--ts','#64748B');r.style.setProperty('--tm','#94A3B8');r.style.setProperty('--b','rgba(0,0,0,0.07)');r.style.setProperty('--bl','rgba(0,0,0,0.12)')}else{r.style.setProperty('--tp','#EDF0F5');r.style.setProperty('--ts','#64748B');r.style.setProperty('--tm','#2E3A4E');r.style.setProperty('--b','rgba(255,255,255,0.06)');r.style.setProperty('--bl','rgba(255,255,255,0.11)')}applyVisualPreset(preset,r);document.getElementById('logo').innerHTML=name+'<em>™</em>'}
+function applyS(){const a=document.getElementById('s-a').value,bg=document.getElementById('s-bg').value,font=document.getElementById('s-font').value,name=document.getElementById('s-name').value,theme=document.getElementById('s-theme').value;const r=document.documentElement;r.style.setProperty('--a',a);r.style.setProperty('--ad',a+'17');r.style.setProperty('--am',a+'50');r.style.setProperty('--fd',font);r.style.setProperty('--bg',bg);r.style.setProperty('--surf',shC(bg,7));r.style.setProperty('--card',shC(bg,14));r.style.setProperty('--card2',shC(bg,20));if(theme==='light'){r.style.setProperty('--bg','#F4F6F9');r.style.setProperty('--surf','#FFFFFF');r.style.setProperty('--card','#F0F2F5');r.style.setProperty('--card2','#E8EBF0');r.style.setProperty('--tp','#0F172A');r.style.setProperty('--ts','#64748B');r.style.setProperty('--tm','#94A3B8');r.style.setProperty('--b','rgba(0,0,0,0.07)');r.style.setProperty('--bl','rgba(0,0,0,0.12)')}else{r.style.setProperty('--tp','#EDF0F5');r.style.setProperty('--ts','#64748B');r.style.setProperty('--tm','#2E3A4E');r.style.setProperty('--b','rgba(255,255,255,0.06)');r.style.setProperty('--bl','rgba(255,255,255,0.11)')}document.getElementById('logo').innerHTML=name+'<em>™</em>'}
 function shC(h,a){const r=Math.max(0,Math.min(255,parseInt(h.slice(1,3),16)+a)),g=Math.max(0,Math.min(255,parseInt(h.slice(3,5),16)+a)),b=Math.max(0,Math.min(255,parseInt(h.slice(5,7),16)+a));return'#'+[r,g,b].map(x=>x.toString(16).padStart(2,'0')).join('')}
 function syncA(){document.getElementById('s-ah').value=document.getElementById('s-a').value;applyS()}
 function syncAT(){const v=document.getElementById('s-ah').value;if(/^#[0-9a-fA-F]{6}$/.test(v)){document.getElementById('s-a').value=v;applyS()}}
 function syncBg(){document.getElementById('s-bgh').value=document.getElementById('s-bg').value;applyS()}
 function syncBgT(){const v=document.getElementById('s-bgh').value;if(/^#[0-9a-fA-F]{6}$/.test(v)){document.getElementById('s-bg').value=v;applyS()}}
-function saveS(){const s={a:document.getElementById('s-a').value,bg:document.getElementById('s-bg').value,f:document.getElementById('s-font').value,n:document.getElementById('s-name').value,th:document.getElementById('s-theme').value,dn:document.getElementById('s-density')?.value||'executive',be:document.getElementById('s-be').value};localStorage.setItem('oq-v8',JSON.stringify(s));BE=s.be;localStorage.setItem('oq-be',s.be);const b=document.getElementById('save-btn');b.textContent='✓ Saved';setTimeout(()=>b.textContent='Save',2000)}
-function loadS(){try{const s=JSON.parse(localStorage.getItem('oq-v8')||'{}');if(s.a){document.getElementById('s-a').value=s.a;document.getElementById('s-ah').value=s.a}if(s.bg){document.getElementById('s-bg').value=s.bg;document.getElementById('s-bgh').value=s.bg}if(s.f)document.getElementById('s-font').value=s.f;if(s.n)document.getElementById('s-name').value=s.n;if(s.th)document.getElementById('s-theme').value=s.th;if(s.dn&&document.getElementById('s-density'))document.getElementById('s-density').value=s.dn;if(s.be){document.getElementById('s-be').value=s.be;BE=s.be}applyS()}catch(e){}}
+function saveS(){const s={a:document.getElementById('s-a').value,bg:document.getElementById('s-bg').value,f:document.getElementById('s-font').value,n:document.getElementById('s-name').value,th:document.getElementById('s-theme').value,be:document.getElementById('s-be').value};localStorage.setItem('oq-v8',JSON.stringify(s));BE=s.be;localStorage.setItem('oq-be',s.be);const b=document.getElementById('save-btn');b.textContent='✓ Saved';setTimeout(()=>b.textContent='Save',2000)}
+function loadS(){try{const s=JSON.parse(localStorage.getItem('oq-v8')||'{}');if(s.a){document.getElementById('s-a').value=s.a;document.getElementById('s-ah').value=s.a}if(s.bg){document.getElementById('s-bg').value=s.bg;document.getElementById('s-bgh').value=s.bg}if(s.f)document.getElementById('s-font').value=s.f;if(s.n)document.getElementById('s-name').value=s.n;if(s.th)document.getElementById('s-theme').value=s.th;if(s.be){document.getElementById('s-be').value=s.be;BE=s.be}if(Object.keys(s).length>0)applyS()}catch(e){}}
 function resetS(){localStorage.removeItem('oq-v8');location.reload()}
+function renderFunnelRings(container, ringData){
+  container.innerHTML='';
+  ringData.forEach((rd,i)=>{
+    const isLast=i===ringData.length-1;
+    const item=document.createElement('div');
+    item.style.cssText='display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;min-width:90px;max-width:150px;padding:0 4px';
+    const cid='ring-c-'+i;
+    item.innerHTML=`<div style="position:relative;width:90px;height:90px"><canvas id="\${cid}" width="90" height="90"></canvas>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">
+        <span style="font-size:14px;font-weight:800;letter-spacing:-.3px;color:\${rd.color};line-height:1">\${rd.val>999999?(rd.val/1000000).toFixed(1)+'M':rd.val>9999?(rd.val/1000).toFixed(0)+'K':fmt(rd.val)}</span>
+        <span style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ts);margin-top:1px">\${rd.label}</span>
+      </div></div>
+    <div style="text-align:center;line-height:1.3"><div style="font-size:11px;font-weight:700;color:\${rd.color}">\${rd.sub}</div><div style="font-size:9px;color:var(--tm)">\${rd.sublabel}</div></div>`;
+    container.appendChild(item);
+    if(!isLast){const arr=document.createElement('div');arr.style.cssText='color:var(--tm);font-size:18px;flex-shrink:0;align-self:center;padding-bottom:32px';arr.textContent='→';container.appendChild(arr);}
+    requestAnimationFrame(()=>{
+      const cvs=document.getElementById(cid);if(!cvs)return;
+      const ex=Chart.getChart(cvs);if(ex)ex.destroy();
+      const f=Math.max(2,Math.min(100,rd.fill||5));
+      new Chart(cvs.getContext('2d'),{type:'doughnut',data:{datasets:[{data:[f,100-f],backgroundColor:[rd.color,rd.color+'18'],borderWidth:0,borderRadius:3}]},options:{responsive:false,cutout:'72%',plugins:{legend:{display:false},tooltip:{enabled:false}},animation:{duration:600}}});
+    });
+  });
+}
+
 </script>
 </body>
 </html>
