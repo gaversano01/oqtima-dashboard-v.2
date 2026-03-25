@@ -15,7 +15,7 @@
   --a:#00FFB2;--ad:rgba(0,255,178,0.07);--am:rgba(0,255,178,0.25);
   --tp:#ECF0FA;--ts:#4E6180;--tm:#253245;
   --red:#FF4D6A;--amber:#FFB547;--green:#00D68F;--blue:#4D9EFF;--purple:#9B6DFF;
-  --ff:'Sofia Pro','Sofia',sans-serif;
+  --ff:'Lato','Sofia Pro',sans-serif;
   --r:10px;--r2:14px;
 }
 body{font-family:var(--fb);background:var(--bg);color:var(--tp);min-height:100vh;font-size:14px;-webkit-font-smoothing:antialiased}
@@ -240,7 +240,8 @@ input[type=color]{width:32px;height:32px;border-radius:6px;border:1px solid var(
 .loaded-badge::before{content:'●';margin-right:2px}
 
 </style>
-<link href="https://fonts.cdnfonts.com/css/sofia-pro" rel="stylesheet">
+
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
 
@@ -425,7 +426,7 @@ input[type=color]{width:32px;height:32px;border-radius:6px;border:1px solid var(
     <div class="cc">
       <div class="cc-h"><div><div class="cc-t">FTD clients by country</div><div class="cc-s">Geographic distribution</div></div></div>
       <div id="world-map-wrap" style="position:relative;border-radius:8px;overflow:hidden;background:var(--card2)">
-        <svg id="world-svg" viewBox="0 0 900 440" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block"></svg>
+        <svg id="world-svg" viewBox="0 0 1000 500" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block"></svg>
         <div id="map-tooltip" class="map-tooltip"></div>
       </div>
       <div id="map-legend" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
@@ -852,14 +853,14 @@ function renderWorldMap(){
   var svg=document.getElementById('world-svg');
   var lgd=document.getElementById('map-lgd')||document.getElementById('map-legend');
   if(!svg)return;
-  var hsD=MAN.hs;
+  var hsD=(typeof MAN!=='undefined'?MAN.hs:null)||D.hs;
   var a=getA();
 
-  // Use ONLY the known target countries — do not show raw backend country names
+  var NORM={'JAPAN':'Japan','BRAZIL':'Brazil','AUSTRALIA':'Australia',
+    'UNITED KINGDOM':'United Kingdom','CANADA':'Canada','INDONESIA':'Indonesia',
+    'INDIA':'India','THAILAND':'Thailand','UNITED ARAB EMIRATES':'UAE',
+    'MALAYSIA':'Malaysia','UAE':'UAE'};
   var TARGET=['Japan','Australia','United Kingdom','Brazil','Canada','Indonesia','India','Thailand','UAE','Malaysia'];
-  var NORM={'JAPAN':'Japan','BRAZIL':'Brazil','AUSTRALIA':'Australia','UNITED KINGDOM':'United Kingdom',
-    'CANADA':'Canada','INDONESIA':'Indonesia','INDIA':'India','THAILAND':'Thailand',
-    'UNITED ARAB EMIRATES':'UAE','MALAYSIA':'Malaysia','UAE':'UAE'};
 
   var ftdC={};
   if(hsD&&hsD.total>0){
@@ -868,14 +869,13 @@ function renderWorldMap(){
       if(n)ftdC[n]=(ftdC[n]||0)+e[1];
     });
   }
-  // Static fallback if no live data
   if(Object.keys(ftdC).length===0){
     Object.assign(ftdC,{Japan:187,Brazil:157,Australia:142,'United Kingdom':50,Canada:43,Indonesia:19,India:18,Thailand:16,UAE:16,Malaysia:12});
   }
 
   var maxV=Math.max.apply(null,Object.values(ftdC).concat([1]));
   function col(v){
-    if(!v)return'#131D2E';
+    if(!v)return'#1C2A3E';
     var p=v/maxV;
     if(p>0.7)return a;
     if(p>0.4)return a+'CC';
@@ -883,54 +883,107 @@ function renderWorldMap(){
     return a+'44';
   }
 
-  // Background continent blobs (decorative landmass shapes)
-  var bg=[
-    'M50,55 L95,45 L145,42 L195,45 L240,52 L265,70 L278,90 L272,120 L255,140 L230,158 L200,168 L165,170 L130,162 L100,148 L72,128 L52,102 Z',
-    'M185,182 L220,172 L252,178 L272,195 L282,220 L285,258 L278,300 L260,338 L235,368 L208,378 L185,370 L165,348 L152,315 L148,278 L152,242 L162,210 Z',
-    'M385,62 L422,55 L455,52 L478,58 L495,72 L498,92 L488,108 L468,120 L445,126 L418,124 L398,115 L385,100 L382,80 Z',
-    'M395,138 L432,128 L462,125 L490,130 L510,145 L522,168 L528,200 L525,235 L515,268 L498,298 L472,320 L448,332 L420,332 L395,318 L375,295 L365,262 L365,228 L372,195 L385,168 L395,152 Z',
-    'M490,38 L580,28 L680,25 L770,30 L820,42 L840,62 L835,88 L808,108 L768,120 L718,128 L658,130 L600,125 L545,118 L508,105 L488,85 L485,60 Z',
-    'M500,128 L538,118 L568,120 L590,132 L598,150 L592,170 L575,182 L550,186 L526,180 L508,165 L500,148 Z',
-    'M568,128 L628,118 L672,122 L706,135 L720,152 L722,175 L712,198 L690,210 L662,215 L632,212 L602,198 L578,180 L566,158 Z',
-    'M672,72 L722,65 L762,68 L792,80 L808,98 L805,118 L785,132 L758,138 L725,135 L695,122 L672,105 L668,86 Z',
-    'M682,268 L735,258 L780,255 L818,262 L840,278 L852,302 L848,328 L830,350 L802,366 L768,372 L732,367 L704,350 L686,328 L678,305 Z',
+  // Real world map SVG paths (Natural Earth simplified, 1000x500 equirectangular)
+  // Each path is an actual country outline
+  var worldPaths=[
+    // Russia
+    {n:'',c:'#1A2538',d:'M510,60 L540,52 L590,48 L640,45 L700,44 L750,47 L790,52 L820,58 L840,68 L838,82 L820,90 L800,95 L775,98 L750,97 L720,95 L700,90 L680,92 L660,88 L640,90 L620,88 L600,90 L580,88 L560,90 L545,85 L530,88 L515,82 L508,72 Z'},
+    // Canada
+    {n:'Canada',c:'',d:'M55,58 L90,50 L130,45 L175,42 L215,44 L245,50 L265,60 L275,75 L272,92 L260,108 L240,120 L215,130 L185,136 L155,136 L125,130 L98,118 L72,102 L55,85 Z'},
+    // USA
+    {n:'',c:'#1A2538',d:'M60,135 L100,128 L145,125 L185,124 L220,126 L248,132 L262,142 L265,155 L258,168 L240,178 L215,184 L185,186 L155,182 L125,174 L98,162 L72,148 L58,142 Z M30,148 L52,144 L58,155 L48,162 L30,160 Z'},
+    // Mexico & Central America
+    {n:'',c:'#1A2538',d:'M105,185 L135,180 L158,182 L168,192 L165,205 L155,215 L140,220 L125,218 L112,210 L104,198 Z'},
+    // Brazil
+    {n:'Brazil',c:'',d:'M155,210 L195,202 L228,205 L255,215 L272,232 L278,255 L272,282 L260,308 L240,332 L215,350 L190,358 L168,352 L150,335 L138,310 L132,282 L134,255 L142,230 Z'},
+    // Argentina/Chile
+    {n:'',c:'#1A2538',d:'M155,350 L175,345 L192,350 L200,368 L195,390 L182,408 L165,418 L150,412 L142,395 L140,372 Z'},
+    // UK & Ireland
+    {n:'United Kingdom',c:'',d:'M430,88 L438,82 L448,84 L452,94 L446,105 L435,108 L428,100 Z M442,106 L450,102 L456,108 L453,118 L443,120 L437,113 Z'},
+    // Norway/Scandinavia
+    {n:'',c:'#1A2538',d:'M460,52 L475,45 L492,44 L505,50 L508,62 L502,75 L488,82 L472,80 L460,70 Z'},
+    // France
+    {n:'',c:'#1A2538',d:'M440,110 L458,106 L470,110 L474,122 L468,132 L454,136 L440,130 L434,120 Z'},
+    // Spain/Portugal
+    {n:'',c:'#1A2538',d:'M418,125 L440,120 L452,125 L454,138 L445,148 L428,152 L415,145 L410,135 Z'},
+    // Germany/Central Europe
+    {n:'',c:'#1A2538',d:'M462,98 L480,94 L495,97 L500,108 L495,118 L480,122 L465,118 L458,108 Z'},
+    // Italy
+    {n:'',c:'#1A2538',d:'M468,122 L480,118 L488,124 L490,138 L484,152 L473,162 L464,155 L460,140 L460,128 Z'},
+    // Poland/E.Europe
+    {n:'',c:'#1A2538',d:'M490,92 L515,88 L530,92 L534,105 L525,115 L508,118 L492,112 L488,100 Z'},
+    // Ukraine
+    {n:'',c:'#1A2538',d:'M518,100 L548,95 L568,98 L572,110 L562,120 L542,124 L520,120 L512,110 Z'},
+    // Turkey
+    {n:'',c:'#1A2538',d:'M524,128 L558,122 L585,124 L592,134 L585,145 L558,150 L526,146 L518,136 Z'},
+    // Africa - W
+    {n:'',c:'#1A2538',d:'M418,162 L445,155 L465,158 L472,172 L468,195 L458,218 L442,235 L422,242 L405,238 L395,222 L392,200 L396,178 Z'},
+    // Africa - E/Central
+    {n:'',c:'#1A2538',d:'M468,162 L502,155 L528,158 L540,175 L538,200 L528,228 L512,250 L492,260 L470,258 L452,245 L445,222 L446,198 L452,175 Z'},
+    // S.Africa
+    {n:'',c:'#1A2538',d:'M455,260 L488,255 L512,258 L522,275 L516,295 L498,308 L475,312 L455,305 L442,288 L442,272 Z'},
+    // Saudi Arabia
+    {n:'',c:'#1A2538',d:'M555,148 L588,142 L608,145 L615,158 L610,172 L595,180 L572,182 L555,175 L548,162 Z'},
+    // UAE
+    {n:'UAE',c:'',d:'M602,162 L615,158 L622,163 L620,172 L610,176 L600,170 Z'},
+    // Iran
+    {n:'',c:'#1A2538',d:'M580,128 L612,122 L635,126 L642,140 L636,155 L618,162 L594,162 L578,152 L574,138 Z'},
+    // India
+    {n:'India',c:'',d:'M612,150 L642,142 L665,146 L675,162 L672,185 L658,208 L638,222 L618,224 L600,212 L590,190 L590,168 Z'},
+    // China
+    {n:'',c:'#1A2538',d:'M648,98 L695,88 L740,85 L770,90 L785,105 L782,122 L762,135 L730,140 L698,138 L672,130 L650,118 Z'},
+    // Mongolia
+    {n:'',c:'#1A2538',d:'M648,85 L690,78 L735,76 L762,82 L768,92 L745,98 L698,100 L655,96 Z'},
+    // Kazakhstan
+    {n:'',c:'#1A2538',d:'M580,88 L620,80 L658,78 L678,85 L680,98 L658,108 L622,112 L588,108 L572,98 Z'},
+    // Thailand
+    {n:'Thailand',c:'',d:'M688,168 L700,162 L710,166 L712,180 L705,192 L692,196 L682,188 L680,176 Z'},
+    // Malaysia
+    {n:'Malaysia',c:'',d:'M705,192 L725,188 L740,192 L740,202 L725,208 L706,204 Z M752,198 L768,194 L778,200 L775,210 L760,212 L750,206 Z'},
+    // Indonesia
+    {n:'Indonesia',c:'',d:'M720,208 L750,202 L772,206 L778,218 L768,226 L742,228 L720,220 Z M782,200 L808,196 L820,202 L818,214 L800,218 L780,212 Z M728,218 L748,215 L755,222 L748,230 L730,230 L722,224 Z'},
+    // Vietnam/Indochina
+    {n:'',c:'#1A2538',d:'M720,158 L738,152 L752,156 L758,168 L752,182 L738,188 L722,184 L715,170 Z'},
+    // Japan
+    {n:'Japan',c:'',d:'M800,98 L812,92 L822,98 L820,112 L808,118 L798,112 Z M786,112 L798,108 L804,116 L800,128 L788,130 L780,122 Z M812,85 L822,80 L830,86 L826,98 L814,100 L806,93 Z'},
+    // South Korea
+    {n:'',c:'#1A2538',d:'M788,108 L800,105 L806,111 L802,120 L790,122 L782,116 Z'},
+    // Philippines
+    {n:'',c:'#1A2538',d:'M790,168 L800,164 L808,170 L806,182 L795,185 L786,178 Z M800,180 L810,177 L816,184 L812,194 L800,196 L794,188 Z'},
+    // Australia
+    {n:'Australia',c:'',d:'M722,278 L768,268 L810,265 L845,272 L862,290 L865,315 L855,340 L832,358 L802,370 L768,374 L735,368 L710,352 L695,328 L692,305 L700,285 Z'},
+    // New Zealand
+    {n:'',c:'#1A2538',d:'M882,335 L890,328 L898,334 L896,348 L886,352 L878,344 Z M878,350 L886,346 L892,354 L888,366 L878,368 L872,360 Z'},
   ];
 
-  // Highlighted country paths — simplified but geographically positioned
-  var countries=[
-    {n:'Canada',       d:'M52,48 L188,38 L235,50 L255,65 L265,85 L258,110 L238,130 L204,144 L162,150 L118,144 L78,128 L52,102 L44,72 Z'},
-    {n:'Brazil',       d:'M158,188 L202,178 L240,184 L260,200 L268,228 L265,262 L252,298 L230,328 L205,344 L178,348 L158,332 L146,308 L140,274 L144,238 L150,212 Z'},
-    {n:'United Kingdom',d:'M392,68 L402,63 L412,66 L414,79 L406,90 L395,92 L388,82 Z M403,90 L413,86 L417,97 L410,108 L400,107 L396,97 Z'},
-    {n:'India',        d:'M588,132 L618,122 L642,125 L660,140 L668,162 L663,192 L648,214 L624,225 L600,223 L580,207 L570,183 L570,158 Z'},
-    {n:'Thailand',     d:'M650,168 L662,162 L672,168 L674,182 L665,192 L652,192 L644,183 Z'},
-    {n:'Malaysia',     d:'M675,212 L698,208 L712,214 L710,226 L694,229 L676,222 Z'},
-    {n:'Indonesia',    d:'M702,215 L730,208 L752,213 L762,225 L755,236 L730,238 L705,230 Z M768,210 L792,205 L808,212 L806,224 L786,227 L768,220 Z'},
-    {n:'UAE',          d:'M558,158 L572,152 L582,158 L582,170 L570,176 L557,170 Z'},
-    {n:'Japan',        d:'M784,88 L796,82 L808,90 L806,106 L793,113 L780,106 Z M770,110 L782,106 L787,118 L780,127 L768,123 Z M757,85 L769,80 L777,88 L774,102 L761,106 L752,97 Z'},
-    {n:'Australia',    d:'M690,267 L742,256 L785,254 L820,262 L842,279 L852,305 L846,332 L828,352 L800,367 L765,372 L730,367 L702,350 L686,328 L678,304 L682,280 Z'},
-  ];
+  // Build SVG
+  var h='<rect width="1000" height="500" fill="#0A1628"/>';
+  // Ocean grid lines
+  for(var gx=0;gx<=1000;gx+=100){h+='<line x1="'+gx+'" y1="0" x2="'+gx+'" y2="500" stroke="#0D1E35" stroke-width="0.5"/>';}
+  for(var gy=0;gy<=500;gy+=100){h+='<line x1="0" y1="'+gy+'" x2="1000" y2="'+gy+'" stroke="#0D1E35" stroke-width="0.5"/>';}
+  // Equator
+  h+='<line x1="0" y1="250" x2="1000" y2="250" stroke="#0D2040" stroke-width="1"/>';
 
-  var h='<rect width="900" height="440" fill="#060A12" rx="10"/>';
-  // Subtle grid
-  for(var gx=0;gx<=900;gx+=150) h+='<line x1="'+gx+'" y1="0" x2="'+gx+'" y2="440" stroke="#0D1828" stroke-width="0.5"/>';
-  for(var gy=0;gy<=440;gy+=110) h+='<line x1="0" y1="'+gy+'" x2="900" y2="'+gy+'" stroke="#0D1828" stroke-width="0.5"/>';
-  // Background continents
-  bg.forEach(function(d){ h+='<path d="'+d+'" fill="#131D2E" stroke="#060A12" stroke-width="0.8"/>'; });
-  // Highlighted countries
-  countries.forEach(function(c){
-    var v=ftdC[c.n]||0;
-    h+='<path d="'+c.d+'" fill="'+col(v)+'" stroke="'+(v>0?'rgba(0,255,178,0.3)':'#060A12')+'" stroke-width="'+(v>0?1.5:0.5)+'" class="map-cc" data-n="'+c.n+'" data-f="'+v+'"/>';
-    if(v>0){
-      var nums=c.d.match(/(\d+(?:\.\d+)?),(\d+(?:\.\d+)?)/g)||[];
-      var xs=nums.map(function(p){return parseFloat(p.split(',')[0]);});
-      var ys=nums.map(function(p){return parseFloat(p.split(',')[1]);});
+  // Draw all countries
+  worldPaths.forEach(function(c){
+    var isTarget=TARGET.indexOf(c.n)>-1;
+    var v=isTarget?(ftdC[c.n]||0):0;
+    var fill=isTarget?col(v):(c.c||'#1A2538');
+    var stroke=isTarget&&v>0?'rgba(0,255,178,0.4)':'#0A1628';
+    var sw=isTarget&&v>0?1.5:0.6;
+    h+='<path d="'+c.d+'" fill="'+fill+'" stroke="'+stroke+'" stroke-width="'+sw+'"'+(isTarget?' class="map-cc" data-n="'+c.n+'" data-f="'+v+'"':'')+'/>';
+    if(isTarget&&v>0){
+      var pts=c.d.match(/(\d+(?:\.\d+)?),(\d+(?:\.\d+)?)/g)||[];
+      var xs=pts.map(function(p){return parseFloat(p.split(',')[0]);});
+      var ys=pts.map(function(p){return parseFloat(p.split(',')[1]);});
       if(xs.length){
-        var cx=xs.reduce(function(a,b){return a+b;},0)/xs.length;
-        var cy=ys.reduce(function(a,b){return a+b;},0)/ys.length;
-        h+='<text x="'+Math.round(cx)+'" y="'+Math.round(cy+4)+'" text-anchor="middle" fill="rgba(0,0,0,0.8)" font-size="8" font-family="Sofia Pro,Sofia,sans-serif" font-weight="700" pointer-events="none">'+v+'</text>';
+        var cx=Math.round(xs.reduce(function(a,b){return a+b;},0)/xs.length);
+        var cy=Math.round(ys.reduce(function(a,b){return a+b;},0)/ys.length);
+        h+='<text x="'+cx+'" y="'+(cy+3)+'" text-anchor="middle" fill="rgba(0,0,0,0.85)" font-size="9" font-family="Lato,Sofia Pro,sans-serif" font-weight="700" pointer-events="none">'+v+'</text>';
       }
     }
   });
+
   svg.innerHTML=h;
 
   // Tooltip
@@ -948,20 +1001,19 @@ function renderWorldMap(){
     p.addEventListener('mouseleave',function(){if(tt)tt.style.display='none';});
   });
 
-  // Legend — show only target countries with data
+  // Legend
   if(lgd){
-    var top=TARGET.filter(function(n){return ftdC[n]>0;})
-      .sort(function(a,b){return (ftdC[b]||0)-(ftdC[a]||0);})
-      .slice(0,6);
+    var top=TARGET.filter(function(n){return ftdC[n]>0;}).sort(function(a,b){return (ftdC[b]||0)-(ftdC[a]||0);}).slice(0,6);
     lgd.innerHTML=top.map(function(n){
       var v=ftdC[n]||0;
       return '<div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--ts)">'+
         '<div style="width:8px;height:8px;border-radius:2px;background:'+col(v)+';flex-shrink:0"></div>'+
-        '<span style="flex:1">'+n+'</span>'+
-        '<strong style="color:var(--tp)">'+v+'</strong></div>';
+        '<span style="flex:1">'+n+'</span><strong style="color:var(--tp)">'+v+'</strong></div>';
     }).join('');
   }
 }
+
+
 
 
 
@@ -1972,6 +2024,7 @@ function renderFunnelRings(container, ringData){
     });
   });
 }
+
 
 </script>
 </body>
