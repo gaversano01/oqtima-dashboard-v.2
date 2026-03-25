@@ -5,8 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
 <meta name="theme-color" content="#07090E">
 <title>OQtima Manual — Marketing Intelligence</title>
-<link href="https://api.fontshare.com/v2/css?f[]=satoshi@700,500,400&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
@@ -16,7 +15,7 @@
   --a:#00FFB2;--ad:rgba(0,255,178,0.07);--am:rgba(0,255,178,0.25);
   --tp:#ECF0FA;--ts:#4E6180;--tm:#253245;
   --red:#FF4D6A;--amber:#FFB547;--green:#00D68F;--blue:#4D9EFF;--purple:#9B6DFF;
-  --ff:'Satoshi','Plus Jakarta Sans',sans-serif;
+  --ff:'Sofia Pro','Sofia',sans-serif;
   --r:10px;--r2:14px;
 }
 body{font-family:var(--fb);background:var(--bg);color:var(--tp);min-height:100vh;font-size:14px;-webkit-font-smoothing:antialiased}
@@ -241,6 +240,7 @@ input[type=color]{width:32px;height:32px;border-radius:6px;border:1px solid var(
 .loaded-badge::before{content:'●';margin-right:2px}
 
 </style>
+<link href="https://fonts.cdnfonts.com/css/sofia-pro" rel="stylesheet">
 </head>
 <body>
 
@@ -655,7 +655,7 @@ input[type=color]{width:32px;height:32px;border-radius:6px;border:1px solid var(
       <div class="si"><label>Company name</label><input class="si-inp" type="text" id="s-name" value="OQtima" oninput="applyS()"/></div>
       <div class="si"><label>Accent color</label><div class="cr"><input type="color" id="s-a" value="#C1FF47" oninput="syncA()"/><input class="si-inp" type="text" id="s-ah" value="#C1FF47" oninput="syncAT()" style="flex:1"/></div></div>
       <div class="si"><label>Background</label><div class="cr"><input type="color" id="s-bg" value="#07090E" oninput="syncBg()"/><input class="si-inp" type="text" id="s-bgh" value="#07090E" oninput="syncBgT()" style="flex:1"/></div></div>
-      <div class="si"><label>Font</label><select class="si-sel" id="s-font" onchange="applyS()"><option value="'Plus Jakarta Sans',sans-serif">Syne</option><option value="'Space Grotesk',sans-serif">Space Grotesk</option><option value="'Plus Jakarta Sans',sans-serif">DM Sans</option><option value="'Inter',sans-serif">Inter</option></select></div>
+      <div class="si"><label>Font</label><select class="si-sel" id="s-font" onchange="applyS()"><option value="'Sofia Pro','Sofia',sans-serif">Syne</option><option value="'Space Grotesk',sans-serif">Space Grotesk</option><option value="'Sofia Pro','Sofia',sans-serif">DM Sans</option><option value="'Inter',sans-serif">Inter</option></select></div>
       <div class="si"><label>Theme</label><select class="si-sel" id="s-theme" onchange="applyS()"><option value="dark">Dark</option><option value="light">Light</option></select></div>
       <div class="si"><label>Backend URL</label><input class="si-inp" type="text" id="s-be" value="https://oqtima-backend.onrender.com" oninput="saveS()"/></div>
     </div>
@@ -849,21 +849,30 @@ async function refreshAll(){sv('upload');} // In manual mode, refresh = go to up
 
 // ── WORLD MAP ────────────────────────────────────────────────────────────
 function renderWorldMap(){
-  const svg=document.getElementById('world-svg');
-  const lgd=document.getElementById('map-lgd')||document.getElementById('map-legend');
+  var svg=document.getElementById('world-svg');
+  var lgd=document.getElementById('map-lgd')||document.getElementById('map-legend');
   if(!svg)return;
-  const hsD=(typeof MAN!=='undefined'?MAN.hs:null)||D.hs;
-  const a=getA();
-  const norm={'JAPAN':'Japan','BRAZIL':'Brazil','AUSTRALIA':'Australia','UNITED KINGDOM':'United Kingdom','CANADA':'Canada','INDONESIA':'Indonesia','INDIA':'India','THAILAND':'Thailand','UNITED ARAB EMIRATES':'UAE','MALAYSIA':'Malaysia','SOUTH AFRICA':'South Africa','NIGERIA':'Nigeria'};
-  const ftdC={};
+  var hsD=MAN.hs;
+  var a=getA();
+
+  // Use ONLY the known target countries — do not show raw backend country names
+  var TARGET=['Japan','Australia','United Kingdom','Brazil','Canada','Indonesia','India','Thailand','UAE','Malaysia'];
+  var NORM={'JAPAN':'Japan','BRAZIL':'Brazil','AUSTRALIA':'Australia','UNITED KINGDOM':'United Kingdom',
+    'CANADA':'Canada','INDONESIA':'Indonesia','INDIA':'India','THAILAND':'Thailand',
+    'UNITED ARAB EMIRATES':'UAE','MALAYSIA':'Malaysia','UAE':'UAE'};
+
+  var ftdC={};
   if(hsD&&hsD.total>0){
     Object.entries(hsD.byCountry||{}).forEach(function(e){
-      var n=norm[e[0]]||(e[0].charAt(0)+e[0].slice(1).toLowerCase());
-      ftdC[n]=(ftdC[n]||0)+e[1];
+      var n=NORM[e[0]];
+      if(n)ftdC[n]=(ftdC[n]||0)+e[1];
     });
-  } else {
-    Object.assign(ftdC,{'Japan':187,'Brazil':157,'Australia':142,'United Kingdom':50,'Canada':43,'Indonesia':19,'India':18,'Thailand':16,'UAE':16,'Malaysia':12});
   }
+  // Static fallback if no live data
+  if(Object.keys(ftdC).length===0){
+    Object.assign(ftdC,{Japan:187,Brazil:157,Australia:142,'United Kingdom':50,Canada:43,Indonesia:19,India:18,Thailand:16,UAE:16,Malaysia:12});
+  }
+
   var maxV=Math.max.apply(null,Object.values(ftdC).concat([1]));
   function col(v){
     if(!v)return'#131D2E';
@@ -873,64 +882,58 @@ function renderWorldMap(){
     if(p>0.2)return a+'88';
     return a+'44';
   }
-  // SVG viewBox 0 0 900 440
-  // Simplified but geographically accurate country outlines
+
+  // Background continent blobs (decorative landmass shapes)
   var bg=[
-    // North America landmass
-    'M50,55 L95,45 L145,42 L195,45 L240,52 L265,70 L278,90 L272,120 L255,140 L230,158 L200,168 L165,170 L130,162 L100,148 L72,128 L52,102 L48,75 Z',
-    // South America
+    'M50,55 L95,45 L145,42 L195,45 L240,52 L265,70 L278,90 L272,120 L255,140 L230,158 L200,168 L165,170 L130,162 L100,148 L72,128 L52,102 Z',
     'M185,182 L220,172 L252,178 L272,195 L282,220 L285,258 L278,300 L260,338 L235,368 L208,378 L185,370 L165,348 L152,315 L148,278 L152,242 L162,210 Z',
-    // Europe  
-    'M388,62 L420,55 L452,52 L478,58 L495,72 L498,92 L488,108 L468,120 L445,126 L420,124 L400,115 L388,100 L385,82 Z',
-    // Africa
-    'M395,138 L430,128 L462,125 L490,130 L510,145 L522,168 L528,198 L525,232 L515,265 L498,295 L475,318 L450,330 L422,332 L398,320 L378,298 L368,268 L365,235 L368,202 L378,172 L390,152 Z',
-    // Russia/N Asia (simplified)
-    'M490,38 L580,28 L680,25 L770,30 L820,42 L840,62 L835,88 L808,108 L768,120 L718,128 L658,130 L600,125 L548,118 L510,105 L490,88 L485,62 Z',
-    // Middle East
-    'M502,128 L538,118 L568,120 L590,132 L598,150 L592,170 L575,182 L552,186 L528,180 L510,165 L502,148 Z',
-    // South/SE Asia block
-    'M568,128 L628,118 L672,122 L705,135 L720,152 L722,175 L712,195 L692,208 L665,215 L635,212 L605,200 L580,182 L568,162 Z',
-    // East Asia  
-    'M672,72 L722,65 L762,68 L792,80 L808,98 L805,118 L785,132 L758,138 L725,135 L696,122 L675,105 L668,88 Z',
-    // Australia landmass
-    'M680,268 L732,258 L778,255 L815,260 L840,275 L852,298 L848,325 L832,348 L805,365 L772,372 L738,368 L708,352 L688,330 L678,305 Z',
+    'M385,62 L422,55 L455,52 L478,58 L495,72 L498,92 L488,108 L468,120 L445,126 L418,124 L398,115 L385,100 L382,80 Z',
+    'M395,138 L432,128 L462,125 L490,130 L510,145 L522,168 L528,200 L525,235 L515,268 L498,298 L472,320 L448,332 L420,332 L395,318 L375,295 L365,262 L365,228 L372,195 L385,168 L395,152 Z',
+    'M490,38 L580,28 L680,25 L770,30 L820,42 L840,62 L835,88 L808,108 L768,120 L718,128 L658,130 L600,125 L545,118 L508,105 L488,85 L485,60 Z',
+    'M500,128 L538,118 L568,120 L590,132 L598,150 L592,170 L575,182 L550,186 L526,180 L508,165 L500,148 Z',
+    'M568,128 L628,118 L672,122 L706,135 L720,152 L722,175 L712,198 L690,210 L662,215 L632,212 L602,198 L578,180 L566,158 Z',
+    'M672,72 L722,65 L762,68 L792,80 L808,98 L805,118 L785,132 L758,138 L725,135 L695,122 L672,105 L668,86 Z',
+    'M682,268 L735,258 L780,255 L818,262 L840,278 L852,302 L848,328 L830,350 L802,366 L768,372 L732,367 L704,350 L686,328 L678,305 Z',
   ];
-  var hl=[
-    {n:'Canada',d:'M52,48 L188,38 L235,48 L255,62 L265,82 L258,108 L238,128 L205,142 L165,148 L118,142 L78,125 L52,100 L44,72 Z'},
-    {n:'United Kingdom',d:'M390,70 L400,65 L410,68 L412,80 L405,90 L395,92 L388,84 Z M402,90 L412,86 L416,96 L410,106 L400,105 L396,96 Z'},
-    {n:'Brazil',d:'M158,188 L202,178 L238,182 L260,198 L268,225 L265,260 L252,295 L230,325 L205,342 L180,345 L160,330 L148,305 L142,272 L145,238 L150,210 Z'},
-    {n:'India',d:'M585,132 L615,122 L640,125 L658,138 L665,160 L660,188 L645,210 L622,222 L598,220 L578,205 L568,182 L568,158 Z'},
-    {n:'Japan',d:'M782,88 L792,82 L802,88 L800,102 L788,108 L778,102 Z M770,108 L780,104 L785,115 L778,124 L768,120 Z M758,85 L768,80 L776,86 L773,98 L762,102 L755,95 Z'},
-    {n:'Australia',d:'M688,265 L738,256 L780,254 L815,260 L838,276 L848,300 L842,326 L825,348 L798,364 L765,370 L732,365 L704,348 L688,325 L678,300 L680,278 Z'},
-    {n:'Indonesia',d:'M700,215 L728,208 L748,212 L758,222 L752,232 L728,235 L705,228 Z M762,210 L785,205 L800,210 L798,222 L780,225 L762,218 Z'},
-    {n:'Thailand',d:'M648,168 L660,162 L670,166 L672,178 L665,188 L652,190 L644,182 Z'},
-    {n:'UAE',d:'M555,158 L568,152 L578,156 L578,168 L568,174 L556,170 Z'},
-    {n:'Malaysia',d:'M672,212 L695,208 L708,212 L706,222 L692,225 L674,220 Z'},
+
+  // Highlighted country paths — simplified but geographically positioned
+  var countries=[
+    {n:'Canada',       d:'M52,48 L188,38 L235,50 L255,65 L265,85 L258,110 L238,130 L204,144 L162,150 L118,144 L78,128 L52,102 L44,72 Z'},
+    {n:'Brazil',       d:'M158,188 L202,178 L240,184 L260,200 L268,228 L265,262 L252,298 L230,328 L205,344 L178,348 L158,332 L146,308 L140,274 L144,238 L150,212 Z'},
+    {n:'United Kingdom',d:'M392,68 L402,63 L412,66 L414,79 L406,90 L395,92 L388,82 Z M403,90 L413,86 L417,97 L410,108 L400,107 L396,97 Z'},
+    {n:'India',        d:'M588,132 L618,122 L642,125 L660,140 L668,162 L663,192 L648,214 L624,225 L600,223 L580,207 L570,183 L570,158 Z'},
+    {n:'Thailand',     d:'M650,168 L662,162 L672,168 L674,182 L665,192 L652,192 L644,183 Z'},
+    {n:'Malaysia',     d:'M675,212 L698,208 L712,214 L710,226 L694,229 L676,222 Z'},
+    {n:'Indonesia',    d:'M702,215 L730,208 L752,213 L762,225 L755,236 L730,238 L705,230 Z M768,210 L792,205 L808,212 L806,224 L786,227 L768,220 Z'},
+    {n:'UAE',          d:'M558,158 L572,152 L582,158 L582,170 L570,176 L557,170 Z'},
+    {n:'Japan',        d:'M784,88 L796,82 L808,90 L806,106 L793,113 L780,106 Z M770,110 L782,106 L787,118 L780,127 L768,123 Z M757,85 L769,80 L777,88 L774,102 L761,106 L752,97 Z'},
+    {n:'Australia',    d:'M690,267 L742,256 L785,254 L820,262 L842,279 L852,305 L846,332 L828,352 L800,367 L765,372 L730,367 L702,350 L686,328 L678,304 L682,280 Z'},
   ];
-  var h='<defs><filter id="glow"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>';
-  h+='<rect width="900" height="440" fill="#060A12" rx="10"/>';
-  // Grid
-  for(var x=0;x<=900;x+=150)h+='<line x1="'+x+'" y1="0" x2="'+x+'" y2="440" stroke="#0D1828" stroke-width="0.5"/>';
-  for(var y=0;y<=440;y+=110)h+='<line x1="0" y1="'+y+'" x2="900" y2="'+y+'" stroke="#0D1828" stroke-width="0.5"/>';
+
+  var h='<rect width="900" height="440" fill="#060A12" rx="10"/>';
+  // Subtle grid
+  for(var gx=0;gx<=900;gx+=150) h+='<line x1="'+gx+'" y1="0" x2="'+gx+'" y2="440" stroke="#0D1828" stroke-width="0.5"/>';
+  for(var gy=0;gy<=440;gy+=110) h+='<line x1="0" y1="'+gy+'" x2="900" y2="'+gy+'" stroke="#0D1828" stroke-width="0.5"/>';
   // Background continents
-  bg.forEach(function(d){h+='<path d="'+d+'" fill="#131D2E" stroke="#060A12" stroke-width="0.8"/>';});
+  bg.forEach(function(d){ h+='<path d="'+d+'" fill="#131D2E" stroke="#060A12" stroke-width="0.8"/>'; });
   // Highlighted countries
-  hl.forEach(function(c){
+  countries.forEach(function(c){
     var v=ftdC[c.n]||0;
-    var fc=col(v);
-    var sw=v>0?1.5:0.5;
-    h+='<path d="'+c.d+'" fill="'+fc+'" stroke="'+( v>0?a+'44':'#060A12')+'" stroke-width="'+sw+'" class="map-cc" data-n="'+c.n+'" data-f="'+v+'"'+(v>0?' filter="url(#glow)"':'')+'/>';
-    // Label
+    h+='<path d="'+c.d+'" fill="'+col(v)+'" stroke="'+(v>0?'rgba(0,255,178,0.3)':'#060A12')+'" stroke-width="'+(v>0?1.5:0.5)+'" class="map-cc" data-n="'+c.n+'" data-f="'+v+'"/>';
     if(v>0){
-      var nums=c.d.match(/(\d+\.?\d*),(\d+\.?\d*)/g)||[];
+      var nums=c.d.match(/(\d+(?:\.\d+)?),(\d+(?:\.\d+)?)/g)||[];
       var xs=nums.map(function(p){return parseFloat(p.split(',')[0]);});
       var ys=nums.map(function(p){return parseFloat(p.split(',')[1]);});
-      var cx=xs.reduce(function(a,b){return a+b;},0)/xs.length;
-      var cy=ys.reduce(function(a,b){return a+b;},0)/ys.length;
-      h+='<text x="'+cx+'" y="'+(cy+3)+'" text-anchor="middle" fill="#060A12" font-size="8" font-family="Satoshi,Plus Jakarta Sans,sans-serif" font-weight="700" pointer-events="none">'+v+'</text>';
+      if(xs.length){
+        var cx=xs.reduce(function(a,b){return a+b;},0)/xs.length;
+        var cy=ys.reduce(function(a,b){return a+b;},0)/ys.length;
+        h+='<text x="'+Math.round(cx)+'" y="'+Math.round(cy+4)+'" text-anchor="middle" fill="rgba(0,0,0,0.8)" font-size="8" font-family="Sofia Pro,Sofia,sans-serif" font-weight="700" pointer-events="none">'+v+'</text>';
+      }
     }
   });
   svg.innerHTML=h;
+
+  // Tooltip
   var tt=document.getElementById('map-tt')||document.getElementById('map-tooltip');
   svg.querySelectorAll('.map-cc').forEach(function(p){
     p.addEventListener('mousemove',function(ev){
@@ -944,15 +947,22 @@ function renderWorldMap(){
     });
     p.addEventListener('mouseleave',function(){if(tt)tt.style.display='none';});
   });
+
+  // Legend — show only target countries with data
   if(lgd){
-    var top=Object.entries(ftdC).sort(function(a,b){return b[1]-a[1];}).slice(0,6);
-    lgd.innerHTML=top.map(function(e){
+    var top=TARGET.filter(function(n){return ftdC[n]>0;})
+      .sort(function(a,b){return (ftdC[b]||0)-(ftdC[a]||0);})
+      .slice(0,6);
+    lgd.innerHTML=top.map(function(n){
+      var v=ftdC[n]||0;
       return '<div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--ts)">'+
-        '<div style="width:8px;height:8px;border-radius:2px;background:'+col(e[1])+';flex-shrink:0"></div>'+
-        '<span>'+e[0]+'</span><strong style="color:var(--tp);margin-left:auto">'+e[1]+'</strong></div>';
+        '<div style="width:8px;height:8px;border-radius:2px;background:'+col(v)+';flex-shrink:0"></div>'+
+        '<span style="flex:1">'+n+'</span>'+
+        '<strong style="color:var(--tp)">'+v+'</strong></div>';
     }).join('');
   }
 }
+
 
 
 
@@ -1913,27 +1923,56 @@ function resetS(){localStorage.removeItem('oq-v8');location.reload()}
 
 function renderFunnelRings(container, ringData){
   container.innerHTML='';
-  ringData.forEach((rd,i)=>{
-    const isLast=i===ringData.length-1;
-    const item=document.createElement('div');
-    item.style.cssText='display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;min-width:90px;max-width:150px;padding:0 4px';
-    const cid='ring-c-'+i;
-    item.innerHTML=`<div style="position:relative;width:90px;height:90px"><canvas id="\${cid}" width="90" height="90"></canvas>
-      <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">
-        <span style="font-size:14px;font-weight:800;letter-spacing:-.3px;color:\${rd.color};line-height:1">\${rd.val>999999?(rd.val/1000000).toFixed(1)+'M':rd.val>9999?(rd.val/1000).toFixed(0)+'K':fmt(rd.val)}</span>
-        <span style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ts);margin-top:1px">\${rd.label}</span>
-      </div></div>
-    <div style="text-align:center;line-height:1.3"><div style="font-size:11px;font-weight:700;color:\${rd.color}">\${rd.sub}</div><div style="font-size:9px;color:var(--tm)">\${rd.sublabel}</div></div>`;
+  container.style.cssText='display:flex;align-items:flex-end;justify-content:center;gap:0;padding:8px 0;overflow-x:auto;flex-wrap:nowrap';
+  ringData.forEach(function(rd,i){
+    var isLast=(i===ringData.length-1);
+    var cid='ring-c-'+i;
+    var displayVal=rd.val!=null?
+      (rd.val>999999?(rd.val/1000000).toFixed(1)+'M':
+       rd.val>9999?Math.round(rd.val/1000)+'K':
+       fmt(rd.val))
+      :'—';
+
+    var item=document.createElement('div');
+    item.style.cssText='display:flex;flex-direction:column;align-items:center;gap:8px;flex:1;min-width:80px;max-width:140px;padding:0 4px';
+
+    var mid='<div style="position:relative;width:90px;height:90px">';
+    mid+='<canvas id="'+cid+'" width="90" height="90" style="position:absolute;top:0;left:0"></canvas>';
+    mid+='<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;pointer-events:none">';
+    mid+='<span style="font-size:13px;font-weight:800;letter-spacing:-.4px;color:'+(rd.val!=null?rd.color:'var(--tm)')+';line-height:1">'+displayVal+'</span>';
+    mid+='<span style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ts);margin-top:2px">'+rd.label+'</span>';
+    mid+='</div></div>';
+
+    var info='<div style="text-align:center;line-height:1.35">';
+    info+='<div style="font-size:11px;font-weight:700;color:'+rd.color+'">'+rd.sub+'</div>';
+    info+='<div style="font-size:9px;color:var(--tm)">'+rd.sublabel+'</div>';
+    info+='</div>';
+
+    item.innerHTML=mid+info;
     container.appendChild(item);
-    if(!isLast){const arr=document.createElement('div');arr.style.cssText='color:var(--tm);font-size:18px;flex-shrink:0;align-self:center;padding-bottom:32px';arr.textContent='→';container.appendChild(arr);}
-    requestAnimationFrame(()=>{
-      const cvs=document.getElementById(cid);if(!cvs)return;
-      const ex=Chart.getChart(cvs);if(ex)ex.destroy();
-      const f=Math.max(2,Math.min(100,rd.fill||5));
-      new Chart(cvs.getContext('2d'),{type:'doughnut',data:{datasets:[{data:[f,100-f],backgroundColor:[rd.color,rd.color+'18'],borderWidth:0,borderRadius:3}]},options:{responsive:false,cutout:'72%',plugins:{legend:{display:false},tooltip:{enabled:false}},animation:{duration:600}}});
+
+    if(!isLast){
+      var arr=document.createElement('div');
+      arr.style.cssText='color:var(--tm);font-size:16px;flex-shrink:0;align-self:center;padding-bottom:36px;opacity:.5';
+      arr.textContent='›';
+      container.appendChild(arr);
+    }
+
+    requestAnimationFrame(function(){
+      var cvs=document.getElementById(cid);
+      if(!cvs)return;
+      var ex=Chart.getChart(cvs);
+      if(ex)ex.destroy();
+      var fill=Math.max(2,Math.min(100,rd.fill||5));
+      new Chart(cvs.getContext('2d'),{
+        type:'doughnut',
+        data:{datasets:[{data:[fill,100-fill],backgroundColor:[rd.color,rd.color+'18'],borderWidth:0,borderRadius:3}]},
+        options:{responsive:false,cutout:'72%',plugins:{legend:{display:false},tooltip:{enabled:false}},animation:{duration:600}}
+      });
     });
   });
 }
+
 </script>
 </body>
 </html>
